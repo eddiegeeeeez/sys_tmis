@@ -1,0 +1,44 @@
+name: Deploy Backend to MonsterASP.NET
+
+on:
+  push:
+    branches: [ main, master ]
+    paths:
+      - 'backend/**'
+  workflow_dispatch:
+
+jobs:
+  deploy-backend:
+    runs-on: windows-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup .NET 9
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+      
+      - name: Restore dependencies
+        working-directory: ./backend/TradeMatrix.Server
+        run: dotnet restore
+      
+      - name: Build
+        working-directory: ./backend/TradeMatrix.Server
+        run: dotnet build --configuration Release --no-restore
+      
+      - name: Publish
+        working-directory: ./backend/TradeMatrix.Server
+        run: dotnet publish --configuration Release --output ../../publish/backend --no-build
+      
+      - name: Deploy to MonsterASP.NET via WebDeploy
+        uses: rasmusbuchholdt/simply-web-deploy@2.1.0
+        with:
+          website-name: ${{ secrets.WEBSITE_NAME }}
+          server-computer-name: ${{ secrets.SERVER_COMPUTER_NAME }}
+          server-username: ${{ secrets.SERVER_USERNAME }}
+          server-password: ${{ secrets.SERVER_PASSWORD }}
+          source-path: './publish/backend'
+          source-fileName: '**'
+          target-path: '/api'

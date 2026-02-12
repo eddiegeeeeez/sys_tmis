@@ -1,0 +1,6 @@
+@TradeMatrix.Server_HostAddress = http://localhost:5009
+
+GET {{TradeMatrix.Server_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

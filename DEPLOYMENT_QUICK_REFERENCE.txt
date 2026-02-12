@@ -1,0 +1,173 @@
+╔════════════════════════════════════════════════════════════════╗
+║           TradeMatrix TryASP.NET Deployment Guide              ║
+╚════════════════════════════════════════════════════════════════╝
+
+📌 YOUR CONFIGURATION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Website: https://tradematrix.tryasp.net
+Server:  site54731.siteasp.net
+FTP:     site54731.siteasp.net:21
+User:    site54731
+Pass:    4Ghl=3Jz8Te%
+Root:    \wwwroot
+
+Database: ✅ ALREADY DEPLOYED
+  Server: db32949.public.databaseasp.net
+  DB:     db32949
+
+
+🚀 DEPLOYMENT STEPS (20 minutes total)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Step 1: BUILD BACKEND (2 min)
+┌────────────────────────────────────────────────────────────────┐
+│ cd backend\TradeMatrix.Server                                  │
+│ dotnet publish -c Release -o .\publish                         │
+└────────────────────────────────────────────────────────────────┘
+  → Output: backend\TradeMatrix.Server\publish\
+
+
+Step 2: BUILD FRONTEND (3 min)
+┌────────────────────────────────────────────────────────────────┐
+│ 1. Edit frontend\next.config.ts                                │
+│    Uncomment: output: 'export',                                │
+│               images: { unoptimized: true }                    │
+│                                                                 │
+│ 2. cd frontend                                                 │
+│    npm run build                                               │
+└────────────────────────────────────────────────────────────────┘
+  → Output: frontend\out\
+
+
+Step 3: UPLOAD FILES (10 min)
+┌────────────────────────────────────────────────────────────────┐
+│ Using FileZilla:                                               │
+│                                                                 │
+│ A) Backend Upload:                                             │
+│    Local:  backend\TradeMatrix.Server\publish\*               │
+│    Remote: /wwwroot/api/                                       │
+│    Action: Upload ALL files                                    │
+│                                                                 │
+│ B) Frontend Upload:                                            │
+│    Local:  frontend\out\*                                      │
+│    Remote: /wwwroot/                                           │
+│    Action: Upload ALL files                                    │
+│                                                                 │
+│ C) Config File:                                                │
+│    Local:  frontend\web.config                                │
+│    Remote: /wwwroot/web.config                                │
+└────────────────────────────────────────────────────────────────┘
+
+
+Step 4: CONFIGURE IIS (5 min)
+┌────────────────────────────────────────────────────────────────┐
+│ In TryASP.NET Control Panel:                                   │
+│                                                                 │
+│ 1. Go to "Application Pools"                                   │
+│ 2. Find your site's pool                                       │
+│ 3. Set: .NET CLR Version = "No Managed Code"                   │
+│ 4. Set: Pipeline Mode = "Integrated"                           │
+│ 5. Click "Recycle Application Pool"                            │
+└────────────────────────────────────────────────────────────────┘
+
+
+Step 5: TEST (5 min)
+┌────────────────────────────────────────────────────────────────┐
+│ ✓ Backend API:                                                 │
+│   https://tradematrix.tryasp.net/api/Database/info            │
+│   Should return JSON with database info                        │
+│                                                                 │
+│ ✓ Frontend:                                                    │
+│   https://tradematrix.tryasp.net                              │
+│   Should show login page                                       │
+│                                                                 │
+│ ✓ Login:                                                       │
+│   Test with database credentials                               │
+│   Should redirect to dashboard                                 │
+└────────────────────────────────────────────────────────────────┘
+
+
+📁 FOLDER STRUCTURE ON SERVER
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+\wwwroot\
+  ├── index.html              ← Frontend entry
+  ├── web.config              ← URL rewrite rules
+  ├── _next\                  ← Frontend assets
+  └── api\                    ← Backend folder
+      ├── TradeMatrix.Server.dll
+      ├── web.config
+      ├── appsettings.Production.json
+      └── ... (other files)
+
+
+🔧 FILEZILLA QUICK CONNECT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Host:     site54731.siteasp.net
+Username: site54731
+Password: 4Ghl=3Jz8Te%
+Port:     21
+Protocol: FTP
+
+
+🐛 COMMON ISSUES & FIXES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Issue: "500 Internal Server Error"
+  → Set App Pool to "No Managed Code"
+  → Recycle application pool
+  → Check web.config uploaded
+
+Issue: "CORS Error"
+  → Verify appsettings.Production.json has correct domain
+  → Recycle app pool
+  → Clear browser cache
+
+Issue: "API 404 Error"
+  → Check backend is in /wwwroot/api/ folder
+  → Test: https://tradematrix.tryasp.net/api/Database/info
+
+Issue: "Blank Page"
+  → Check web.config in /wwwroot/
+  → Check index.html in /wwwroot/
+  → Check browser console (F12)
+
+
+✅ VERIFICATION CHECKLIST
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[ ] Backend builds successfully
+[ ] Frontend builds successfully
+[ ] All backend files uploaded to /wwwroot/api/
+[ ] All frontend files uploaded to /wwwroot/
+[ ] web.config uploaded to /wwwroot/
+[ ] App Pool set to "No Managed Code"
+[ ] App Pool recycled
+[ ] Backend API responds (check Database/info)
+[ ] Frontend loads (check main page)
+[ ] Login works
+[ ] Dashboard displays data
+[ ] No CORS errors in console
+
+
+📖 DETAILED GUIDES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+- DEPLOY_TRADEMATRIX.md  ← Your specific deployment guide
+- DEPLOYMENT_GUIDE.md    ← Comprehensive documentation
+- DEPLOYMENT_CHECKLIST.md ← Detailed checklist
+
+
+⚡ UPDATES AFTER DEPLOYMENT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Backend:
+  1. dotnet publish -c Release -o .\publish
+  2. Upload .\publish\* to /wwwroot/api/ (overwrite)
+  3. Recycle app pool
+
+Frontend:
+  1. npm run build
+  2. Upload .\out\* to /wwwroot/ (overwrite)
+  3. Clear browser cache
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Good luck with your deployment! 🚀
+For detailed instructions, open: DEPLOY_TRADEMATRIX.md
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
