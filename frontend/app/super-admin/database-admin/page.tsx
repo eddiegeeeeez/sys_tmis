@@ -99,7 +99,7 @@ export default function DatabaseAdminPage() {
             setError(null);
         } catch (error: any) {
             console.error('Error fetching database data:', error);
-            setError(error?.message || 'Failed to connect to backend API. Please ensure the backend server is running on http://localhost:5009');
+            setError(error?.message || 'Failed to connect to backend API. Please ensure the backend server is running.');
             // Set default values to prevent crashes
             setDbHealth({ status: 'Unhealthy', connected: false, responseTime: 'N/A', pendingMigrations: 0, message: 'Cannot connect to backend' });
         } finally {
@@ -168,7 +168,7 @@ export default function DatabaseAdminPage() {
             case 'Healthy': return 'text-emerald-600';
             case 'Warning': return 'text-amber-600';
             case 'Unhealthy': return 'text-red-600';
-            default: return 'text-zinc-400';
+            default: return 'text-muted-foreground';
         }
     };
 
@@ -177,7 +177,7 @@ export default function DatabaseAdminPage() {
             case 'Healthy': return <CheckCircle className="h-5 w-5 text-emerald-600" />;
             case 'Warning': return <AlertTriangle className="h-5 w-5 text-amber-600" />;
             case 'Unhealthy': return <AlertCircle className="h-5 w-5 text-red-600" />;
-            default: return <Activity className="h-5 w-5 text-zinc-400" />;
+            default: return <Activity className="h-5 w-5 text-muted-foreground" />;
         }
     };
 
@@ -193,8 +193,8 @@ export default function DatabaseAdminPage() {
                     {/* Header */}
                     <div className="flex justify-between items-center">
                         <div>
-                            <h3 className="text-lg font-semibold text-zinc-900">Database Administration</h3>
-                            <p className="text-xs text-zinc-500 mt-0.5">
+                            <h3 className="text-lg font-semibold text-foreground">Database Administration</h3>
+                            <p className="text-xs text-muted-foreground mt-0.5">
                                 {connInfo ? `${connInfo.server} / ${connInfo.database}` : 'MonsterASP.NET Hosted Database'}
                             </p>
                         </div>
@@ -226,11 +226,11 @@ export default function DatabaseAdminPage() {
 
                     {/* Key Metrics */}
                     <div className="grid gap-3 md:grid-cols-4">
-                        <Card className="border-zinc-200">
+                        <Card className="border-border">
                             <CardContent className="p-4">
                                 <div className="flex items-center justify-between">
                                     <div>
-                                        <p className="text-xs text-zinc-600">Status</p>
+                                        <p className="text-xs text-muted-foreground">Status</p>
                                         <p className={`text-lg font-bold mt-0.5 ${dbHealth?.connected ? 'text-emerald-600' : 'text-red-600'}`}>
                                             {loading ? '...' : dbHealth?.connected ? 'Online' : 'Offline'}
                                         </p>
@@ -240,26 +240,26 @@ export default function DatabaseAdminPage() {
                             </CardContent>
                         </Card>
 
-                        <Card className="border-zinc-200">
+                        <Card className="border-border">
                             <CardContent className="p-4">
                                 <div className="flex items-center justify-between">
                                     <div>
-                                        <p className="text-xs text-zinc-600">Total Users</p>
-                                        <p className="text-lg font-bold text-zinc-900 mt-0.5">
+                                        <p className="text-xs text-muted-foreground">Total Users</p>
+                                        <p className="text-lg font-bold text-foreground mt-0.5">
                                             {loading ? '...' : dbStats?.users.total || 0}
                                         </p>
                                     </div>
-                                    <Database className="h-4 w-4 text-zinc-400" />
+                                    <Database className="h-4 w-4 text-muted-foreground" />
                                 </div>
                             </CardContent>
                         </Card>
 
-                        <Card className="border-zinc-200">
+                        <Card className="border-border">
                             <CardContent className="p-4">
                                 <div className="flex items-center justify-between">
                                     <div>
-                                        <p className="text-xs text-zinc-600">Migrations</p>
-                                        <p className="text-lg font-bold text-zinc-900 mt-0.5">
+                                        <p className="text-xs text-muted-foreground">Migrations</p>
+                                        <p className="text-lg font-bold text-foreground mt-0.5">
                                             {loading ? '...' : `${dbInfo?.appliedMigrations || 0} / ${(dbInfo?.appliedMigrations || 0) + (dbInfo?.pendingMigrations || 0)}`}
                                         </p>
                                     </div>
@@ -268,16 +268,16 @@ export default function DatabaseAdminPage() {
                             </CardContent>
                         </Card>
 
-                        <Card className="border-zinc-200">
+                        <Card className="border-border">
                             <CardContent className="p-4">
                                 <div className="flex items-center justify-between">
                                     <div>
-                                        <p className="text-xs text-zinc-600">Pool</p>
-                                        <p className="text-lg font-bold text-zinc-900 mt-0.5">
+                                        <p className="text-xs text-muted-foreground">Pool</p>
+                                        <p className="text-lg font-bold text-foreground mt-0.5">
                                             {loading ? '...' : connInfo ? `${connInfo.poolSettings.minSize}-${connInfo.poolSettings.maxSize}` : 'N/A'}
                                         </p>
                                     </div>
-                                    <Activity className="h-4 w-4 text-zinc-400" />
+                                    <Activity className="h-4 w-4 text-muted-foreground" />
                                 </div>
                             </CardContent>
                         </Card>
@@ -286,9 +286,9 @@ export default function DatabaseAdminPage() {
                     {/* Main Content Grid */}
                     <div className="grid gap-4 md:grid-cols-3">
                         {/* Database Overview (merged with Health & Tables) */}
-                        <Card className="border-zinc-200">
+                        <Card className="border-border">
                             <CardHeader className="pb-2">
-                                <CardTitle className="text-sm font-semibold text-zinc-900 flex items-center gap-1.5">
+                                <CardTitle className="text-sm font-semibold text-foreground flex items-center gap-1.5">
                                     <Server className="w-4 h-4 text-blue-600" />
                                     Database Overview
                                 </CardTitle>
@@ -296,27 +296,27 @@ export default function DatabaseAdminPage() {
                             <CardContent className="pt-2 space-y-3">
                                 {/* Connection Info */}
                                 <div className="space-y-2">
-                                    <div className="flex justify-between py-1.5 border-b border-zinc-100">
-                                        <span className="text-xs text-zinc-600">Server</span>
-                                        <span className="text-xs font-medium text-zinc-900 truncate max-w-[180px]">{loading ? '...' : dbInfo?.server}</span>
+                                    <div className="flex justify-between py-1.5 border-b border-border">
+                                        <span className="text-xs text-muted-foreground">Server</span>
+                                        <span className="text-xs font-medium text-foreground truncate max-w-[180px]">{loading ? '...' : dbInfo?.server}</span>
                                     </div>
-                                    <div className="flex justify-between py-1.5 border-b border-zinc-100">
-                                        <span className="text-xs text-zinc-600">Database</span>
-                                        <span className="text-xs font-medium text-zinc-900">{loading ? '...' : dbInfo?.database}</span>
+                                    <div className="flex justify-between py-1.5 border-b border-border">
+                                        <span className="text-xs text-muted-foreground">Database</span>
+                                        <span className="text-xs font-medium text-foreground">{loading ? '...' : dbInfo?.database}</span>
                                     </div>
-                                    <div className="flex justify-between py-1.5 border-b border-zinc-100">
-                                        <span className="text-xs text-zinc-600">Provider</span>
-                                        <span className="text-xs font-medium text-zinc-900">SQL Server</span>
+                                    <div className="flex justify-between py-1.5 border-b border-border">
+                                        <span className="text-xs text-muted-foreground">Provider</span>
+                                        <span className="text-xs font-medium text-foreground">SQL Server</span>
                                     </div>
-                                    <div className="flex justify-between py-1.5 border-b border-zinc-100">
-                                        <span className="text-xs text-zinc-600">Encryption</span>
+                                    <div className="flex justify-between py-1.5 border-b border-border">
+                                        <span className="text-xs text-muted-foreground">Encryption</span>
                                         <span className="text-xs font-medium text-emerald-600">
                                             {loading ? '...' : connInfo?.encryption ? 'Enabled' : 'Disabled'}
                                         </span>
                                     </div>
                                     <div className="flex justify-between py-1.5">
-                                        <span className="text-xs text-zinc-600">Response Time</span>
-                                        <span className="text-xs font-medium text-zinc-900">{loading ? '...' : dbHealth?.responseTime}</span>
+                                        <span className="text-xs text-muted-foreground">Response Time</span>
+                                        <span className="text-xs font-medium text-foreground">{loading ? '...' : dbHealth?.responseTime}</span>
                                     </div>
                                 </div>
 
@@ -330,14 +330,14 @@ export default function DatabaseAdminPage() {
                                 </div>
                                 
                                 {/* Database Tables */}
-                                <div className="space-y-1.5 pt-2 border-t border-zinc-200">
-                                    <p className="text-xs text-zinc-500 font-semibold">Database Tables</p>
+                                <div className="space-y-1.5 pt-2 border-t border-border">
+                                    <p className="text-xs text-muted-foreground font-semibold">Database Tables</p>
                                     {loading ? (
-                                        <p className="text-xs text-zinc-400">Loading...</p>
+                                        <p className="text-xs text-muted-foreground">Loading...</p>
                                     ) : tableInfo?.tables.map((table) => (
                                         <div key={table.name} className="flex justify-between py-1 text-xs">
-                                            <span className="text-zinc-700">{table.name}</span>
-                                            <span className="font-semibold text-zinc-900">{table.rowCount} rows</span>
+                                            <span className="text-foreground">{table.name}</span>
+                                            <span className="font-semibold text-foreground">{table.rowCount} rows</span>
                                         </div>
                                     ))}
                                 </div>
@@ -358,37 +358,37 @@ export default function DatabaseAdminPage() {
                         </Card>
 
                         {/* User Statistics */}
-                        <Card className="border-zinc-200">
+                        <Card className="border-border">
                             <CardHeader className="pb-2">
-                                <CardTitle className="text-sm font-semibold text-zinc-900 flex items-center gap-1.5">
+                                <CardTitle className="text-sm font-semibold text-foreground flex items-center gap-1.5">
                                     <Database className="w-4 h-4 text-violet-600" />
                                     User Statistics
                                 </CardTitle>
                             </CardHeader>
                             <CardContent className="pt-2 space-y-2">
-                                <div className="flex justify-between py-1.5 border-b border-zinc-100">
-                                    <span className="text-xs text-zinc-600">Total Users</span>
-                                    <span className="text-xs font-bold text-zinc-900">{loading ? '...' : dbStats?.users.total || 0}</span>
+                                <div className="flex justify-between py-1.5 border-b border-border">
+                                    <span className="text-xs text-muted-foreground">Total Users</span>
+                                    <span className="text-xs font-bold text-foreground">{loading ? '...' : dbStats?.users.total || 0}</span>
                                 </div>
-                                <div className="flex justify-between py-1.5 border-b border-zinc-100">
-                                    <span className="text-xs text-zinc-600">Active</span>
+                                <div className="flex justify-between py-1.5 border-b border-border">
+                                    <span className="text-xs text-muted-foreground">Active</span>
                                     <span className="text-xs font-bold text-emerald-600">{loading ? '...' : dbStats?.users.active || 0}</span>
                                 </div>
-                                <div className="flex justify-between py-1.5 border-b border-zinc-100">
-                                    <span className="text-xs text-zinc-600">Inactive</span>
-                                    <span className="text-xs font-bold text-zinc-600">{loading ? '...' : dbStats?.users.inactive || 0}</span>
+                                <div className="flex justify-between py-1.5 border-b border-border">
+                                    <span className="text-xs text-muted-foreground">Inactive</span>
+                                    <span className="text-xs font-bold text-muted-foreground">{loading ? '...' : dbStats?.users.inactive || 0}</span>
                                 </div>
                                 <div className="flex justify-between py-1.5">
-                                    <span className="text-xs text-zinc-600">Locked</span>
+                                    <span className="text-xs text-muted-foreground">Locked</span>
                                     <span className="text-xs font-bold text-amber-600">{loading ? '...' : dbStats?.users.locked || 0}</span>
                                 </div>
-                                <div className="mt-3 pt-2 border-t border-zinc-200">
-                                    <p className="text-xs text-zinc-500 mb-2">Role Distribution</p>
+                                <div className="mt-3 pt-2 border-t border-border">
+                                    <p className="text-xs text-muted-foreground mb-2">Role Distribution</p>
                                     <div className="flex flex-wrap gap-1.5">
                                         {loading ? (
-                                            <span className="text-xs text-zinc-400">Loading...</span>
+                                            <span className="text-xs text-muted-foreground">Loading...</span>
                                         ) : dbStats?.roleDistribution.map((role) => (
-                                            <span key={role.role} className="text-xs px-2 py-0.5 bg-zinc-100 rounded">
+                                            <span key={role.role} className="text-xs px-2 py-0.5 bg-muted rounded">
                                                 {role.role}: {role.count}
                                             </span>
                                         ))}
@@ -398,9 +398,9 @@ export default function DatabaseAdminPage() {
                         </Card>
 
                         {/* Database Backup */}
-                        <Card className="border-zinc-200">
+                        <Card className="border-border">
                             <CardHeader className="pb-2">
-                                <CardTitle className="text-sm font-semibold text-zinc-900 flex items-center gap-1.5">
+                                <CardTitle className="text-sm font-semibold text-foreground flex items-center gap-1.5">
                                     <HardDrive className="w-4 h-4 text-amber-600" />
                                     Database Backup
                                 </CardTitle>
@@ -423,26 +423,26 @@ export default function DatabaseAdminPage() {
 
                                 {/* Backup Info */}
                                 <div className="space-y-2">
-                                    <div className="flex justify-between py-1.5 border-b border-zinc-100">
-                                        <span className="text-xs text-zinc-600">Backup Type</span>
-                                        <span className="text-xs font-medium text-zinc-900">{loading ? '...' : backupInfo?.backupType}</span>
+                                    <div className="flex justify-between py-1.5 border-b border-border">
+                                        <span className="text-xs text-muted-foreground">Backup Type</span>
+                                        <span className="text-xs font-medium text-foreground">{loading ? '...' : backupInfo?.backupType}</span>
                                     </div>
-                                    <div className="flex justify-between py-1.5 border-b border-zinc-100">
-                                        <span className="text-xs text-zinc-600">Size</span>
-                                        <span className="text-xs font-medium text-zinc-900">
+                                    <div className="flex justify-between py-1.5 border-b border-border">
+                                        <span className="text-xs text-muted-foreground">Size</span>
+                                        <span className="text-xs font-medium text-foreground">
                                             {loading ? '...' : backupInfo?.backupSizeMb ? `${backupInfo.backupSizeMb} MB` : 'N/A'}
                                         </span>
                                     </div>
                                     <div className="flex justify-between py-1.5">
-                                        <span className="text-xs text-zinc-600">Recommendation</span>
-                                        <span className="text-xs font-medium text-zinc-900 truncate max-w-[150px]">
+                                        <span className="text-xs text-muted-foreground">Recommendation</span>
+                                        <span className="text-xs font-medium text-foreground truncate max-w-[150px]">
                                             {loading ? '...' : backupInfo?.recommendation}
                                         </span>
                                     </div>
                                 </div>
 
                                 {/* Backup Actions */}
-                                <div className="space-y-2 pt-2 border-t border-zinc-200">
+                                <div className="space-y-2 pt-2 border-t border-border">
                                     <Button 
                                         onClick={handleRequestBackup} 
                                         size="sm"

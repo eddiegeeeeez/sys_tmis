@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import RoleGuard from "@/components/auth/role-guard";
 import { DashboardLayout } from '@/components/layouts/DashboardLayout';
 import { useUser } from '@/components/contexts/UserContext';
 import { useTheme } from '@/components/contexts/ThemeContext';
@@ -54,6 +55,7 @@ export default function DashboardPage() {
     ];
 
     return (
+        <RoleGuard allowedRoles={["SuperAdmin", "SystemAdmin", "Manager", "Cashier", "InventoryClerk"]}>
         <DashboardLayout
             currentRole={currentRole}
             activeView={activeView}
@@ -212,5 +214,6 @@ export default function DashboardPage() {
                 </div>
             </div>
         </DashboardLayout>
+        </RoleGuard>
     );
 }

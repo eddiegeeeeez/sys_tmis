@@ -32,8 +32,8 @@ jobs:
         env:
           NEXT_PUBLIC_API_URL: https://tradematrix.tryasp.net/api
       
-      - name: Copy web.config to out folder
-        run: copy frontend\web.config frontend\out\web.config
+      - name: Copy web.config to dist folder
+        run: copy frontend\web.config frontend\dist\web.config
       
       - name: Deploy to MonsterASP.NET via WebDeploy
         uses: rasmusbuchholdt/simply-web-deploy@2.1.0
@@ -42,5 +42,7 @@ jobs:
           server-computer-name: ${{ secrets.SERVER_COMPUTER_NAME }}
           server-username: ${{ secrets.SERVER_USERNAME }}
           server-password: ${{ secrets.SERVER_PASSWORD }}
-          source-path: './frontend/out'
+          source-path: './frontend/dist'
           source-fileName: '**'
+          target-path: '/'
+          delete-existing-files: 'true'

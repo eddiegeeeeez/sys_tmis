@@ -22,58 +22,58 @@ export default function SystemConfigPage() {
             >
                 <div className="space-y-6 pb-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
                     <div>
-                        <h3 className="text-lg font-medium text-zinc-900">System Configuration</h3>
-                        <p className="text-sm text-zinc-500">Configure system settings and security parameters.</p>
+                        <h3 className="text-lg font-medium text-foreground">System Configuration</h3>
+                        <p className="text-sm text-muted-foreground">Configure system settings and security parameters.</p>
                     </div>
 
                     <div className="grid gap-6 md:grid-cols-2">
-                        <Card className="border-zinc-200 shadow-sm">
-                            <CardHeader className="border-b border-zinc-100">
-                                <CardTitle className="text-base text-zinc-900">Security Settings</CardTitle>
+                        <Card className="border-border shadow-sm">
+                            <CardHeader className="border-b border-border">
+                                <CardTitle className="text-base text-foreground">Security Settings</CardTitle>
                             </CardHeader>
                             <CardContent className="space-y-4 pt-6">
                                 <div className="space-y-2">
-                                    <label className="text-sm font-medium text-zinc-900">Session Timeout (minutes)</label>
-                                    <Input type="number" defaultValue="30" className="border-zinc-200" />
+                                    <label className="text-sm font-medium text-foreground">Session Timeout (minutes)</label>
+                                    <Input type="number" defaultValue="30" className="border-border" />
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-sm font-medium text-zinc-900">Password Expiry (days)</label>
-                                    <Input type="number" defaultValue="90" className="border-zinc-200" />
+                                    <label className="text-sm font-medium text-foreground">Password Expiry (days)</label>
+                                    <Input type="number" defaultValue="90" className="border-border" />
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-sm font-medium text-zinc-900">Max Login Attempts</label>
-                                    <Input type="number" defaultValue="5" className="border-zinc-200" />
+                                    <label className="text-sm font-medium text-foreground">Max Login Attempts</label>
+                                    <Input type="number" defaultValue="5" className="border-border" />
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-sm font-medium text-zinc-900">Lockout Duration (minutes)</label>
-                                    <Input type="number" defaultValue="15" className="border-zinc-200" />
+                                    <label className="text-sm font-medium text-foreground">Lockout Duration (minutes)</label>
+                                    <Input type="number" defaultValue="15" className="border-border" />
                                 </div>
                                 <Button className="w-full">Save Settings</Button>
                             </CardContent>
                         </Card>
 
-                        <Card className="border-zinc-200 shadow-sm">
-                            <CardHeader className="border-b border-zinc-100">
-                                <CardTitle className="text-base text-zinc-900">System Information</CardTitle>
+                        <Card className="border-border shadow-sm">
+                            <CardHeader className="border-b border-border">
+                                <CardTitle className="text-base text-foreground">System Information</CardTitle>
                             </CardHeader>
                             <CardContent className="space-y-3 pt-6">
-                                <div className="flex justify-between items-center p-3 bg-zinc-50/50 rounded border border-zinc-100">
-                                    <span className="text-sm text-zinc-600">Application Version</span>
-                                    <span className="text-sm font-semibold text-zinc-900">1.0.0</span>
+                                <div className="flex justify-between items-center p-3 bg-muted/50 rounded border border-border">
+                                    <span className="text-sm text-muted-foreground">Application Version</span>
+                                    <span className="text-sm font-semibold text-foreground">1.0.0</span>
                                 </div>
-                                <div className="flex justify-between items-center p-3 bg-zinc-50/50 rounded border border-zinc-100">
-                                    <span className="text-sm text-zinc-600">Database Connection</span>
+                                <div className="flex justify-between items-center p-3 bg-muted/50 rounded border border-border">
+                                    <span className="text-sm text-muted-foreground">Database Connection</span>
                                     <span className="inline-flex items-center gap-1 text-sm font-semibold text-emerald-700">
                                         <Check className="w-3 h-3" />
                                         Connected
                                     </span>
                                 </div>
-                                <div className="flex justify-between items-center p-3 bg-zinc-50/50 rounded border border-zinc-100">
-                                    <span className="text-sm text-zinc-600">Registered Users</span>
-                                    <span className="text-sm font-semibold text-zinc-900">{MOCK_USERS.length}</span>
+                                <div className="flex justify-between items-center p-3 bg-muted/50 rounded border border-border">
+                                    <span className="text-sm text-muted-foreground">Registered Users</span>
+                                    <span className="text-sm font-semibold text-foreground">{MOCK_USERS.length}</span>
                                 </div>
-                                <div className="flex justify-between items-center p-3 bg-zinc-50/50 rounded border border-zinc-100">
-                                    <span className="text-sm text-zinc-600">System Status</span>
+                                <div className="flex justify-between items-center p-3 bg-muted/50 rounded border border-border">
+                                    <span className="text-sm text-muted-foreground">System Status</span>
                                     <span className="inline-flex items-center gap-1 text-sm font-semibold text-emerald-700">
                                         <CheckCircle className="w-3 h-3" />
                                         Operational

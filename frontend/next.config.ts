@@ -1,8 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Uncomment for static export deployment (e.g., MonsterASP.NET static hosting)
+  // Static export for ASP.NET hosting (no Node.js server required)
   output: 'export',
+  distDir: 'dist',
+  trailingSlash: true,
   images: {
     unoptimized: true
   },

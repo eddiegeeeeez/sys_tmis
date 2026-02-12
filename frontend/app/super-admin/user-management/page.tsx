@@ -58,8 +58,8 @@ export default function UserManagementPage() {
                 <div className="space-y-6 pb-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
                     <div className="flex justify-between items-center">
                         <div>
-                            <h3 className="text-lg font-medium text-zinc-900">User Management</h3>
-                            <p className="text-sm text-zinc-500">Manage user accounts, permissions, and access levels.</p>
+                            <h3 className="text-lg font-medium text-foreground">User Management</h3>
+                            <p className="text-sm text-muted-foreground">Manage user accounts, permissions, and access levels.</p>
                         </div>
                         <Button className="flex items-center gap-2">
                             <Plus className="w-4 h-4" />
@@ -69,50 +69,50 @@ export default function UserManagementPage() {
 
                     <div className="space-y-3">
                         <div className="px-1">
-                            <h4 className="text-sm font-semibold text-zinc-900">Users List</h4>
-                            <p className="text-xs text-zinc-500 mt-0.5">View and manage all registered users</p>
+                            <h4 className="text-sm font-semibold text-foreground">Users List</h4>
+                            <p className="text-xs text-muted-foreground mt-0.5">View and manage all registered users</p>
                         </div>
                         
-                        <Card className="border-zinc-200 shadow-sm overflow-hidden">
+                        <Card className="border-border shadow-sm overflow-hidden">
                             <div className="overflow-x-auto">
                                 <table className="w-full">
-                                        <thead className="bg-zinc-50/80 border-b border-zinc-200">
+                                        <thead className="bg-muted/50 border-b border-border">
                                             <tr>
-                                                <th className="px-4 py-3 text-left text-xs font-semibold text-zinc-600 cursor-pointer hover:bg-zinc-100 select-none transition-colors" onClick={() => handleSort('name')}>
+                                                <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground cursor-pointer hover:bg-muted select-none transition-colors" onClick={() => handleSort('name')}>
                                                     <div className="flex items-center gap-1">Name<ArrowUpDown className="w-3.5 h-3.5 opacity-50" /></div>
                                                 </th>
-                                                <th className="px-4 py-3 text-left text-xs font-semibold text-zinc-600 cursor-pointer hover:bg-zinc-100 select-none transition-colors" onClick={() => handleSort('email')}>
+                                                <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground cursor-pointer hover:bg-muted select-none transition-colors" onClick={() => handleSort('email')}>
                                                     <div className="flex items-center gap-1">Email<ArrowUpDown className="w-3.5 h-3.5 opacity-50" /></div>
                                                 </th>
-                                                <th className="px-4 py-3 text-left text-xs font-semibold text-zinc-600 cursor-pointer hover:bg-zinc-100 select-none transition-colors" onClick={() => handleSort('role')}>
+                                                <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground cursor-pointer hover:bg-muted select-none transition-colors" onClick={() => handleSort('role')}>
                                                     <div className="flex items-center gap-1">Role<ArrowUpDown className="w-3.5 h-3.5 opacity-50" /></div>
                                                 </th>
-                                                <th className="px-4 py-3 text-left text-xs font-semibold text-zinc-600">Status</th>
-                                                <th className="px-4 py-3 text-right text-xs font-semibold text-zinc-600">Actions</th>
+                                                <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">Status</th>
+                                                <th className="px-4 py-3 text-right text-xs font-semibold text-muted-foreground">Actions</th>
                                             </tr>
                                         </thead>
-                                        <tbody className="divide-y divide-zinc-100">
+                                        <tbody className="divide-y divide-border">
                                             {paginatedUsers.map((user) => (
-                                                <tr key={user.id} className="hover:bg-zinc-50/70 transition-colors">
+                                                <tr key={user.id} className="hover:bg-muted/50 transition-colors">
                                                     <td className="px-4 py-3">
-                                                        <span className="text-sm font-medium text-zinc-900">{user.name}</span>
+                                                        <span className="text-sm font-medium text-foreground">{user.name}</span>
                                                     </td>
                                                     <td className="px-4 py-3">
-                                                        <span className="text-sm text-zinc-600">{user.email}</span>
+                                                        <span className="text-sm text-muted-foreground">{user.email}</span>
                                                     </td>
                                                     <td className="px-4 py-3">
-                                                        <span className="inline-block px-2 py-0.5 rounded text-xs font-medium bg-zinc-100 text-zinc-700">{user.role}</span>
+                                                        <span className="inline-block px-2 py-0.5 rounded text-xs font-medium bg-muted text-foreground">{user.role}</span>
                                                     </td>
                                                     <td className="px-4 py-3">
-                                                        <span className={`inline-flex items-center gap-1 text-xs font-medium ${user.status === 'Active' ? 'text-emerald-700' : 'text-zinc-600'}`}>
+                                                        <span className={`inline-flex items-center gap-1 text-xs font-medium ${user.status === 'Active' ? 'text-emerald-700' : 'text-muted-foreground'}`}>
                                                             {user.status === 'Active' ? <Check className="w-3.5 h-3.5" /> : <X className="w-3.5 h-3.5" />}
                                                             {user.status}
                                                         </span>
                                                     </td>
                                                     <td className="px-4 py-3">
                                                         <div className="flex justify-end gap-1">
-                                                            <button className="p-1.5 hover:bg-zinc-100 rounded transition-colors" title="Edit user">
-                                                                <Edit2 className="w-4 h-4 text-zinc-500 hover:text-zinc-900" />
+                                                            <button className="p-1.5 hover:bg-muted rounded transition-colors" title="Edit user">
+                                                                <Edit2 className="w-4 h-4 text-muted-foreground hover:text-foreground" />
                                                             </button>
                                                             <button className="p-1.5 hover:bg-red-50 rounded transition-colors" title="Delete user">
                                                                 <Trash2 className="w-4 h-4 text-red-500 hover:text-red-700" />
@@ -128,7 +128,7 @@ export default function UserManagementPage() {
                         
                         {totalPages > 1 && (
                             <div className="flex items-center justify-between px-1">
-                                <p className="text-xs text-zinc-500">
+                                <p className="text-xs text-muted-foreground">
                                     Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, filteredUsers.length)} of {filteredUsers.length} results
                                 </p>
                                 <div className="flex items-center gap-1">

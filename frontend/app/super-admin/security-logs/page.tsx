@@ -31,39 +31,39 @@ export default function SecurityLogsPage() {
             >
                 <div className="space-y-6 pb-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
                     <div>
-                        <h3 className="text-lg font-medium text-zinc-900">Security & Audit Logs</h3>
-                        <p className="text-sm text-zinc-500">View system activity and user actions.</p>
+                        <h3 className="text-lg font-medium text-foreground">Security & Audit Logs</h3>
+                        <p className="text-sm text-muted-foreground">View system activity and user actions.</p>
                     </div>
 
                     <div className="space-y-3">
                         <div className="px-1">
-                            <h4 className="text-sm font-semibold text-zinc-900">Recent Activity</h4>
-                            <p className="text-xs text-zinc-500 mt-0.5">System audit logs and user actions</p>
+                            <h4 className="text-sm font-semibold text-foreground">Recent Activity</h4>
+                            <p className="text-xs text-muted-foreground mt-0.5">System audit logs and user actions</p>
                         </div>
                         
-                        <Card className="border-zinc-200 shadow-sm overflow-hidden">
+                        <Card className="border-border shadow-sm overflow-hidden">
                             <div className="overflow-x-auto">
                                 <table className="w-full">
-                                        <thead className="bg-zinc-50/80 border-b border-zinc-200">
+                                        <thead className="bg-muted/50 border-b border-border">
                                             <tr>
-                                                <th className="px-4 py-3 text-left text-xs font-semibold text-zinc-600">Action</th>
-                                                <th className="px-4 py-3 text-left text-xs font-semibold text-zinc-600">User</th>
-                                                <th className="px-4 py-3 text-left text-xs font-semibold text-zinc-600">Timestamp</th>
-                                                <th className="px-4 py-3 text-left text-xs font-semibold text-zinc-600">Status</th>
-                                                <th className="px-4 py-3 text-left text-xs font-semibold text-zinc-600">Details</th>
+                                                <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">Action</th>
+                                                <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">User</th>
+                                                <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">Timestamp</th>
+                                                <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">Status</th>
+                                                <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">Details</th>
                                             </tr>
                                         </thead>
-                                        <tbody className="divide-y divide-zinc-100">
+                                        <tbody className="divide-y divide-border">
                                             {paginatedLogs.map((log) => (
-                                                <tr key={log.id} className="hover:bg-zinc-50/70 transition-colors">
+                                                <tr key={log.id} className="hover:bg-muted/50 transition-colors">
                                                     <td className="px-4 py-3">
-                                                        <span className="text-sm font-medium text-zinc-900">{log.action}</span>
+                                                        <span className="text-sm font-medium text-foreground">{log.action}</span>
                                                     </td>
                                                     <td className="px-4 py-3">
-                                                        <span className="text-sm text-zinc-600">{log.user}</span>
+                                                        <span className="text-sm text-muted-foreground">{log.user}</span>
                                                     </td>
                                                     <td className="px-4 py-3">
-                                                        <span className="text-xs text-zinc-500">{log.timestamp}</span>
+                                                        <span className="text-xs text-muted-foreground">{log.timestamp}</span>
                                                     </td>
                                                     <td className="px-4 py-3">
                                                         <span className={`inline-flex items-center gap-1 text-xs font-medium ${log.status === 'Success' ? 'text-emerald-700' : 'text-red-700'}`}>
@@ -72,7 +72,7 @@ export default function SecurityLogsPage() {
                                                         </span>
                                                     </td>
                                                     <td className="px-4 py-3">
-                                                        <span className="text-xs text-zinc-500">{log.details}</span>
+                                                        <span className="text-xs text-muted-foreground">{log.details}</span>
                                                     </td>
                                                 </tr>
                                             ))}
@@ -83,7 +83,7 @@ export default function SecurityLogsPage() {
                         
                         {totalPages > 1 && (
                             <div className="flex items-center justify-between px-1">
-                                <p className="text-xs text-zinc-500">
+                                <p className="text-xs text-muted-foreground">
                                     Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, MOCK_AUDIT_LOGS.length)} of {MOCK_AUDIT_LOGS.length} results
                                 </p>
                                 <div className="flex items-center gap-1">

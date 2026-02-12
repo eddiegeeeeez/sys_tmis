@@ -341,3 +341,16 @@ C:\Users\mendo\OneDrive\Documents\PAM IT13\sys_tmis\backend\TradeMatrix.Server\o
 C:\Users\mendo\OneDrive\Documents\PAM IT13\sys_tmis\backend\TradeMatrix.Server\obj\Debug\net9.0\TradeMatrix.Server.pdb
 C:\Users\mendo\OneDrive\Documents\PAM IT13\sys_tmis\backend\TradeMatrix.Server\obj\Debug\net9.0\TradeMatrix.Server.genruntimeconfig.cache
 C:\Users\mendo\OneDrive\Documents\PAM IT13\sys_tmis\backend\TradeMatrix.Server\obj\Debug\net9.0\ref\TradeMatrix.Server.dll
+C:\Users\mendo\OneDrive\Documents\PAM IT13\sys_tmis\backend\TradeMatrix.Server\bin\Debug\net9.0\publish\web.config
+C:\Users\mendo\OneDrive\Documents\PAM IT13\sys_tmis\backend\TradeMatrix.Server\bin\Debug\net9.0\web.config
+C:\Users\mendo\OneDrive\Documents\PAM IT13\sys_tmis\backend\TradeMatrix.Server\bin\Debug\net9.0\appsettings.Production.json
+C:\Users\mendo\OneDrive\Documents\PAM IT13\sys_tmis\backend\TradeMatrix.Server\bin\Debug\net9.0\package-lock.json
+C:\Users\mendo\OneDrive\Documents\PAM IT13\sys_tmis\backend\TradeMatrix.Server\bin\Debug\net9.0\publish\appsettings.Development.json
+C:\Users\mendo\OneDrive\Documents\PAM IT13\sys_tmis\backend\TradeMatrix.Server\bin\Debug\net9.0\publish\appsettings.json
+C:\Users\mendo\OneDrive\Documents\PAM IT13\sys_tmis\backend\TradeMatrix.Server\bin\Debug\net9.0\publish\appsettings.Production.json
+C:\Users\mendo\OneDrive\Documents\PAM IT13\sys_tmis\backend\TradeMatrix.Server\bin\Debug\net9.0\publish\libman.json
+C:\Users\mendo\OneDrive\Documents\PAM IT13\sys_tmis\backend\TradeMatrix.Server\bin\Debug\net9.0\publish\TradeMatrix.Server.deps.json
+C:\Users\mendo\OneDrive\Documents\PAM IT13\sys_tmis\backend\TradeMatrix.Server\bin\Debug\net9.0\publish\TradeMatrix.Server.runtimeconfig.json
+C:\Users\mendo\OneDrive\Documents\PAM IT13\sys_tmis\backend\TradeMatrix.Server\bin\Debug\net9.0\publish\TradeMatrix.Server.staticwebassets.endpoints.json
+C:\Users\mendo\OneDrive\Documents\PAM IT13\sys_tmis\backend\TradeMatrix.Server\bin\Debug\net9.0\publish\wwwroot\lib\jquery-validation\package.json
+C:\Users\mendo\OneDrive\Documents\PAM IT13\sys_tmis\backend\TradeMatrix.Server\obj\Debug\net9.0\TradeMatrix.Server.sourcelink.json
