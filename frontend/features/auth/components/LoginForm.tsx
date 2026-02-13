@@ -50,7 +50,8 @@ export function LoginForm({
 
   return (
     <div className={cn("grid gap-6", className)} {...props}>
-      <div className="flex flex-col space-y-2 text-center">
+      <div className="flex flex-col space-y-2 text-center items-center">
+        <img src="/logo-icon.png" alt="TradeMatrix" className="h-12 w-12 mb-2" />
         <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
           Sign in to your account
         </h1>

@@ -105,18 +105,38 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentRole }) => {
 
   return (
     <div className="w-64 bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-50 flex flex-col h-full hidden md:flex border-r border-zinc-200 dark:border-zinc-800 shrink-0 transition-colors duration-300">
-      <div className="p-6 flex items-center gap-3 border-b border-zinc-200 dark:border-zinc-800">
-        <div className="relative w-8 h-8 flex items-center justify-center">
-          {/* Logo Icon utilizing brand colors */}
-          <div className="absolute inset-0 bg-brand-600 rounded-lg opacity-20 blur-sm"></div>
-          <div className="relative bg-brand-600 text-white p-1.5 rounded-lg shadow-lg shadow-brand-600/30 dark:shadow-brand-900/50">
-            <CircuitBoard size={20} className="text-white" />
-          </div>
-          {/* Brand Dots */}
-          <div className="absolute -top-1 -right-1 w-2 h-2 bg-accent-cyan rounded-full border-2 border-white dark:border-zinc-950"></div>
-          <div className="absolute -bottom-1 -left-1 w-2 h-2 bg-accent-orange rounded-full border-2 border-white dark:border-zinc-950"></div>
-        </div>
-        <div className="flex flex-col">
+      <div className="p-6 flex items-center justify-center gap-3 border-b border-zinc-200 dark:border-zinc-800">
+        {/* Light Mode Logo */}
+        <img
+          src="/logo-full-black.png"
+          alt="TradeMatrix MIS"
+          className="w-full h-auto object-contain block dark:hidden px-2"
+          onError={(e) => {
+            e.currentTarget.style.display = 'none';
+            // Show text fallback if this is the active mode image failing
+            const parent = e.currentTarget.parentElement;
+            if (parent) {
+              const textDiv = parent.querySelector('.hidden.flex-col');
+              if (textDiv) textDiv.classList.remove('hidden');
+            }
+          }}
+        />
+        {/* Dark Mode Logo */}
+        <img
+          src="/logo-full.png"
+          alt="TradeMatrix MIS"
+          className="w-full h-auto object-contain hidden dark:block px-2"
+          onError={(e) => {
+            e.currentTarget.style.display = 'none';
+            // Show text fallback if this is the active mode image failing
+            const parent = e.currentTarget.parentElement;
+            if (parent) {
+              const textDiv = parent.querySelector('.hidden.flex-col');
+              if (textDiv) textDiv.classList.remove('hidden');
+            }
+          }}
+        />
+        <div className="hidden flex flex-col">
           <h1 className="font-bold text-base tracking-tight leading-none text-zinc-900 dark:text-white">
             Trade<span className="text-brand-600 dark:text-brand-400">Matrix</span>
           </h1>
@@ -141,8 +161,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentRole }) => {
                     key={item.id}
                     onClick={() => navigate('/' + item.id)}
                     className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-md transition-all duration-200 text-sm font-medium ${isActive
-                        ? 'bg-brand-50 text-brand-700 border border-brand-200 shadow-sm dark:bg-brand-900/20 dark:text-brand-400 dark:border-brand-800/50'
-                        : 'text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-900 dark:hover:text-zinc-200'
+                      ? 'bg-brand-50 text-brand-700 border border-brand-200 shadow-sm dark:bg-brand-900/20 dark:text-brand-400 dark:border-brand-800/50'
+                      : 'text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-900 dark:hover:text-zinc-200'
                       }`}
                   >
                     <Icon size={18} className={isActive ? 'text-brand-600 dark:text-brand-400' : ''} />

@@ -40,10 +40,20 @@
     </script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
+      html, body, #root {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+        overflow: hidden; /* Prevent global scroll */
+      }
       body {
         font-family: 'Inter', sans-serif;
         -webkit-font-smoothing: antialiased;
         -moz-osx-font-smoothing: grayscale;
+        background-color: #f9fafb; /* zinc-50 */
+      }
+      .dark body {
+        background-color: #09090b; /* zinc-950 */
       }
       /* Custom Scrollbar for sleek look */
       ::-webkit-scrollbar {

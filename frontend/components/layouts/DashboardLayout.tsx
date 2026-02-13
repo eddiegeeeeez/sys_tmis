@@ -49,7 +49,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
               <Menu className="w-5 h-5" />
             </button>
             <div className="flex items-center gap-2 md:hidden text-brand-600 dark:text-brand-500">
-              <CircuitBoard className="h-6 w-6" />
+              <img src="/logo-icon.png" alt="TradeMatrix" className="h-8 w-8" />
               <span className="font-semibold text-zinc-900 dark:text-white leading-none">TradeMatrix</span>
             </div>
             {/* Breadcrumb-like title for desktop */}
@@ -88,9 +88,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
         <div className="absolute inset-0 z-50 bg-zinc-950/95 dark:bg-black/95 md:hidden flex flex-col p-6 animate-in fade-in duration-200">
           <div className="flex justify-between items-center mb-10 text-zinc-50">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-brand-600 rounded-md text-white">
-                <CircuitBoard size={20} />
-              </div>
+              <img src="/logo-icon.png" alt="TradeMatrix" className="h-10 w-10" />
               <span className="font-bold text-xl tracking-tight">TradeMatrix</span>
             </div>
             <button onClick={() => setIsMobileMenuOpen(false)} className="p-2 text-zinc-400 hover:text-white">✕</button>
