@@ -4,10 +4,11 @@ import { Button } from "../../../components/ui/Button"
 import { Input } from "../../../components/ui/Input"
 import { UserRole } from '../../../types';
 import { Shield, Users, ShoppingCart, Package } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 interface LoginFormProps extends React.HTMLAttributes<HTMLDivElement> {
-    onLogin: (role?: UserRole) => void;
-    className?: string;
+  onLogin: (role?: UserRole) => void;
+  className?: string;
 }
 
 export function LoginForm({
@@ -15,22 +16,37 @@ export function LoginForm({
   onLogin,
   ...props
 }: LoginFormProps) {
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [isLoading, setIsLoading] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate();
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setIsLoading(true);
-        // Simulate network request
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        setIsLoading(false);
-        onLogin(UserRole.MANAGER);
-    };
+  const handleSuccess = (role: UserRole) => {
+    onLogin(role);
+    // Redirect based on role
+    if (role === UserRole.SUPER_ADMIN || role === UserRole.SYSTEM_ADMIN) {
+      navigate('/admin/users');
+    } else if (role === UserRole.CASHIER) {
+      navigate('/pos');
+    } else if (role === UserRole.INVENTORY_CLERK) {
+      navigate('/inventory');
+    } else {
+      navigate('/dashboard');
+    }
+  }
 
-    const handleDemoLogin = (role: UserRole) => {
-        onLogin(role);
-    };
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    // Simulate network request
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    setIsLoading(false);
+    handleSuccess(UserRole.MANAGER); // Default fallback
+  };
+
+  const handleDemoLogin = (role: UserRole) => {
+    handleSuccess(role);
+  };
 
   return (
     <div className={cn("grid gap-6", className)} {...props}>
@@ -64,10 +80,10 @@ export function LoginForm({
           </div>
           <div className="grid gap-2">
             <div className="flex items-center justify-between">
-                <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-zinc-900 dark:text-zinc-100" htmlFor="password">
+              <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-zinc-900 dark:text-zinc-100" htmlFor="password">
                 Password
-                </label>
-                <a href="#" className="text-xs text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-300">Forgot password?</a>
+              </label>
+              <a href="#" className="text-xs text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-300">Forgot password?</a>
             </div>
             <Input
               id="password"
@@ -98,36 +114,36 @@ export function LoginForm({
       </div>
 
       <div className="grid grid-cols-2 gap-3">
-         <button 
-            onClick={() => handleDemoLogin(UserRole.SUPER_ADMIN)}
-            className="flex flex-col items-center justify-center gap-2 p-4 rounded-lg border border-zinc-200 bg-white hover:bg-zinc-50 hover:border-zinc-300 transition-all dark:bg-zinc-900 dark:border-zinc-800 dark:hover:bg-zinc-800"
-         >
-            <Shield className="h-5 w-5 text-red-500" />
-            <span className="text-xs font-medium text-zinc-900 dark:text-zinc-200">Super Admin</span>
-         </button>
-         <button 
-            onClick={() => handleDemoLogin(UserRole.MANAGER)}
-            className="flex flex-col items-center justify-center gap-2 p-4 rounded-lg border border-zinc-200 bg-white hover:bg-zinc-50 hover:border-zinc-300 transition-all dark:bg-zinc-900 dark:border-zinc-800 dark:hover:bg-zinc-800"
-         >
-            <Users className="h-5 w-5 text-blue-500" />
-            <span className="text-xs font-medium text-zinc-900 dark:text-zinc-200">Manager</span>
-         </button>
-         <button 
-            onClick={() => handleDemoLogin(UserRole.CASHIER)}
-            className="flex flex-col items-center justify-center gap-2 p-4 rounded-lg border border-zinc-200 bg-white hover:bg-zinc-50 hover:border-zinc-300 transition-all dark:bg-zinc-900 dark:border-zinc-800 dark:hover:bg-zinc-800"
-         >
-            <ShoppingCart className="h-5 w-5 text-emerald-500" />
-            <span className="text-xs font-medium text-zinc-900 dark:text-zinc-200">Cashier</span>
-         </button>
-         <button 
-            onClick={() => handleDemoLogin(UserRole.INVENTORY_CLERK)}
-            className="flex flex-col items-center justify-center gap-2 p-4 rounded-lg border border-zinc-200 bg-white hover:bg-zinc-50 hover:border-zinc-300 transition-all dark:bg-zinc-900 dark:border-zinc-800 dark:hover:bg-zinc-800"
-         >
-            <Package className="h-5 w-5 text-amber-500" />
-            <span className="text-xs font-medium text-zinc-900 dark:text-zinc-200">Clerk</span>
-         </button>
+        <button
+          onClick={() => handleDemoLogin(UserRole.SUPER_ADMIN)}
+          className="flex flex-col items-center justify-center gap-2 p-4 rounded-lg border border-zinc-200 bg-white hover:bg-zinc-50 hover:border-zinc-300 transition-all dark:bg-zinc-900 dark:border-zinc-800 dark:hover:bg-zinc-800"
+        >
+          <Shield className="h-5 w-5 text-red-500" />
+          <span className="text-xs font-medium text-zinc-900 dark:text-zinc-200">Super Admin</span>
+        </button>
+        <button
+          onClick={() => handleDemoLogin(UserRole.MANAGER)}
+          className="flex flex-col items-center justify-center gap-2 p-4 rounded-lg border border-zinc-200 bg-white hover:bg-zinc-50 hover:border-zinc-300 transition-all dark:bg-zinc-900 dark:border-zinc-800 dark:hover:bg-zinc-800"
+        >
+          <Users className="h-5 w-5 text-blue-500" />
+          <span className="text-xs font-medium text-zinc-900 dark:text-zinc-200">Manager</span>
+        </button>
+        <button
+          onClick={() => handleDemoLogin(UserRole.CASHIER)}
+          className="flex flex-col items-center justify-center gap-2 p-4 rounded-lg border border-zinc-200 bg-white hover:bg-zinc-50 hover:border-zinc-300 transition-all dark:bg-zinc-900 dark:border-zinc-800 dark:hover:bg-zinc-800"
+        >
+          <ShoppingCart className="h-5 w-5 text-emerald-500" />
+          <span className="text-xs font-medium text-zinc-900 dark:text-zinc-200">Cashier</span>
+        </button>
+        <button
+          onClick={() => handleDemoLogin(UserRole.INVENTORY_CLERK)}
+          className="flex flex-col items-center justify-center gap-2 p-4 rounded-lg border border-zinc-200 bg-white hover:bg-zinc-50 hover:border-zinc-300 transition-all dark:bg-zinc-900 dark:border-zinc-800 dark:hover:bg-zinc-800"
+        >
+          <Package className="h-5 w-5 text-amber-500" />
+          <span className="text-xs font-medium text-zinc-900 dark:text-zinc-200">Clerk</span>
+        </button>
       </div>
-      
+
       <p className="px-8 text-center text-xs text-zinc-500 dark:text-zinc-400">
         By clicking continue, you agree to our{" "}
         <a href="#" className="underline underline-offset-4 hover:text-zinc-900 dark:hover:text-zinc-50">
