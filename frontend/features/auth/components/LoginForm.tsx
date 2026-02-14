@@ -3,7 +3,7 @@ import { cn } from "../../../lib/utils"
 import { Button } from "../../../components/ui/Button"
 import { Input } from "../../../components/ui/Input"
 import { UserRole } from '../../../types';
-import { Shield, Users, ShoppingCart, Package } from 'lucide-react';
+
 import { useNavigate } from 'react-router-dom';
 
 interface LoginFormProps extends React.HTMLAttributes<HTMLDivElement> {
@@ -38,15 +38,31 @@ export function LoginForm({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    // Simulate network request
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    setIsLoading(false);
-    handleSuccess(UserRole.MANAGER); // Default fallback
+
+    // Simulate network request with delay
+    await new Promise(resolve => setTimeout(resolve, 1500));
+
+    // Mock Authentication Logic
+    const mockUsers = {
+      'admin@tmis.com': UserRole.SUPER_ADMIN,
+      'manager@tmis.com': UserRole.MANAGER,
+      'cashier@tmis.com': UserRole.CASHIER,
+      'clerk@tmis.com': UserRole.INVENTORY_CLERK
+    };
+
+    const role = mockUsers[email as keyof typeof mockUsers];
+
+    // Simple password check (allow 'password' or '123456')
+    if (role && (password === 'password' || password === '123456')) {
+      setIsLoading(false);
+      handleSuccess(role);
+    } else {
+      setIsLoading(false);
+      alert("Invalid credentials. Try using the mock accounts below.");
+    }
   };
 
-  const handleDemoLogin = (role: UserRole) => {
-    handleSuccess(role);
-  };
+
 
   return (
     <div className={cn("grid gap-6", className)} {...props}>
@@ -103,47 +119,7 @@ export function LoginForm({
         </div>
       </form>
 
-      <div className="relative">
-        <div className="absolute inset-0 flex items-center">
-          <span className="w-full border-t border-zinc-200 dark:border-zinc-800" />
-        </div>
-        <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-zinc-50 dark:bg-zinc-950 px-2 text-zinc-500">
-            Or continue with demo role
-          </span>
-        </div>
-      </div>
 
-      <div className="grid grid-cols-2 gap-3">
-        <button
-          onClick={() => handleDemoLogin(UserRole.SUPER_ADMIN)}
-          className="flex flex-col items-center justify-center gap-2 p-4 rounded-lg border border-zinc-200 bg-white hover:bg-zinc-50 hover:border-zinc-300 transition-all dark:bg-zinc-900 dark:border-zinc-800 dark:hover:bg-zinc-800"
-        >
-          <Shield className="h-5 w-5 text-red-500" />
-          <span className="text-xs font-medium text-zinc-900 dark:text-zinc-200">Super Admin</span>
-        </button>
-        <button
-          onClick={() => handleDemoLogin(UserRole.MANAGER)}
-          className="flex flex-col items-center justify-center gap-2 p-4 rounded-lg border border-zinc-200 bg-white hover:bg-zinc-50 hover:border-zinc-300 transition-all dark:bg-zinc-900 dark:border-zinc-800 dark:hover:bg-zinc-800"
-        >
-          <Users className="h-5 w-5 text-blue-500" />
-          <span className="text-xs font-medium text-zinc-900 dark:text-zinc-200">Manager</span>
-        </button>
-        <button
-          onClick={() => handleDemoLogin(UserRole.CASHIER)}
-          className="flex flex-col items-center justify-center gap-2 p-4 rounded-lg border border-zinc-200 bg-white hover:bg-zinc-50 hover:border-zinc-300 transition-all dark:bg-zinc-900 dark:border-zinc-800 dark:hover:bg-zinc-800"
-        >
-          <ShoppingCart className="h-5 w-5 text-emerald-500" />
-          <span className="text-xs font-medium text-zinc-900 dark:text-zinc-200">Cashier</span>
-        </button>
-        <button
-          onClick={() => handleDemoLogin(UserRole.INVENTORY_CLERK)}
-          className="flex flex-col items-center justify-center gap-2 p-4 rounded-lg border border-zinc-200 bg-white hover:bg-zinc-50 hover:border-zinc-300 transition-all dark:bg-zinc-900 dark:border-zinc-800 dark:hover:bg-zinc-800"
-        >
-          <Package className="h-5 w-5 text-amber-500" />
-          <span className="text-xs font-medium text-zinc-900 dark:text-zinc-200">Clerk</span>
-        </button>
-      </div>
 
       <p className="px-8 text-center text-xs text-zinc-500 dark:text-zinc-400">
         By clicking continue, you agree to our{" "}
