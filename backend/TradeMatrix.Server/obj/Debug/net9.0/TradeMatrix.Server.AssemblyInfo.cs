@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("TradeMatrix.Server")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+807e9dc2a3105758f4c4ead52acdb703e3ec3cb2")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+bd43390591eb6651c8a42308af5f39915a800f74")]
 [assembly: System.Reflection.AssemblyProductAttribute("TradeMatrix.Server")]
 [assembly: System.Reflection.AssemblyTitleAttribute("TradeMatrix.Server")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
