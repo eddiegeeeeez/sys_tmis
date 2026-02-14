@@ -94,16 +94,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
             <button onClick={() => setIsMobileMenuOpen(false)} className="p-2 text-zinc-400 hover:text-white">✕</button>
           </div>
           <nav className="space-y-4">
-            <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2">Switch Role</p>
-            {Object.values(UserRole).map((role) => (
-              <button
-                key={role}
-                onClick={() => handleRoleChange(role)}
-                className={`w-full text-left p-4 rounded-lg border transition-all ${currentRole === role ? 'bg-zinc-100 text-brand-700 border-brand-200' : 'bg-zinc-900 text-zinc-300 border-zinc-800 hover:border-zinc-700 hover:text-white'}`}
-              >
-                {role} View
-              </button>
-            ))}
+            {/* Navigation items could go here if needed, currently empty as sidebar handles main nav */}
           </nav>
         </div>
       )}
