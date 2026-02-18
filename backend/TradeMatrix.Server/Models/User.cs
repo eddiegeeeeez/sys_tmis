@@ -2,15 +2,8 @@ using System.ComponentModel.DataAnnotations;
 
 namespace TradeMatrix.Server.Models
 {
-    public enum UserRole
-    {
-        SuperAdmin,
-        SystemAdmin,
-        Manager,
-        Cashier,
-        InventoryClerk
-    }
-
+// Enum removed in favor of dynamic Role entity
+    
     public class User
     {
         public int Id { get; set; }
@@ -26,7 +19,9 @@ namespace TradeMatrix.Server.Models
         [Required]
         public string PasswordHash { get; set; } = string.Empty;
 
-        public UserRole Role { get; set; }
+        // Foreign Key to Role
+        public int RoleId { get; set; }
+        public Role Role { get; set; } = null!;
 
         public bool IsActive { get; set; } = true;
 

@@ -44,6 +44,7 @@ namespace TradeMatrix.Server.Controllers
             // Validation is performed by data annotations in LoginDto
             var user = await _context.Users
                 .AsNoTracking()
+                .Include(u => u.Role)
                 .FirstOrDefaultAsync(u => u.Email == loginDto.Email);
 
             // Check if account is locked out
@@ -103,7 +104,7 @@ namespace TradeMatrix.Server.Controllers
             return Ok(new 
             { 
                 token = token, 
-                role = user.Role.ToString(), 
+                role = user.Role.Name, 
                 name = user.Name,
                 email = user.Email
             });
@@ -122,7 +123,9 @@ namespace TradeMatrix.Server.Controllers
                 return Unauthorized();
             }
 
-            var user = await _context.Users.FindAsync(userId);
+            var user = await _context.Users
+                .Include(u => u.Role)
+                .FirstOrDefaultAsync(u => u.Id == userId);
             if (user == null)
             {
                 return NotFound();
@@ -133,10 +136,42 @@ namespace TradeMatrix.Server.Controllers
                 id = user.Id,
                 name = user.Name,
                 email = user.Email,
-                role = user.Role.ToString(),
+                role = user.Role.Name,
                 isActive = user.IsActive,
                 lastLogin = user.LastLogin
             });
+        }
+
+        /// <summary>
+        /// Verify current user password for sensitive actions
+        /// </summary>
+        [HttpPost("verify-password")]
+        [Authorize]
+        public async Task<IActionResult> VerifyPassword([FromBody] VerifyPasswordDto dto)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+            if (!int.TryParse(userIdClaim?.Value, out int userId))
+            {
+                return Unauthorized();
+            }
+
+            var user = await _context.Users.FindAsync(userId);
+            if (user == null)
+            {
+                return NotFound();
+            }
+
+            if (!_passwordHashing.VerifyPassword(dto.Password, user.PasswordHash))
+            {
+                return Unauthorized(new { message = "Invalid password" });
+            }
+
+            return Ok(new { success = true });
+        }
+
+        public class VerifyPasswordDto
+        {
+            public string Password { get; set; } = string.Empty;
         }
 
         private string GenerateJwtToken(User user)
@@ -153,7 +188,7 @@ namespace TradeMatrix.Server.Controllers
                 new Claim(JwtRegisteredClaimNames.Sub, user.Email),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
                 new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-                new Claim(ClaimTypes.Role, user.Role.ToString()),
+                new Claim(ClaimTypes.Role, user.Role.Name),
                 new Claim("Name", user.Name)
             };
 
