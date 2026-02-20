@@ -21,12 +21,12 @@ namespace TradeMatrix.Server.Controllers
 
         // GET: api/Roles
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<RoleDto>>> GetRoles()
+        public async Task<ActionResult<ApiResponse<IEnumerable<RoleDto>>>> GetRoles()
         {
             try
             {
                 var roles = await _roleService.GetRolesAsync();
-                return Ok(roles);
+                return Ok(ApiResponse<IEnumerable<RoleDto>>.SuccessResponse(roles));
             }
             catch (Exception ex)
             {
@@ -37,7 +37,7 @@ namespace TradeMatrix.Server.Controllers
 
         // GET: api/Roles/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<RoleDto>> GetRole(int id)
+        public async Task<ActionResult<ApiResponse<RoleDto>>> GetRole(int id)
         {
             try
             {
@@ -46,7 +46,7 @@ namespace TradeMatrix.Server.Controllers
                 {
                     return NotFound(ApiResponse<string>.ErrorResponse("Role not found"));
                 }
-                return Ok(role);
+                return Ok(ApiResponse<RoleDto>.SuccessResponse(role));
             }
             catch (Exception ex)
             {
@@ -82,7 +82,7 @@ namespace TradeMatrix.Server.Controllers
             {
                 var result = await _roleService.CreateRoleAsync(roleDto);
                 if (!result.Success)
-                    return result.Message.Contains("already exists") ? Conflict(result) : BadRequest(result);
+                    return (result.Message?.Contains("already exists") == true) ? Conflict(result) : BadRequest(result);
 
                 return CreatedAtAction(nameof(GetRole), new { id = result.Data!.Id }, result);
             }
@@ -109,6 +109,43 @@ namespace TradeMatrix.Server.Controllers
             {
                 _logger.LogError(ex, "Error deleting role");
                 return StatusCode(500, ApiResponse<string>.ErrorResponse("Error deleting role"));
+            }
+        }
+        // PUT: api/Roles/5/archive
+        [HttpPut("{id}/archive")]
+        public async Task<ActionResult<ApiResponse<bool>>> ArchiveRole(int id)
+        {
+            try
+            {
+                var result = await _roleService.ArchiveRoleAsync(id);
+                if (!result.Success)
+                    return BadRequest(result);
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error archiving role");
+                return StatusCode(500, ApiResponse<string>.ErrorResponse("Error archiving role"));
+            }
+        }
+
+        // PUT: api/Roles/5/restore
+        [HttpPut("{id}/restore")]
+        public async Task<ActionResult<ApiResponse<bool>>> RestoreRole(int id)
+        {
+            try
+            {
+                var result = await _roleService.RestoreRoleAsync(id);
+                if (!result.Success)
+                    return BadRequest(result);
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error restoring role");
+                return StatusCode(500, ApiResponse<string>.ErrorResponse("Error restoring role"));
             }
         }
     }

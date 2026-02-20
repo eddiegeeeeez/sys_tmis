@@ -60,7 +60,9 @@ namespace TradeMatrix.Server.Services
 
         private static byte[] DeriveBytes(string password, byte[] salt)
         {
-            using var pbkdf2 = new Rfc2898DeriveBytes(password, salt, Iterations, HashAlgorithmName.SHA256);
+            // Use SHA1 to maintain compatibility with existing stored password hashes in the database.
+            // Earlier versions defaulted to SHA1 before the transition to explicit algorithm declarations.
+            using var pbkdf2 = new Rfc2898DeriveBytes(password, salt, Iterations, HashAlgorithmName.SHA1);
             return pbkdf2.GetBytes(HashLength);
         }
     }

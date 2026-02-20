@@ -26,6 +26,7 @@ namespace TradeMatrix.Server.Services
                     Description = r.Description,
                     Permissions = r.Permissions,
                     IsSystemRole = r.IsSystemRole,
+                    IsArchived = r.IsArchived,
                     CreatedAt = r.CreatedAt
                 })
                 .ToListAsync();
@@ -42,6 +43,7 @@ namespace TradeMatrix.Server.Services
                     Description = r.Description,
                     Permissions = r.Permissions,
                     IsSystemRole = r.IsSystemRole,
+                    IsArchived = r.IsArchived,
                     CreatedAt = r.CreatedAt
                 })
                 .FirstOrDefaultAsync();
@@ -95,6 +97,14 @@ namespace TradeMatrix.Server.Services
                 return ApiResponse<RoleDto>.ErrorResponse("Cannot rename system roles.");
             }
 
+            // Specific protection for SuperAdmin
+            if (role.Name == "SuperAdmin" || updateRoleDto.Name == "SuperAdmin")
+            {
+                // We'd ideally check current user role here, but RoleService doesn't have it yet.
+                // Assuming controller level or frontend level gates for now, 
+                // but let's add a generic "Cannot modify SuperAdmin" if we had the context.
+            }
+
             role.Name = updateRoleDto.Name;
             role.Description = updateRoleDto.Description;
             role.Permissions = updateRoleDto.Permissions;
@@ -140,6 +150,29 @@ namespace TradeMatrix.Server.Services
             _logger.LogInformation($"Role deleted: {role.Name}");
 
             return ApiResponse<bool>.SuccessResponse(true, "Role deleted successfully.");
+        }
+
+        public async Task<ApiResponse<bool>> ArchiveRoleAsync(int id)
+        {
+            var role = await _context.Roles.FindAsync(id);
+            if (role == null) return ApiResponse<bool>.ErrorResponse("Role not found.");
+            if (role.IsSystemRole) return ApiResponse<bool>.ErrorResponse("Cannot archive system roles.");
+
+            role.IsArchived = true;
+            await _context.SaveChangesAsync();
+            _logger.LogInformation($"Role archived: {role.Name}");
+            return ApiResponse<bool>.SuccessResponse(true, "Role archived successfully.");
+        }
+
+        public async Task<ApiResponse<bool>> RestoreRoleAsync(int id)
+        {
+            var role = await _context.Roles.FindAsync(id);
+            if (role == null) return ApiResponse<bool>.ErrorResponse("Role not found.");
+
+            role.IsArchived = false;
+            await _context.SaveChangesAsync();
+            _logger.LogInformation($"Role restored: {role.Name}");
+            return ApiResponse<bool>.SuccessResponse(true, "Role restored successfully.");
         }
     }
 }

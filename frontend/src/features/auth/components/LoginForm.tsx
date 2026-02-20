@@ -23,14 +23,10 @@ export function LoginForm({
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
-  const handleSuccess = (role: UserRole, token?: string, name?: string) => {
-    // If no token is provided (demo mode), create a mock one for session persistence
-    const finalToken = token || `demo_token_${role}_${Date.now()}`;
-    const finalName = name || `Demo ${role}`;
-
+  const handleSuccess = (role: UserRole, token: string, name: string) => {
     // Store token and user info
-    localStorage.setItem('token', finalToken);
-    localStorage.setItem('user', JSON.stringify({ name: finalName, role, email: email || 'demo@tmis.com' }));
+    localStorage.setItem('token', token);
+    localStorage.setItem('user', JSON.stringify({ name, role, email }));
 
     onLogin(role);
 
@@ -63,10 +59,6 @@ export function LoginForm({
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const handleDemoLogin = (role: UserRole) => {
-    handleSuccess(role);
   };
 
   return (
@@ -129,32 +121,6 @@ export function LoginForm({
           </Button>
         </div>
       </form>
-
-      <div className="relative">
-        <div className="absolute inset-0 flex items-center">
-          <span className="w-full border-t border-zinc-200 dark:border-zinc-800" />
-        </div>
-        <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-zinc-50 dark:bg-zinc-950 px-2 text-zinc-500">
-            Or continue with Demo Accounts
-          </span>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-2">
-        <Button variant="outline" type="button" onClick={() => handleDemoLogin(UserRole.SUPER_ADMIN as any)} className="text-xs h-9">
-          Super Admin
-        </Button>
-        <Button variant="outline" type="button" onClick={() => handleDemoLogin(UserRole.MANAGER as any)} className="text-xs h-9">
-          Manager
-        </Button>
-        <Button variant="outline" type="button" onClick={() => handleDemoLogin(UserRole.CASHIER as any)} className="text-xs h-9">
-          Cashier
-        </Button>
-        <Button variant="outline" type="button" onClick={() => handleDemoLogin(UserRole.INVENTORY_CLERK as any)} className="text-xs h-9">
-          Clerk
-        </Button>
-      </div>
 
       <p className="px-8 text-center text-xs text-zinc-500 dark:text-zinc-400">
         By clicking continue, you agree to our{" "}

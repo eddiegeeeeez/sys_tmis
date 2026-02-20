@@ -103,7 +103,7 @@ namespace TradeMatrix.Server.Services
             };
         }
 
-        public async Task<ConnectionInfoDto> GetConnectionInfoAsync()
+        public Task<ConnectionInfoDto> GetConnectionInfoAsync()
         {
             var connectionString = _configuration.GetConnectionString("DefaultConnection") ?? "";
             var server = ExtractServerName(connectionString);
@@ -112,7 +112,7 @@ namespace TradeMatrix.Server.Services
             var maxPoolSize = ExtractValue(connectionString, "Max Pool Size");
             var connectionLifetime = ExtractValue(connectionString, "Connection Lifetime");
 
-            return new ConnectionInfoDto
+            return Task.FromResult(new ConnectionInfoDto
             {
                 Server = server,
                 Database = database,
@@ -124,7 +124,7 @@ namespace TradeMatrix.Server.Services
                 },
                 Encryption = connectionString.Contains("Encrypt=True"),
                 MultipleActiveResultSets = connectionString.Contains("MultipleActiveResultSets=True")
-            };
+            });
         }
 
         public async Task<ApiResponse<object>> RunMigrationsAsync()

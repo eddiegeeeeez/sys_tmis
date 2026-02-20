@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TradeMatrix.Server.Data;
 using TradeMatrix.Server.Models;
+using TradeMatrix.Server.Services;
+using TradeMatrix.Server.DTOs;
 
 namespace TradeMatrix.Server.Controllers
 {
@@ -41,10 +43,5 @@ namespace TradeMatrix.Server.Controllers
 
             return Ok(ApiResponse<bool>.SuccessResponse(true, $"System setting '{key}' updated."));
         }
-    }
-
-    public class UpdateSettingDto
-    {
-        public string Value { get; set; } = string.Empty;
     }
 }

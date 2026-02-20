@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { Card, CardContent } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
 import { Badge } from '../../../components/ui/Badge';
+import { StatusDot } from '../../../components/ui/StatusDot';
 import { Input } from '../../../components/ui/Input';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../../../components/ui/Tabs';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../../components/ui/Table';
@@ -186,7 +187,7 @@ export const Procurement: React.FC = () => {
                                         <TableCell className="text-zinc-700 dark:text-zinc-300">{po.ExpectedDeliveryDate}</TableCell>
                                         <TableCell className="font-medium text-zinc-900 dark:text-zinc-100">${po.TotalAmount.toFixed(2)}</TableCell>
                                         <TableCell>
-                                            <Badge variant={po.Status === 'Received' ? 'success' : 'warning'}>{po.Status}</Badge>
+                                            <StatusDot variant={po.Status === 'Received' ? 'success' : 'warning'}>{po.Status}</StatusDot>
                                         </TableCell>
                                     </TableRow>
                                 ))}

@@ -55,6 +55,18 @@ export const adminService = {
     deleteRole: (id: string | number) =>
         api.delete<ApiResponse<boolean>>(`/roles/${id}`),
 
+    archiveUser: (id: string | number) =>
+        api.put<ApiResponse<boolean>>(`/users/${id}/archive`),
+
+    restoreUser: (id: string | number) =>
+        api.put<ApiResponse<boolean>>(`/users/${id}/restore`),
+
+    archiveRole: (id: string | number) =>
+        api.put<ApiResponse<boolean>>(`/roles/${id}/archive`),
+
+    restoreRole: (id: string | number) =>
+        api.put<ApiResponse<boolean>>(`/roles/${id}/restore`),
+
     // Audit Logs / Security
     getAuditLogs: (params?: any) =>
         api.get<ApiResponse<any[]>>('/Audit/logs', { params }),

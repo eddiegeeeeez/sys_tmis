@@ -38,7 +38,7 @@ jobs:
           server: ${{ secrets.FTP_SERVER }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
-          local-dir: ./backend/TradeMatrix.Server/wwwroot/
+          local-dir: ./frontend/dist/
           server-dir: /wwwroot/
           protocol: ftp
           port: 21

@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\mendo\\OneDrive\\Documents\\PAM IT13\\sys_tmis\\backend\\TradeMatrix.Server\\TradeMatrix.Server.csproj": {}
+    "C:\\Programming Files\\PAM IT13\\sys_tmis\\backend\\TradeMatrix.Server\\TradeMatrix.Server.csproj": {}
   },
   "projects": {
-    "C:\\Users\\mendo\\OneDrive\\Documents\\PAM IT13\\sys_tmis\\backend\\TradeMatrix.Server\\TradeMatrix.Server.csproj": {
+    "C:\\Programming Files\\PAM IT13\\sys_tmis\\backend\\TradeMatrix.Server\\TradeMatrix.Server.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\mendo\\OneDrive\\Documents\\PAM IT13\\sys_tmis\\backend\\TradeMatrix.Server\\TradeMatrix.Server.csproj",
+        "projectUniqueName": "C:\\Programming Files\\PAM IT13\\sys_tmis\\backend\\TradeMatrix.Server\\TradeMatrix.Server.csproj",
         "projectName": "TradeMatrix.Server",
-        "projectPath": "C:\\Users\\mendo\\OneDrive\\Documents\\PAM IT13\\sys_tmis\\backend\\TradeMatrix.Server\\TradeMatrix.Server.csproj",
+        "projectPath": "C:\\Programming Files\\PAM IT13\\sys_tmis\\backend\\TradeMatrix.Server\\TradeMatrix.Server.csproj",
         "packagesPath": "C:\\Users\\mendo\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\mendo\\OneDrive\\Documents\\PAM IT13\\sys_tmis\\backend\\TradeMatrix.Server\\obj\\",
+        "outputPath": "C:\\Programming Files\\PAM IT13\\sys_tmis\\backend\\TradeMatrix.Server\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"

@@ -7,6 +7,8 @@ import { Separator } from '../ui/Separator';
 import { useTheme } from '../providers/ThemeProvider';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 
+import { LogoutConfirmation } from '../common/LogoutConfirmation';
+
 interface DashboardLayoutProps {
   currentRole: UserRole;
   onRoleChange: (role: UserRole) => void;
@@ -19,6 +21,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   onLogout
 }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
   const { theme, setTheme } = useTheme();
   const location = useLocation();
   const navigate = useNavigate();
@@ -36,6 +39,15 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
 
   return (
     <div className="flex h-screen bg-background text-foreground font-sans overflow-hidden">
+      <LogoutConfirmation
+        isOpen={isLogoutModalOpen}
+        onClose={() => setIsLogoutModalOpen(false)}
+        onConfirm={() => {
+          setIsLogoutModalOpen(false);
+          onLogout();
+        }}
+      />
+
       {/* Sidebar Navigation */}
       <Sidebar
         currentRole={currentRole}
@@ -59,7 +71,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
               <span className="text-border">/</span>
               <span>{currentRole}</span>
               <span className="text-border">/</span>
-              <span className="capitalize text-primary">{activeView.replace('admin/', '').replace('/', ' ')}</span>
+              <span className="capitalize text-primary">{activeView.replace('admin/', '').replace('system/', '').replace('/', ' ')}</span>
             </div>
           </div>
 
@@ -69,7 +81,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
               {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
             </Button>
             <Separator orientation="vertical" className="h-6 mx-2" />
-            <Button variant="ghost" size="sm" onClick={onLogout} title="Logout" className="hover:text-destructive">
+            <Button variant="ghost" size="sm" onClick={() => setIsLogoutModalOpen(true)} title="Logout" className="hover:text-destructive">
               <LogOut className="w-4 h-4 mr-2" />
               <span className="hidden sm:inline">Logout</span>
             </Button>

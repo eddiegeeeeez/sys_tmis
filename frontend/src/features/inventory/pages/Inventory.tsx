@@ -3,6 +3,7 @@ import { Card, CardContent } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
 import { Badge } from '../../../components/ui/Badge';
+import { StatusDot } from '../../../components/ui/StatusDot';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../../components/ui/Table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../../../components/ui/Dialog';
 import { Label } from '../../../components/ui/Label';
@@ -107,12 +108,12 @@ export const Inventory: React.FC = () => {
 
     const renderStockBadge = (stock: number) => {
         if (stock === 0) {
-            return <Badge variant="destructive" className="bg-red-50 text-red-700 hover:bg-red-100 border-red-100 dark:bg-red-900/20 dark:text-red-300 dark:border-red-900/50">Out of Stock</Badge>;
+            return <StatusDot variant="error">Out of Stock</StatusDot>;
         }
         if (stock < 10) {
-            return <Badge variant="warning" className="bg-amber-50 text-amber-700 hover:bg-amber-100 border-amber-100 dark:bg-amber-900/20 dark:text-amber-300 dark:border-amber-900/50">Low Stock: {stock}</Badge>;
+            return <StatusDot variant="warning">Low Stock: {stock}</StatusDot>;
         }
-        return <Badge variant="success" className="bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border-emerald-100 dark:bg-emerald-900/20 dark:text-emerald-300 dark:border-emerald-900/50">In Stock: {stock}</Badge>;
+        return <StatusDot variant="success">In Stock: {stock}</StatusDot>;
     };
 
     const handleSaveProduct = (e: React.FormEvent) => {

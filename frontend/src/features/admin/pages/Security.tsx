@@ -12,9 +12,11 @@ import {
 } from 'lucide-react';
 import { LogEntry } from '../../../lib/mockData';
 import { Skeleton } from '../../../components/ui/Skeleton';
+import { StatusDot } from '../../../components/ui/StatusDot';
 import { adminService } from '../services/adminService';
 import { useSort } from '../../../hooks/useSort';
 import { ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+import { Pagination } from '../../../components/ui/Pagination';
 
 export const Security: React.FC = () => {
     const [searchTerm, setSearchTerm] = useState('');
@@ -23,6 +25,8 @@ export const Security: React.FC = () => {
     const [isDetailsOpen, setIsDetailsOpen] = useState(false);
     const [logs, setLogs] = useState<LogEntry[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 10;
 
     const { items: sortedLogs, requestSort, sortConfig } = useSort(logs, 'timestamp', 'desc');
 
@@ -34,7 +38,8 @@ export const Security: React.FC = () => {
         setIsLoading(true);
         try {
             const response = await adminService.getAuditLogs();
-            setLogs(response.data.data);
+            const logsData = response.data?.data;
+            setLogs(Array.isArray(logsData) ? logsData : []);
         } catch (error) {
             console.error('Failed to fetch logs:', error);
             // Fallback to empty or mock for now if API fails (since backend is still being refactored)
@@ -59,6 +64,13 @@ export const Security: React.FC = () => {
         });
     }, [sortedLogs, searchTerm, statusFilter]);
 
+    const totalPages = Math.max(1, Math.ceil(filteredLogs.length / itemsPerPage));
+    const paginatedLogs = filteredLogs.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchTerm, statusFilter]);
+
     const getSortIcon = (key: string) => {
         if (sortConfig.key !== key) return <ArrowUpDown className="ml-2 h-4 w-4" />;
         if (sortConfig.order === 'asc') return <ArrowUp className="ml-2 h-4 w-4" />;
@@ -73,10 +85,10 @@ export const Security: React.FC = () => {
     // --- Helpers for UI visuals ---
     const getStatusBadge = (status: string) => {
         switch (status) {
-            case 'Success': return <Badge variant="success">Success</Badge>;
-            case 'Failure': return <Badge variant="destructive">Failure</Badge>;
-            case 'Warning': return <Badge variant="warning">Warning</Badge>;
-            default: return <Badge variant="neutral">{status}</Badge>;
+            case 'Success': return <StatusDot variant="success">Success</StatusDot>;
+            case 'Failure': return <StatusDot variant="error">Failure</StatusDot>;
+            case 'Warning': return <StatusDot variant="warning">Warning</StatusDot>;
+            default: return <StatusDot variant="neutral">{status}</StatusDot>;
         }
     };
 
@@ -125,9 +137,9 @@ export const Security: React.FC = () => {
                                         <span className="text-xs opacity-80 dark:text-zinc-300">{new Date(selectedLog.timestamp).toLocaleString()}</span>
                                     </div>
                                 </div>
-                                <Badge variant={selectedLog.status === 'Success' ? 'success' : selectedLog.status === 'Failure' ? 'destructive' : 'warning'}>
-                                    {selectedLog.severity} Severity
-                                </Badge>
+                                <StatusDot variant={selectedLog.status === 'Success' ? 'success' : selectedLog.status === 'Failure' ? 'error' : 'warning'}>
+                                    {selectedLog.status}
+                                </StatusDot>
                             </div>
 
                             <div className="grid grid-cols-2 gap-6">
@@ -264,7 +276,7 @@ export const Security: React.FC = () => {
                                             <TableCell className="text-right"><Skeleton className="h-8 w-8 ml-auto rounded-md" /></TableCell>
                                         </TableRow>
                                     ))
-                                ) : filteredLogs.map((log) => (
+                                ) : paginatedLogs.map((log) => (
                                     <TableRow key={log.id} className="group cursor-default hover:bg-zinc-50/80 dark:hover:bg-zinc-800/50">
                                         <TableCell className="font-mono text-xs text-zinc-500 dark:text-zinc-400 whitespace-nowrap">
                                             {new Date(log.timestamp).toLocaleString(undefined, {
@@ -309,13 +321,15 @@ export const Security: React.FC = () => {
                             </TableBody>
                         </Table>
                     </div>
-                    <div className="border-t border-zinc-200 dark:border-zinc-800 p-2 bg-zinc-50 dark:bg-zinc-900 text-xs text-zinc-500 dark:text-zinc-400 flex justify-between items-center shrink-0">
-                        <span>Showing {filteredLogs.length} events</span>
-                        <div className="flex gap-2">
-                            <Button variant="outline" size="sm" disabled className="h-7 text-xs">Previous</Button>
-                            <Button variant="outline" size="sm" className="h-7 text-xs">Next</Button>
+                    {!isLoading && filteredLogs.length > 0 && (
+                        <div className="border-t border-zinc-200 dark:border-zinc-800">
+                            <Pagination
+                                currentPage={currentPage}
+                                totalPages={totalPages}
+                                onPageChange={setCurrentPage}
+                            />
                         </div>
-                    </div>
+                    )}
                 </div>
             </div>
         </div>

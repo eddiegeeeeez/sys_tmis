@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../..
 import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
 import { Badge } from '../../../components/ui/Badge';
+import { StatusDot } from '../../../components/ui/StatusDot';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../../../components/ui/Tabs';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../../components/ui/Table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../../../components/ui/Dialog';
@@ -177,7 +178,7 @@ const EmployeesTab = () => {
                                 </TableCell>
                                 <TableCell className="text-zinc-700 dark:text-zinc-300">{emp.Position}</TableCell>
                                 <TableCell className="text-zinc-700 dark:text-zinc-300">{emp.Department}</TableCell>
-                                <TableCell><Badge variant="neutral">{emp.EmploymentStatus}</Badge></TableCell>
+                                <TableCell><StatusDot variant="neutral">{emp.EmploymentStatus}</StatusDot></TableCell>
                                 <TableCell className="text-right">
                                     <Button variant="ghost" size="icon" className="h-8 w-8 text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200"><MoreHorizontal className="h-4 w-4" /></Button>
                                 </TableCell>
@@ -330,7 +331,7 @@ const PayrollTab = () => {
                                 <TableCell className="text-red-600 dark:text-red-400">-${pay.TotalDeductions.toFixed(2)}</TableCell>
                                 <TableCell className="font-bold text-emerald-700 dark:text-emerald-400">${pay.NetPay.toFixed(2)}</TableCell>
                                 <TableCell>
-                                    <Badge variant={pay.Status === 'Paid' ? 'success' : 'warning'}>{pay.Status}</Badge>
+                                    <StatusDot variant={pay.Status === 'Paid' ? 'success' : 'warning'}>{pay.Status}</StatusDot>
                                 </TableCell>
                                 <TableCell className="text-right">
                                     <Button variant="outline" size="icon" className="h-8 w-8"><FileText className="h-4 w-4" /></Button>
@@ -421,9 +422,9 @@ const AttendanceTab = () => {
                                 <TableCell className="text-emerald-600 dark:text-emerald-400">{att.TimeIn}</TableCell>
                                 <TableCell className="text-zinc-500 dark:text-zinc-400">{att.TimeOut}</TableCell>
                                 <TableCell>
-                                    <Badge variant={att.Status === 'Present' ? 'success' : att.Status === 'Late' ? 'warning' : 'neutral'}>
+                                    <StatusDot variant={att.Status === 'Present' ? 'success' : att.Status === 'Late' ? 'warning' : 'neutral'}>
                                         {att.Status}
-                                    </Badge>
+                                    </StatusDot>
                                 </TableCell>
                             </TableRow>
                         ))}

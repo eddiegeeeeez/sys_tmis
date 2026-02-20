@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { Card, CardContent } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
 import { Badge } from '../../../components/ui/Badge';
+import { StatusDot } from '../../../components/ui/StatusDot';
 import { Input } from '../../../components/ui/Input';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../../components/ui/Table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../../../components/ui/Dialog';
@@ -142,7 +143,7 @@ export const CRM: React.FC = () => {
                                     </div>
                                 </TableCell>
                                 <TableCell>
-                                    <Badge variant="secondary">{cust.CustomerType}</Badge>
+                                    <StatusDot variant="info">{cust.CustomerType}</StatusDot>
                                 </TableCell>
                                 <TableCell className="text-zinc-700 dark:text-zinc-300">{cust.ContactNumber}</TableCell>
                                 <TableCell>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
 import { Badge } from '../../../components/ui/Badge';
@@ -6,24 +7,33 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '.
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../../../components/ui/Dialog';
 import { Input } from '../../../components/ui/Input';
 import { Label } from '../../../components/ui/Label';
-import { LayoutGrid, List, Plus, Shield, Users, Eye, Edit } from 'lucide-react';
+import { LayoutGrid, List, Plus, Shield, Users, Eye, Edit, Trash2, Archive } from 'lucide-react';
 import { Role } from '../../../types';
 import { AuthConfirmationModal } from '../../../components/common/AuthConfirmationModal';
 import { Skeleton } from '../../../components/ui/Skeleton';
+import { StatusDot } from '../../../components/ui/StatusDot';
 import { adminService } from '../services/adminService';
 import { useSort } from '../../../hooks/useSort';
 import { ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 
-interface RoleManagementProps {
-    onNavigate: (view: string) => void;
-}
-
-export const RoleManagement: React.FC<RoleManagementProps> = ({ onNavigate }) => {
+export const RoleManagement: React.FC = () => {
+    const navigate = useNavigate();
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
     const [isCreateRoleOpen, setIsCreateRoleOpen] = useState(false);
     const [viewingRole, setViewingRole] = useState<Role | null>(null);
     const [roles, setRoles] = useState<Role[]>([]);
     const [loading, setLoading] = useState(true);
+    const [currentUserRole, setCurrentUserRole] = useState<string>(() => {
+        const savedUser = localStorage.getItem('user');
+        if (savedUser) {
+            try {
+                return JSON.parse(savedUser).role || '';
+            } catch (e) {
+                return '';
+            }
+        }
+        return '';
+    });
 
     const { items: sortedRoles, requestSort, sortConfig } = useSort(roles);
 
@@ -31,6 +41,15 @@ export const RoleManagement: React.FC<RoleManagementProps> = ({ onNavigate }) =>
     const [newRoleName, setNewRoleName] = useState('');
     const [newRoleDesc, setNewRoleDesc] = useState('');
     const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+
+    // Edit Role State
+    const [isEditRoleOpen, setIsEditRoleOpen] = useState(false);
+    const [editingRole, setEditingRole] = useState<{ id: number; name: string; description: string, isSystemRole: boolean, permissions: string } | null>(null);
+    const [editError, setEditError] = useState('');
+
+    // Delete Role State
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [roleToDelete, setRoleToDelete] = useState<Role | null>(null);
 
     useEffect(() => {
         fetchRoles();
@@ -40,7 +59,15 @@ export const RoleManagement: React.FC<RoleManagementProps> = ({ onNavigate }) =>
         setLoading(true);
         try {
             const response = await adminService.getRoles();
-            setRoles(response.data);
+            const rolesData = response.data.data || [];
+
+            // Filter out SuperAdmin for non-SuperAdmins
+            let filteredRoles = rolesData;
+            if (currentUserRole !== 'SuperAdmin') {
+                filteredRoles = filteredRoles.filter((r: Role) => r.name !== 'SuperAdmin');
+            }
+
+            setRoles(filteredRoles);
         } catch (error) {
             console.error('Error fetching roles:', error);
         } finally {
@@ -48,9 +75,8 @@ export const RoleManagement: React.FC<RoleManagementProps> = ({ onNavigate }) =>
         }
     };
 
-    const handleEditClick = (roleName: string) => {
-        // Navigate to the editor page instead of opening a modal
-        onNavigate(`admin-roles-edit|${roleName}`);
+    const handleEditPermissionsClick = (roleName: string) => {
+        navigate(`/admin/roles/edit/${roleName}`);
     };
 
     const handleCreateRoleSubmit = (e: React.FormEvent) => {
@@ -59,31 +85,75 @@ export const RoleManagement: React.FC<RoleManagementProps> = ({ onNavigate }) =>
     };
 
     const handleAuthConfirm = async () => {
-        console.log(`Creating new role: ${newRoleName} - ${newRoleDesc}`);
-
         try {
+            if (newRoleName === 'SuperAdmin' || newRoleName === 'SystemAdmin') {
+                alert(`Cannot create another role named "${newRoleName}"`);
+                return;
+            }
+
             await adminService.createRole({
                 name: newRoleName,
                 description: newRoleDesc,
                 permissions: '' // Default to empty, configure later
             });
 
-            // Refresh list
             fetchRoles();
-
-            // Close modals
             setIsAuthModalOpen(false);
             setIsCreateRoleOpen(false);
-            // Reset form
             setNewRoleName('');
             setNewRoleDesc('');
         } catch (error) {
             console.error('Error creating role:', error);
-            // Optionally show error toast
         }
     };
 
-    // Helper to parse permissions string or return empty array
+    const handleUpdateRoleSubmit = async () => {
+        if (!editingRole) return;
+        setEditError('');
+        try {
+            await adminService.updateRole(editingRole.id, {
+                name: editingRole.name,
+                description: editingRole.description,
+                permissions: editingRole.permissions
+            });
+            setIsEditRoleOpen(false);
+            fetchRoles();
+        } catch (error: any) {
+            console.error('Error updating role:', error);
+            setEditError(error.response?.data?.message || 'Failed to update role');
+        }
+    };
+
+    const handleDeleteRole = async () => {
+        if (!roleToDelete) return;
+        try {
+            await adminService.deleteRole(roleToDelete.id);
+            setIsDeleteModalOpen(false);
+            setRoleToDelete(null);
+            fetchRoles();
+        } catch (error) {
+            console.error('Error deleting role:', error);
+        }
+    };
+
+    const handleArchiveRole = async (role: Role) => {
+        try {
+            await adminService.archiveRole(role.id);
+            fetchRoles();
+        } catch (error) {
+            console.error('Error archiving role:', error);
+        }
+    };
+
+    const handleRestoreRole = async (role: Role) => {
+        try {
+            await adminService.restoreRole(role.id);
+            fetchRoles();
+        } catch (error) {
+            console.error('Error restoring role:', error);
+        }
+    };
+
     const getPermissionsArray = (permissionsStr: string | undefined) => {
         if (!permissionsStr) return [];
         return permissionsStr.split(',').filter(p => p.length > 0);
@@ -158,6 +228,14 @@ export const RoleManagement: React.FC<RoleManagementProps> = ({ onNavigate }) =>
     return (
         <div className="space-y-6 relative">
 
+            {/* Delete Role Confirmation Modal */}
+            <AuthConfirmationModal
+                isOpen={isDeleteModalOpen}
+                onClose={() => setIsDeleteModalOpen(false)}
+                onConfirm={handleDeleteRole}
+                actionDescription={`Are you sure you want to permanently delete the custom role "${roleToDelete?.name}"? Any users assigned to this role must be reassigned first.`}
+            />
+
             {/* Auth Confirmation Modal for Create Role */}
             <AuthConfirmationModal
                 isOpen={isAuthModalOpen}
@@ -202,6 +280,49 @@ export const RoleManagement: React.FC<RoleManagementProps> = ({ onNavigate }) =>
                             <Button type="submit">Create Role</Button>
                         </DialogFooter>
                     </form>
+                </DialogContent>
+            </Dialog>
+
+            {/* Edit Role Modal */}
+            <Dialog open={isEditRoleOpen} onOpenChange={setIsEditRoleOpen}>
+                <DialogContent className="bg-white dark:bg-zinc-900 dark:border-zinc-800">
+                    <DialogHeader>
+                        <DialogTitle className="text-zinc-900 dark:text-zinc-50">Edit Role Details</DialogTitle>
+                        <DialogDescription className="text-zinc-500 dark:text-zinc-400">Modify the basic properties of this role.</DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                        {editError && (
+                            <div className="p-2 text-sm text-red-500 bg-red-50 rounded border border-red-200">{editError}</div>
+                        )}
+                        <div className="space-y-2">
+                            <Label className="text-zinc-900 dark:text-zinc-200">Role Name</Label>
+                            <Input
+                                placeholder="e.g. Regional Manager"
+                                required
+                                disabled={editingRole?.isSystemRole}
+                                value={editingRole?.name || ''}
+                                onChange={(e) => setEditingRole(editingRole ? { ...editingRole, name: e.target.value } : null)}
+                                className="dark:bg-zinc-950 dark:border-zinc-800"
+                            />
+                            {editingRole?.isSystemRole && (
+                                <p className="text-xs text-amber-600 dark:text-amber-500">System role names cannot be modified.</p>
+                            )}
+                        </div>
+                        <div className="space-y-2">
+                            <Label className="text-zinc-900 dark:text-zinc-200">Description</Label>
+                            <Input
+                                placeholder="Brief description of responsibilities"
+                                required
+                                value={editingRole?.description || ''}
+                                onChange={(e) => setEditingRole(editingRole ? { ...editingRole, description: e.target.value } : null)}
+                                className="dark:bg-zinc-950 dark:border-zinc-800"
+                            />
+                        </div>
+                        <DialogFooter>
+                            <Button type="button" variant="outline" onClick={() => setIsEditRoleOpen(false)}>Cancel</Button>
+                            <Button onClick={handleUpdateRoleSubmit}>Save Changes</Button>
+                        </DialogFooter>
+                    </div>
                 </DialogContent>
             </Dialog>
 
@@ -256,7 +377,7 @@ export const RoleManagement: React.FC<RoleManagementProps> = ({ onNavigate }) =>
                             <Button className="w-full" variant="outline" onClick={() => {
                                 const roleName = viewingRole?.name;
                                 setViewingRole(null);
-                                if (roleName) handleEditClick(roleName);
+                                if (roleName) handleEditPermissionsClick(roleName);
                             }}>
                                 <Edit className="h-4 w-4 mr-2" /> Edit Permissions
                             </Button>
@@ -309,11 +430,37 @@ export const RoleManagement: React.FC<RoleManagementProps> = ({ onNavigate }) =>
                         return (
                             <Card key={role.id} className="flex flex-col hover:border-zinc-300 dark:hover:border-zinc-700 group bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800">
                                 <CardHeader className="pb-3">
-                                    <CardTitle className="text-base flex justify-between items-center text-zinc-900 dark:text-zinc-50">
-                                        {role.name}
-                                        {role.isSystemRole && <Badge variant="outline" className="font-normal bg-zinc-50 dark:bg-zinc-950 dark:border-zinc-700 dark:text-zinc-400">System</Badge>}
+                                    <CardTitle className="text-base flex justify-between items-start text-zinc-900 dark:text-zinc-50 gap-2">
+                                        <span className="truncate pt-1">{role.name}</span>
+                                        <div className="flex flex-col items-end gap-2 shrink-0">
+                                            <div className="flex items-center gap-1">
+                                                {role.isSystemRole && <Badge variant="outline" className="font-normal bg-zinc-50 dark:bg-zinc-950 dark:border-zinc-700 dark:text-zinc-400">System</Badge>}
+                                                {role.isArchived && <Badge variant="secondary" className="font-normal bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-500">Archived</Badge>}
+                                                <div className="flex items-center gap-0.5 ml-1 -mr-2">
+                                                    <Button variant="ghost" size="icon" className="h-6 w-6 text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-50" title="Edit Details" onClick={() => { setEditingRole(role as any); setIsEditRoleOpen(true); }}>
+                                                        <Edit className="h-3 w-3" />
+                                                    </Button>
+                                                    {!role.isSystemRole && (
+                                                        <>
+                                                            {role.isArchived ? (
+                                                                <Button variant="ghost" size="icon" className="h-6 w-6 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50" title="Restore Role" onClick={() => handleRestoreRole(role)}>
+                                                                    <Plus className="h-3 w-3" />
+                                                                </Button>
+                                                            ) : (
+                                                                <Button variant="ghost" size="icon" className="h-6 w-6 text-zinc-400 hover:text-amber-600 hover:bg-amber-50" title="Archive Role" onClick={() => handleArchiveRole(role)}>
+                                                                    <Archive className="h-3 w-3" />
+                                                                </Button>
+                                                            )}
+                                                            <Button variant="ghost" size="icon" className="h-6 w-6 text-zinc-400 hover:text-red-600 hover:bg-red-50" title="Delete Role" onClick={() => { setRoleToDelete(role); setIsDeleteModalOpen(true); }}>
+                                                                <Trash2 className="h-3 w-3" />
+                                                            </Button>
+                                                        </>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
                                     </CardTitle>
-                                    <CardDescription className="line-clamp-2 min-h-[40px] text-zinc-500 dark:text-zinc-400">{role.description}</CardDescription>
+                                    <CardDescription className="line-clamp-2 min-h-[40px] text-zinc-500 dark:text-zinc-400 pt-2">{role.description}</CardDescription>
                                 </CardHeader>
                                 <CardContent className="mt-auto pt-0">
                                     <div className="mb-4 space-y-2">
@@ -337,9 +484,9 @@ export const RoleManagement: React.FC<RoleManagementProps> = ({ onNavigate }) =>
                                             variant="outline"
                                             size="sm"
                                             className="w-full text-xs hover:bg-zinc-900 hover:text-zinc-50 hover:border-zinc-900 dark:hover:bg-zinc-50 dark:hover:text-zinc-900 dark:hover:border-zinc-50"
-                                            onClick={() => handleEditClick(role.name)}
+                                            onClick={() => handleEditPermissionsClick(role.name)}
                                         >
-                                            <Edit className="h-3.5 w-3.5 mr-2" /> Edit Permissions
+                                            <Shield className="h-3.5 w-3.5 mr-2" /> Edit Permissions
                                         </Button>
                                     </div>
                                 </CardContent>
@@ -363,7 +510,7 @@ export const RoleManagement: React.FC<RoleManagementProps> = ({ onNavigate }) =>
                                         Type {getSortIcon('isSystemRole')}
                                     </Button>
                                 </TableHead>
-                                <TableHead className="text-right w-[240px] text-zinc-500 dark:text-zinc-400">Actions</TableHead>
+                                <TableHead className="text-right w-[280px] text-zinc-500 dark:text-zinc-400">Actions</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -374,33 +521,76 @@ export const RoleManagement: React.FC<RoleManagementProps> = ({ onNavigate }) =>
                                             <div className="flex items-center gap-2 mt-1">
                                                 <Shield className="h-4 w-4 text-zinc-400 dark:text-zinc-500" />
                                                 {role.name}
+                                                {role.isArchived && <Badge variant="secondary" className="ml-2 font-normal bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-500">Archived</Badge>}
                                             </div>
                                         </TableCell>
                                         <TableCell className="text-zinc-500 dark:text-zinc-400 align-top">
                                             <span className="line-clamp-2 mt-1">{role.description}</span>
                                         </TableCell>
-                                        <TableCell className="align-top">
-                                            <Badge variant="secondary" className="font-normal gap-1 mt-1 dark:bg-zinc-800 dark:text-zinc-300">
-                                                {role.isSystemRole ? 'System' : 'Custom'}
-                                            </Badge>
+                                        <TableCell>
+                                            <StatusDot variant={role.isArchived ? 'neutral' : 'success'}>
+                                                {role.isArchived ? 'Archived' : 'Active'}
+                                            </StatusDot>
                                         </TableCell>
                                         <TableCell className="text-right align-top">
-                                            <div className="flex justify-end gap-2 mt-0.5">
+                                            <div className="flex justify-end gap-1 mt-0.5">
                                                 <Button
                                                     variant="ghost"
                                                     size="sm"
-                                                    className="h-8 px-3 text-xs font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200"
+                                                    className="h-8 px-2 text-xs font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200"
                                                     onClick={() => setViewingRole(role)}
                                                 >
-                                                    <Eye className="h-3.5 w-3.5 mr-1.5" /> Details
+                                                    <Eye className="h-4 w-4" />
                                                 </Button>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    className="h-8 px-2 text-xs font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200"
+                                                    onClick={() => { setEditingRole(role as any); setIsEditRoleOpen(true); }}
+                                                >
+                                                    <Edit className="h-4 w-4" />
+                                                </Button>
+                                                {!role.isSystemRole && (
+                                                    role.isArchived ? (
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            className="h-8 px-2 text-xs font-medium text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
+                                                            onClick={() => handleRestoreRole(role)}
+                                                            title="Restore Role"
+                                                        >
+                                                            <Plus className="h-4 w-4" />
+                                                        </Button>
+                                                    ) : (
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            className="h-8 px-2 text-xs font-medium text-zinc-600 dark:text-zinc-400 hover:text-amber-600 hover:bg-amber-50"
+                                                            onClick={() => handleArchiveRole(role)}
+                                                            title="Archive Role"
+                                                        >
+                                                            <Archive className="h-4 w-4" />
+                                                        </Button>
+                                                    )
+                                                )}
+                                                {!role.isSystemRole && (
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        className="h-8 px-2 text-xs font-medium text-zinc-600 dark:text-zinc-400 hover:text-red-900 dark:hover:text-red-200"
+                                                        onClick={() => { setRoleToDelete(role); setIsDeleteModalOpen(true); }}
+                                                    >
+                                                        <Trash2 className="h-4 w-4 text-red-500" />
+                                                    </Button>
+                                                )}
                                                 <Button
                                                     variant="outline"
                                                     size="sm"
-                                                    className="h-8 px-3 text-xs font-medium"
-                                                    onClick={() => handleEditClick(role.name)}
+                                                    className="h-8 px-3 ml-2 text-xs font-medium"
+                                                    onClick={() => handleEditPermissionsClick(role.name)}
+                                                    title="Edit Permissions"
                                                 >
-                                                    <Edit className="h-3.5 w-3.5 mr-1.5" /> Edit Permissions
+                                                    <Shield className="h-3.5 w-3.5 mr-1" /> Perms
                                                 </Button>
                                             </div>
                                         </TableCell>

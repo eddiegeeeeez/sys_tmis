@@ -5,11 +5,15 @@ using TradeMatrix.Server.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using TradeMatrix.Server.Filters;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-builder.Services.AddControllers();
+builder.Services.AddControllers(options => 
+{
+    options.Filters.Add<AuditLogAttribute>();
+});
 builder.Services.AddOpenApi();
 builder.Services.AddLogging(config =>
 {
@@ -68,6 +72,7 @@ builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IRoleService, RoleService>();
 builder.Services.AddScoped<ISystemService, SystemService>();
 builder.Services.AddScoped<IDatabaseService, DatabaseService>();
+builder.Services.AddScoped<IAuditService, AuditService>();
 
 // Authentication
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -95,9 +100,11 @@ if (app.Environment.IsDevelopment())
 
 // Add custom middleware
 app.UseMiddleware<GlobalExceptionHandlingMiddleware>();
-app.UseMiddleware<RateLimitingMiddleware>();
 
-app.UseHttpsRedirection();
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
 app.UseStaticFiles();
 app.UseCors("AllowFrontend");
 

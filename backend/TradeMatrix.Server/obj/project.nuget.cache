@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "Hjotywusfok=",
+  "dgSpecHash": "TXLCnoNnD2g=",
   "success": true,
-  "projectFilePath": "C:\\Users\\mendo\\OneDrive\\Documents\\PAM IT13\\sys_tmis\\backend\\TradeMatrix.Server\\TradeMatrix.Server.csproj",
+  "projectFilePath": "C:\\Programming Files\\PAM IT13\\sys_tmis\\backend\\TradeMatrix.Server\\TradeMatrix.Server.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\mendo\\.nuget\\packages\\azure.core\\1.38.0\\azure.core.1.38.0.nupkg.sha512",
     "C:\\Users\\mendo\\.nuget\\packages\\azure.identity\\1.11.4\\azure.identity.1.11.4.nupkg.sha512",

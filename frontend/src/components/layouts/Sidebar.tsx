@@ -43,9 +43,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentRole }) => {
           {
             section: 'Administration', items: [
               { id: 'dashboard', label: 'Admin Dashboard', icon: LayoutDashboard },
-              { id: 'admin/users', label: 'User Management', icon: Users },
-              { id: 'admin/roles', label: 'Role Management', icon: Shield },
-              { id: 'admin/security', label: 'Audit Logs', icon: Lock },
+              { id: 'system/users', label: 'User Management', icon: Users },
+              { id: 'system/roles', label: 'Role Management', icon: Shield },
+              { id: 'system/security', label: 'Audit Logs', icon: Lock },
             ]
           }
         ];

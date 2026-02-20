@@ -47,6 +47,7 @@ namespace TradeMatrix.Server.Services
                     Email = u.Email,
                     Role = u.Role.Name,
                     IsActive = u.IsActive,
+                    IsArchived = u.IsArchived,
                     LastLogin = u.LastLogin,
                     CreatedAt = u.CreatedAt,
                     CreatedBy = u.CreatedBy
@@ -68,6 +69,7 @@ namespace TradeMatrix.Server.Services
                     Email = u.Email,
                     Role = u.Role.Name,
                     IsActive = u.IsActive,
+                    IsArchived = u.IsArchived,
                     LastLogin = u.LastLogin,
                     CreatedAt = u.CreatedAt,
                     CreatedBy = u.CreatedBy,
@@ -98,11 +100,33 @@ namespace TradeMatrix.Server.Services
                 return ApiResponse<UserDto>.ErrorResponse("Invalid role");
             }
 
+            // Security Restriction: SystemAdmin can only create InventoryClerk and Cashier
+            if (role.Name == "SuperAdmin" && currentUserId != null)
+            {
+                var creator = await _context.Users.Include(u => u.Role).FirstOrDefaultAsync(u => u.Id.ToString() == currentUserId);
+                if (creator?.Role.Name != "SuperAdmin")
+                {
+                    return ApiResponse<UserDto>.ErrorResponse("Unauthorized to assign SuperAdmin role");
+                }
+            }
+
+            if (currentUserId != null)
+            {
+                var creator = await _context.Users.Include(u => u.Role).FirstOrDefaultAsync(u => u.Id.ToString() == currentUserId);
+                if (creator?.Role.Name == "SystemAdmin")
+                {
+                    if (role.Name != "InventoryClerk" && role.Name != "Cashier")
+                    {
+                        return ApiResponse<UserDto>.ErrorResponse("SystemAdmin can only create Inventory Clerk or Cashier accounts");
+                    }
+                }
+            }
+
             var newUser = new User
             {
                 Name = createUserDto.Name,
                 Email = createUserDto.Email,
-                PasswordHash = _passwordHashing.HashPassword(createUserDto.Password ?? "DefaultPassword123!"),
+                PasswordHash = _passwordHashing.HashPassword(createUserDto.Password ?? "TradeMatrix2024!"),
                 Role = role,
                 IsActive = createUserDto.IsActive ?? true,
                 CreatedAt = DateTime.UtcNow,
@@ -121,6 +145,7 @@ namespace TradeMatrix.Server.Services
                 Email = newUser.Email,
                 Role = newUser.Role.Name,
                 IsActive = newUser.IsActive,
+                IsArchived = newUser.IsArchived,
                 CreatedAt = newUser.CreatedAt,
                 CreatedBy = newUser.CreatedBy
             };
@@ -147,12 +172,37 @@ namespace TradeMatrix.Server.Services
                 user.Email = updateUserDto.Email;
             }
 
+            Role? role = null;
             if (!string.IsNullOrWhiteSpace(updateUserDto.Role))
             {
-                var role = await _context.Roles.FirstOrDefaultAsync(r => r.Name == updateUserDto.Role);
-                if (role != null)
-                    user.Role = role;
+                role = await _context.Roles.FirstOrDefaultAsync(r => r.Name == updateUserDto.Role);
+                if (role == null)
+                {
+                    return ApiResponse<UserDto>.ErrorResponse("Invalid role");
+                }
             }
+
+            if (role != null)
+            {
+                    // Security Restriction for Update
+                    if (role.Name != user.Role.Name && currentUserId != null)
+                    {
+                        var updater = await _context.Users.Include(u => u.Role).FirstOrDefaultAsync(u => u.Id.ToString() == currentUserId);
+                        if (updater?.Role.Name == "SystemAdmin")
+                        {
+                            if (role.Name != "InventoryClerk" && role.Name != "Cashier")
+                            {
+                                return ApiResponse<UserDto>.ErrorResponse("SystemAdmin can only reassign to Inventory Clerk or Cashier roles");
+                            }
+                        }
+                        
+                        if (role.Name == "SuperAdmin" && updater?.Role.Name != "SuperAdmin")
+                        {
+                            return ApiResponse<UserDto>.ErrorResponse("Unauthorized to assign SuperAdmin role");
+                        }
+                    }
+                    user.Role = role;
+                }
 
             if (updateUserDto.IsActive.HasValue)
                 user.IsActive = updateUserDto.IsActive.Value;
@@ -171,6 +221,7 @@ namespace TradeMatrix.Server.Services
                 Email = user.Email,
                 Role = user.Role.Name,
                 IsActive = user.IsActive,
+                IsArchived = user.IsArchived,
                 UpdatedAt = user.UpdatedAt,
                 UpdatedBy = user.UpdatedBy
             };
@@ -239,6 +290,33 @@ namespace TradeMatrix.Server.Services
             _logger.LogInformation($"Password reset for user: {user.Email}");
 
             return ApiResponse<bool>.SuccessResponse(true, "Password reset successfully");
+        }
+
+        public async Task<ApiResponse<bool>> ArchiveUserAsync(int id, string? currentUserId)
+        {
+            var user = await _context.Users.FindAsync(id);
+            if (user == null) return ApiResponse<bool>.ErrorResponse("User not found");
+            if (id.ToString() == currentUserId) return ApiResponse<bool>.ErrorResponse("Cannot archive your own account");
+
+            user.IsActive = false;
+            user.IsArchived = true;
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation($"User archived: {user.Email} by user ID: {currentUserId}");
+            return ApiResponse<bool>.SuccessResponse(true, "User archived successfully");
+        }
+
+        public async Task<ApiResponse<bool>> RestoreUserAsync(int id, string? currentUserId)
+        {
+            var user = await _context.Users.FindAsync(id);
+            if (user == null) return ApiResponse<bool>.ErrorResponse("User not found");
+
+            user.IsActive = true;
+            user.IsArchived = false;
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation($"User restored: {user.Email} by user ID: {currentUserId}");
+            return ApiResponse<bool>.SuccessResponse(true, "User restored successfully");
         }
     }
 }

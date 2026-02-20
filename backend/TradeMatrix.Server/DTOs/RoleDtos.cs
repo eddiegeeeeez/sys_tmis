@@ -7,6 +7,7 @@ namespace TradeMatrix.Server.DTOs
         public string Description { get; set; } = string.Empty;
         public string Permissions { get; set; } = string.Empty;
         public bool IsSystemRole { get; set; }
+        public bool IsArchived { get; set; }
         public DateTime CreatedAt { get; set; }
     }
 

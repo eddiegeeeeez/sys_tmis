@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { Card, CardContent } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
 import { Badge } from '../../../components/ui/Badge';
+import { StatusDot } from '../../../components/ui/StatusDot';
 import { Input } from '../../../components/ui/Input';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../../components/ui/Table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../../../components/ui/Dialog';
@@ -153,7 +154,7 @@ export const Finance: React.FC = () => {
                                 <TableCell className="font-medium text-zinc-900 dark:text-zinc-100">{exp.Description}</TableCell>
                                 <TableCell className="font-bold text-zinc-900 dark:text-zinc-100">${exp.Amount.toFixed(2)}</TableCell>
                                 <TableCell>
-                                    <Badge variant={exp.Status === 'Paid' ? 'success' : 'neutral'}>{exp.Status}</Badge>
+                                    <StatusDot variant={exp.Status === 'Paid' ? 'success' : 'neutral'}>{exp.Status}</StatusDot>
                                 </TableCell>
                                 <TableCell className="text-right">
                                     <Button variant="ghost" size="icon" className="h-8 w-8"><Receipt className="h-4 w-4" /></Button>

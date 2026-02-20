@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../..
 import { Skeleton } from '../../../components/ui/Skeleton';
 import { Button } from '../../../components/ui/Button';
 import { Badge } from '../../../components/ui/Badge';
+import { StatusDot } from '../../../components/ui/StatusDot';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, AreaChart, Area } from 'recharts';
 import {
   DollarSign, Package, Users, TrendingUp, Activity, Server,
@@ -41,10 +42,10 @@ const CHART_COLORS = ['#2563eb', '#0ea5e9', '#f59e0b', '#64748b'];
 // --- Sub-Components for Role-Based Views ---
 
 /**
- * Super Admin & System Admin View
- * Focus: System Health, Security, User Activity
+ * Super Admin View
+ * Focus: System Infrastructure, DB, Global Security
  */
-const AdminDashboard = () => (
+const SuperAdminDashboard = () => (
   <div className="space-y-6">
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
       <Card className="border-l-4 border-l-emerald-500">
@@ -92,8 +93,8 @@ const AdminDashboard = () => (
     <div className="grid gap-6 md:grid-cols-2">
       <Card className="border-zinc-200 dark:border-zinc-800">
         <CardHeader>
-          <CardTitle>Server Load (24h)</CardTitle>
-          <CardDescription>CPU usage across primary application cluster.</CardDescription>
+          <CardTitle>Infrastructure Load (24h)</CardTitle>
+          <CardDescription>Overall CPU usage across clusters.</CardDescription>
         </CardHeader>
         <CardContent>
           <ResponsiveContainer width="100%" height={250}>
@@ -107,7 +108,6 @@ const AdminDashboard = () => (
               <XAxis dataKey="time" stroke="#71717a" fontSize={12} tickLine={false} axisLine={false} />
               <YAxis stroke="#71717a" fontSize={12} tickLine={false} axisLine={false} />
               <Tooltip contentStyle={{ borderRadius: '8px', backgroundColor: '#18181b', color: '#fff', border: 'none' }} />
-              {/* Changed stroke color to Brand Blue #2563eb for visibility on dark mode */}
               <Area type="monotone" dataKey="load" stroke="#2563eb" strokeWidth={2} fillOpacity={1} fill="url(#colorLoad)" />
             </AreaChart>
           </ResponsiveContainer>
@@ -116,20 +116,20 @@ const AdminDashboard = () => (
 
       <Card className="border-zinc-200 dark:border-zinc-800">
         <CardHeader>
-          <CardTitle>Recent System Events</CardTitle>
-          <CardDescription>Latest audit log entries requiring attention.</CardDescription>
+          <CardTitle>Recent Critical Events</CardTitle>
+          <CardDescription>Latest high-level audit log entries.</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
             {[
               { event: 'Database Backup Completed', time: '10 mins ago', status: 'success' },
-              { event: 'New Role Created: Regional Manager', time: '1 hour ago', status: 'info' },
-              { event: 'Multiple Failed Logins (IP: 192.168.x.x)', time: '2 hours ago', status: 'warning' },
+              { event: 'Critical: Schema Migration', time: '1 hour ago', status: 'warning' },
+              { event: 'Admin Session Cleanup', time: '2 hours ago', status: 'info' },
               { event: 'System Config Updated', time: 'Yesterday', status: 'info' },
             ].map((item, i) => (
               <div key={i} className="flex items-center justify-between p-2 rounded-md hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors">
                 <div className="flex items-center gap-3">
-                  <div className={`h-2 w-2 rounded-full ${item.status === 'success' ? 'bg-emerald-500' : item.status === 'warning' ? 'bg-amber-500' : 'bg-blue-500'}`} />
+                  <StatusDot variant={item.status as any} />
                   <span className="text-sm font-medium text-zinc-700 dark:text-zinc-200">{item.event}</span>
                 </div>
                 <span className="text-xs text-zinc-400 font-mono">{item.time}</span>
@@ -139,6 +139,88 @@ const AdminDashboard = () => (
         </CardContent>
       </Card>
     </div>
+  </div>
+);
+
+/**
+ * System Admin View
+ * Focus: User Management, Staff Oversight, Operational Security
+ */
+const SystemAdminDashboard = () => (
+  <div className="space-y-6">
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <Card className="border-l-4 border-l-blue-500">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Total Staff</CardTitle>
+          <Users className="h-4 w-4 text-blue-500" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">20</div>
+          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">Cashiers & Clerks managed</p>
+        </CardContent>
+      </Card>
+      <Card className="border-l-4 border-l-orange-500">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Active Sessions</CardTitle>
+          <Activity className="h-4 w-4 text-orange-500" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">12</div>
+          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">Live staff interactions</p>
+        </CardContent>
+      </Card>
+      <Card className="border-l-4 border-l-indigo-500">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Account Updates</CardTitle>
+          <ClipboardList className="h-4 w-4 text-indigo-500" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">5</div>
+          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">Modified in last 7 days</p>
+        </CardContent>
+      </Card>
+      <Card className="border-l-4 border-l-red-500">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Failed Logins</CardTitle>
+          <AlertCircle className="h-4 w-4 text-red-500" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">2</div>
+          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">Across managed roles</p>
+        </CardContent>
+      </Card>
+    </div>
+
+    <Card className="border-zinc-200 dark:border-zinc-800">
+      <CardHeader>
+        <CardTitle>Recent Staff Activity</CardTitle>
+        <CardDescription>Latest actions taken by managed accounts.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-4">
+          {[
+            { user: 'Cashier John', action: 'Logged In', time: '5 mins ago' },
+            { user: 'Clerk Sarah', action: 'Created Purchase Order', time: '1 hour ago' },
+            { user: 'Cashier Mike', action: 'Failed Login Attempt', time: '2 hours ago' },
+            { user: 'Clerk David', action: 'Updated Inventory Item', time: '3 hours ago' },
+          ].map((item, i) => (
+            <div key={i} className="flex items-center justify-between p-3 border rounded-lg hover:bg-zinc-50 dark:border-zinc-800 dark:hover:bg-zinc-800/50 transition-colors">
+              <div className="flex items-center gap-3">
+                <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xs font-bold">
+                  {item.user.charAt(item.user.indexOf(' ') + 1)}
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-sm font-medium text-zinc-900 dark:text-zinc-200">{item.user}</span>
+                  <span className="text-xs text-zinc-500 dark:text-zinc-400">{item.action}</span>
+                </div>
+              </div>
+              <span className="text-xs text-zinc-400 font-mono">{item.time}</span>
+            </div>
+          ))}
+        </div>
+        <Button variant="outline" className="w-full mt-6">View All Audit Logs</Button>
+      </CardContent>
+    </Card>
   </div>
 );
 
@@ -410,7 +492,9 @@ const InventoryDashboard = () => (
                     <p className="text-xs text-zinc-500 dark:text-zinc-400">{item.stock} units remaining</p>
                   </div>
                 </div>
-                <Badge variant={item.stock === 0 ? 'destructive' : 'warning'}>{item.status}</Badge>
+                <StatusDot variant={item.stock === 0 ? 'error' : 'warning'}>
+                  {item.status}
+                </StatusDot>
               </div>
             ))}
           </div>
@@ -433,7 +517,7 @@ const InventoryDashboard = () => (
                   <p className="font-medium text-sm text-zinc-900 dark:text-zinc-200">{po.supplier}</p>
                   <p className="text-xs text-zinc-500 dark:text-zinc-400">{po.id} • ETA: {po.eta}</p>
                 </div>
-                <Badge variant="outline" className="bg-white dark:bg-zinc-900">{po.status}</Badge>
+                <StatusDot variant="info">{po.status}</StatusDot>
               </div>
             ))}
           </div>
@@ -483,8 +567,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentRole }) => {
   const renderDashboardContent = () => {
     switch (currentRole) {
       case UserRole.SUPER_ADMIN:
+        return <SuperAdminDashboard />;
       case UserRole.SYSTEM_ADMIN:
-        return <AdminDashboard />;
+        return <SystemAdminDashboard />;
       case UserRole.CASHIER:
         return <CashierDashboard />;
       case UserRole.INVENTORY_CLERK:

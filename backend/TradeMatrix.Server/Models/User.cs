@@ -24,6 +24,7 @@ namespace TradeMatrix.Server.Models
         public Role Role { get; set; } = null!;
 
         public bool IsActive { get; set; } = true;
+        public bool IsArchived { get; set; } = false;
 
         // Audit Fields
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

@@ -47,37 +47,9 @@ namespace TradeMatrix.Server.Controllers
                 .Include(u => u.Role)
                 .FirstOrDefaultAsync(u => u.Email == loginDto.Email);
 
-            // Check if account is locked out
-            if (user != null && user.LockoutUntil.HasValue && user.LockoutUntil > DateTime.UtcNow)
-            {
-                var remainingSeconds = (int)(user.LockoutUntil.Value - DateTime.UtcNow).TotalSeconds;
-                _logger.LogWarning($"Login attempt on locked account: {loginDto.Email}");
-                return Unauthorized(new { message = $"Account is locked. Try again in {remainingSeconds} seconds." });
-            }
-
-            // Verify password first before any database updates
+            // Verify password
             if (user == null || !_passwordHashing.VerifyPassword(loginDto.Password, user.PasswordHash))
             {
-                // Record failed attempt only if user exists
-                if (user != null)
-                {
-                    // Re-fetch user for update (remove AsNoTracking)
-                    var userForUpdate = await _context.Users.FirstOrDefaultAsync(u => u.Id == user.Id);
-                    if (userForUpdate != null)
-                    {
-                        userForUpdate.FailedLoginAttempts++;
-                        
-                        // Lock account after 5 failed attempts
-                        if (userForUpdate.FailedLoginAttempts >= 5)
-                        {
-                            userForUpdate.LockoutUntil = DateTime.UtcNow.AddMinutes(15);
-                            _logger.LogWarning($"Account locked due to failed login attempts: {loginDto.Email}");
-                        }
-
-                        await _context.SaveChangesAsync();
-                    }
-                }
-
                 _logger.LogWarning($"Failed login attempt for email: {loginDto.Email}");
                 return Unauthorized(new { message = "Invalid email or password" });
             }
@@ -88,13 +60,13 @@ namespace TradeMatrix.Server.Controllers
                 return Unauthorized(new { message = "User account is inactive" });
             }
 
-            // Successful login - fetch tracked user and update all fields in one call
+            // Successful login - fetch tracked user and update LastLogin
             var trackedUser = await _context.Users.FirstOrDefaultAsync(u => u.Id == user.Id);
             if (trackedUser != null)
             {
-                trackedUser.FailedLoginAttempts = 0;
-                trackedUser.LockoutUntil = null;
                 trackedUser.LastLogin = DateTime.UtcNow;
+                trackedUser.FailedLoginAttempts = 0; // Reset failed attempts on success
+                trackedUser.LockoutUntil = null; // Clear any lockout on success
                 await _context.SaveChangesAsync();
             }
 
@@ -117,10 +89,22 @@ namespace TradeMatrix.Server.Controllers
         [Authorize]
         public async Task<IActionResult> GetProfile()
         {
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
-            if (!int.TryParse(userIdClaim?.Value, out int userId))
+            // We specifically look for 'id' first as we add it explicitly. 
+            // NameIdentifier is often mapped from 'sub' or 'nameid' by ASP.NET Core.
+            var userIdClaim = User.FindFirst("id") ?? 
+                             User.FindFirst(ClaimTypes.NameIdentifier) ?? 
+                             User.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier");
+
+            if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
             {
-                return Unauthorized();
+                // If the first find failed or returned a non-integer (like an email in 'sub'), try to find any integer claim
+                userIdClaim = User.Claims.FirstOrDefault(c => int.TryParse(c.Value, out _));
+                
+                if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out userId))
+                {
+                    _logger.LogWarning("Profile fetch failed: User ID claim is missing or invalid.");
+                    return Unauthorized(new { message = "Invalid token claims" });
+                }
             }
 
             var user = await _context.Users
@@ -187,7 +171,9 @@ namespace TradeMatrix.Server.Controllers
             {
                 new Claim(JwtRegisteredClaimNames.Sub, user.Email),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+                new Claim(JwtRegisteredClaimNames.NameId, user.Id.ToString()),
                 new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+                new Claim("id", user.Id.ToString()),
                 new Claim(ClaimTypes.Role, user.Role.Name),
                 new Claim("Name", user.Name)
             };

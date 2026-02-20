@@ -11,5 +11,7 @@ namespace TradeMatrix.Server.Services
         Task<ApiResponse<bool>> DeleteUserAsync(int id, string? currentUserId);
         Task<ApiResponse<bool>> UnlockUserAsync(int id);
         Task<ApiResponse<bool>> ResetPasswordAsync(int id, string newPassword);
+        Task<ApiResponse<bool>> ArchiveUserAsync(int id, string? currentUserId);
+        Task<ApiResponse<bool>> RestoreUserAsync(int id, string? currentUserId);
     }
 }

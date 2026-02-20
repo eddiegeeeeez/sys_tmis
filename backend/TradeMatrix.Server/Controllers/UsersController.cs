@@ -25,7 +25,7 @@ namespace TradeMatrix.Server.Controllers
         /// </summary>
         [HttpGet("list")]
         [Authorize(Roles = "SuperAdmin,SystemAdmin")]
-        public async Task<ActionResult<PaginatedResponse<UserDto>>> GetUsers(
+        public async Task<ActionResult<ApiResponse<PaginatedResponse<UserDto>>>> GetUsers(
             [FromQuery] int page = 1, 
             [FromQuery] int pageSize = 10, 
             [FromQuery] string? search = null, 
@@ -34,7 +34,7 @@ namespace TradeMatrix.Server.Controllers
             try
             {
                 var result = await _userService.GetUsersAsync(page, pageSize, search, role);
-                return Ok(result);
+                return Ok(ApiResponse<PaginatedResponse<UserDto>>.SuccessResponse(result));
             }
             catch (Exception ex)
             {
@@ -178,6 +178,51 @@ namespace TradeMatrix.Server.Controllers
             {
                 _logger.LogError(ex, "Error resetting password");
                 return StatusCode(500, ApiResponse<string>.ErrorResponse("Error resetting password"));
+            }
+        }
+        /// <summary>
+        /// Archive a user (deactivate)
+        /// </summary>
+        [HttpPut("{id}/archive")]
+        [Authorize(Roles = "SuperAdmin,SystemAdmin")]
+        public async Task<ActionResult<ApiResponse<bool>>> ArchiveUser(int id)
+        {
+            try
+            {
+                var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                var result = await _userService.ArchiveUserAsync(id, currentUserId);
+                if (!result.Success)
+                    return BadRequest(result);
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error archiving user");
+                return StatusCode(500, ApiResponse<string>.ErrorResponse("Error archiving user"));
+            }
+        }
+
+        /// <summary>
+        /// Restore an archived user (activate)
+        /// </summary>
+        [HttpPut("{id}/restore")]
+        [Authorize(Roles = "SuperAdmin,SystemAdmin")]
+        public async Task<ActionResult<ApiResponse<bool>>> RestoreUser(int id)
+        {
+            try
+            {
+                var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                var result = await _userService.RestoreUserAsync(id, currentUserId);
+                if (!result.Success)
+                    return BadRequest(result);
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error restoring user");
+                return StatusCode(500, ApiResponse<string>.ErrorResponse("Error restoring user"));
             }
         }
     }

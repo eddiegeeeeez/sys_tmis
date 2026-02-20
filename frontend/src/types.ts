@@ -29,6 +29,7 @@ export interface User {
   email: string;
   role: UserRole;
   isActive?: boolean;
+  isArchived?: boolean;
   status?: 'Active' | 'Inactive';
   lastLogin?: string;
 }
@@ -39,6 +40,7 @@ export interface Role {
   description: string;
   permissions: string;
   isSystemRole: boolean;
+  isArchived: boolean;
   createdAt?: string;
 }
 

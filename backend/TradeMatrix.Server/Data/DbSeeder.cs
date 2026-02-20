@@ -8,19 +8,33 @@ namespace TradeMatrix.Server.Data
         public static void Seed(ApplicationDbContext context, IPasswordHashingService passwordHashing)
         {
             // 1. Seed Roles
-            if (!context.Roles.Any())
+            var defaultRoles = new List<Role>
             {
-                var roles = new List<Role>
+                new Role { Name = "SuperAdmin", Description = "Full system access with developer tools.", IsSystemRole = true, Permissions = "view_dashboard,manage_users,manage_roles,view_inventory,manage_inventory,view_pos,process_transactions,view_reports,manage_settings,view_audit_logs,manage_database,manage_employees,process_payroll,manage_suppliers,manage_customers" },
+                new Role { Name = "SystemAdmin", Description = "Manage configurations and users.", IsSystemRole = true, Permissions = "view_dashboard,manage_users,manage_roles,view_reports,manage_settings,view_audit_logs,manage_employees" },
+                new Role { Name = "Manager", Description = "Store operations, inventory and reports.", IsSystemRole = true, Permissions = "view_dashboard,view_inventory,manage_inventory,view_reports,manage_employees,manage_suppliers,manage_customers" },
+                new Role { Name = "Cashier", Description = "POS access and basic stock check.", IsSystemRole = true, Permissions = "view_dashboard,view_inventory,view_pos,process_transactions,manage_customers" },
+                new Role { Name = "InventoryClerk", Description = "Stock management and receiving.", IsSystemRole = true, Permissions = "view_dashboard,view_inventory,manage_inventory,manage_suppliers" }
+            };
+
+            foreach (var role in defaultRoles)
+            {
+                var existingRole = context.Roles.FirstOrDefault(r => r.Name == role.Name);
+                if (existingRole == null)
                 {
-                    new Role { Name = "SuperAdmin", Description = "Full system access" },
-                    new Role { Name = "SystemAdmin", Description = "System configuration and user management" },
-                    new Role { Name = "Manager", Description = "Store operations and reports" },
-                    new Role { Name = "Cashier", Description = "POS and basic sales" },
-                    new Role { Name = "InventoryClerk", Description = "Stock management" }
-                };
-                context.Roles.AddRange(roles);
-                context.SaveChanges();
+                    context.Roles.Add(role);
+                }
+                else
+                {
+                    // Update existing roles to ensure they have the latest system flags and base permissions
+                    if (!existingRole.IsSystemRole || string.IsNullOrEmpty(existingRole.Permissions))
+                    {
+                        existingRole.IsSystemRole = true;
+                        existingRole.Permissions = role.Permissions;
+                    }
+                }
             }
+            context.SaveChanges();
 
             if (context.Users.Any())
             {
