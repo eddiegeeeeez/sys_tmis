@@ -15,15 +15,6 @@ builder.Services.AddControllers(options =>
     options.Filters.Add<AuditLogAttribute>();
 });
 
-// MonsterASP.NET shared hosting: frontend assets are flattened into the
-// app root (ContentRootPath) alongside the DLLs during publish.
-// WebRootPath must point there so UseStaticFiles() and MapFallbackToFile()
-// can find index.html and the /assets/ folder.
-if (!builder.Environment.IsDevelopment())
-{
-    builder.Environment.WebRootPath = builder.Environment.ContentRootPath;
-}
-
 builder.Services.AddLogging(config =>
 {
     config.ClearProviders();
@@ -151,8 +142,6 @@ app.Use(async (context, next) =>
 });
 
 // 4. Static Files & Routing
-// UseDefaultFiles maps "/" to "index.html" before static files are served
-app.UseDefaultFiles();
 app.UseStaticFiles();
 app.UseRouting();
 app.UseCors("AllowFrontend");

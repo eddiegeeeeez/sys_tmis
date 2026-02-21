@@ -37,17 +37,11 @@ jobs:
         run: |
           cd backend/TradeMatrix.Server
 
-          # Framework-dependent publish targeting .NET 8 on MonsterASP.NET.
+          # Standard framework-dependent publish.
+          # wwwroot/ subdirectory is kept intact inside publish/.
+          # ASP.NET Core automatically uses publish/wwwroot/ as the web root.
+          # No path overrides or flattening needed.
           dotnet publish -c Release -o ./publish
-
-          # MonsterASP.NET web root IS the wwwroot folder on FTP.
-          # Keep wwwroot intact — deploy its contents into the IIS web root directly.
-          # The DLLs and web.config go to wwwroot root, static files go to wwwroot/assets/
-          echo "Moving wwwroot contents up to publish root..."
-          if [ -d "./publish/wwwroot" ]; then
-            cp -r ./publish/wwwroot/. ./publish/
-            rm -rf ./publish/wwwroot
-          fi
 
       - name: FTP Deploy
         uses: SamKirkland/FTP-Deploy-Action@v4.3.4
