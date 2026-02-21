@@ -38,6 +38,19 @@ jobs:
           cd backend/TradeMatrix.Server
           dotnet publish -c Release -o ./publish
 
+          # MonsterASP.NET requires frontend assets at the publish root
+          # alongside the DLLs so ASP.NET Core owns ALL requests.
+          # Without this, IIS serves index.html as a static file and
+          # ASP.NET Core never starts, causing every /api/* call to 404.
+          echo "Flattening wwwroot into publish root..."
+          if [ -d "./publish/wwwroot" ]; then
+            cp -r ./publish/wwwroot/. ./publish/
+            rm -rf ./publish/wwwroot
+          fi
+
+          # Create the logs directory so ANCM can write startup logs
+          mkdir -p ./publish/logs
+
       - name: FTP Deploy
         uses: SamKirkland/FTP-Deploy-Action@v4.3.4
         with:
