@@ -111,19 +111,31 @@ if (!app.Environment.IsDevelopment())
     app.UseHttpsRedirection();
 }
 
-// Security headers
+// Security headers middleware
 app.Use(async (context, next) =>
 {
-    context.Response.Headers["Content-Security-Policy"] = 
-        "default-src 'self'; " +
-        "script-src 'self' 'unsafe-inline' 'unsafe-eval'; " +
-        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
-        "font-src 'self' https://fonts.gstatic.com; " +
-        "img-src 'self' data: blob:; " +
-        "connect-src 'self'; " +
-        "frame-ancestors 'self'";
-    context.Response.Headers["X-Content-Type-Options"] = "nosniff";
-    context.Response.Headers["X-Frame-Options"] = "SAMEORIGIN";
+    context.Response.OnStarting(() =>
+    {
+        if (!context.Response.Headers.ContainsKey("Content-Security-Policy"))
+        {
+            context.Response.Headers.Append("Content-Security-Policy", 
+                "default-src 'self'; " +
+                "script-src 'self' 'unsafe-inline' 'unsafe-eval'; " +
+                "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
+                "font-src 'self' https://fonts.gstatic.com; " +
+                "img-src 'self' data: blob:; " +
+                "connect-src 'self'; " +
+                "frame-ancestors 'self'");
+        }
+        
+        if (!context.Response.Headers.ContainsKey("X-Content-Type-Options"))
+            context.Response.Headers.Append("X-Content-Type-Options", "nosniff");
+            
+        if (!context.Response.Headers.ContainsKey("X-Frame-Options"))
+            context.Response.Headers.Append("X-Frame-Options", "SAMEORIGIN");
+            
+        return Task.CompletedTask;
+    });
     await next();
 });
 
@@ -134,6 +146,8 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+// Only fallback to index.html for non-API requests that don't look like files
 app.MapFallbackToFile("index.html");
 
 // using (var scope = app.Services.CreateScope())

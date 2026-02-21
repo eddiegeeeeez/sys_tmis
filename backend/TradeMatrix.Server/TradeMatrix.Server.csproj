@@ -18,10 +18,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Update="web.config">
-      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    <Content Include="wwwroot\**">
+      <CopyToPublishDirectory>Always</CopyToPublishDirectory>
     </Content>
-    <Content Update="wwwroot\**">
+    <Content Update="web.config">
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
     </Content>
   </ItemGroup>
