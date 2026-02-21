@@ -19,7 +19,7 @@
 
   <ItemGroup>
     <Content Update="wwwroot\**" CopyToPublishDirectory="Always" />
-    <Content Update="web.config" CopyToPublishDirectory="PreserveNewest" />
+    <Content Update="web.config" CopyToPublishDirectory="Always" />
   </ItemGroup>
 
 </Project>

@@ -47,7 +47,7 @@ jobs:
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
           local-dir: ./backend/TradeMatrix.Server/publish/
-          server-dir: /wwwroot/
+          server-dir: /
           protocol: ftp
           port: 21
           dangerous-clean-slate: true
