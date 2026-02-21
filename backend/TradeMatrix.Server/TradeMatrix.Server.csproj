@@ -18,7 +18,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="wwwroot\**">
+    <Content Update="wwwroot\**">
       <CopyToPublishDirectory>Always</CopyToPublishDirectory>
     </Content>
     <Content Update="web.config">
