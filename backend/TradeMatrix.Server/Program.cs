@@ -114,21 +114,21 @@ app.UseAuthorization();
 app.MapControllers();
 app.MapFallbackToFile("index.html");
 
-// using (var scope = app.Services.CreateScope())
-// {
-//     var services = scope.ServiceProvider;
-//     try
-//     {
-//         var context = services.GetRequiredService<ApplicationDbContext>();
-//         context.Database.Migrate();
-//         // var passwordHashing = services.GetRequiredService<IPasswordHashingService>();
-//         // DbSeeder.Seed(context, passwordHashing);
-//     }
-//     catch (Exception ex)
-//     {
-//         var logger = services.GetRequiredService<ILogger<Program>>();
-//         logger.LogError(ex, "An error occurred migrating or seeding the DB.");
-//     }
-// }
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    try
+    {
+        var context = services.GetRequiredService<ApplicationDbContext>();
+        context.Database.Migrate();
+        var passwordHashing = services.GetRequiredService<IPasswordHashingService>();
+        TradeMatrix.Server.Data.DbSeeder.Seed(context, passwordHashing);
+    }
+    catch (Exception ex)
+    {
+        var logger = services.GetRequiredService<ILogger<Program>>();
+        logger.LogError(ex, "An error occurred migrating or seeding the DB.");
+    }
+}
 
 app.Run();
