@@ -51,8 +51,9 @@ jobs:
             rm -rf ./publish/wwwroot
           fi
 
-          # Create the logs directory so ANCM can write startup logs
+          # Create the logs directory and a placeholder so FTP uploads it
           mkdir -p ./publish/logs
+          touch ./publish/logs/.gitkeep
 
       - name: FTP Deploy
         uses: SamKirkland/FTP-Deploy-Action@v4.3.4
@@ -64,10 +65,9 @@ jobs:
           server-dir: /
           protocol: ftp
           port: 21
-          # Manual cleanup is being handled by the user now
           dangerous-clean-slate: false
           exclude: |
             **/.git*
             **/.git*/**
             **/node_modules/**
-            **/logs/**
+            **/logs/*.log
