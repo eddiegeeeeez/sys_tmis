@@ -151,6 +151,8 @@ app.Use(async (context, next) =>
 });
 
 // 4. Static Files & Routing
+// UseDefaultFiles maps "/" to "index.html" before static files are served
+app.UseDefaultFiles();
 app.UseStaticFiles();
 app.UseRouting();
 app.UseCors("AllowFrontend");

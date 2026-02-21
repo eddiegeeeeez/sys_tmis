@@ -37,8 +37,8 @@ jobs:
         run: |
           cd backend/TradeMatrix.Server
 
-          # Framework-dependent publish targeting win-x64 to match MonsterASP.NET 64-bit app pool.
-          dotnet publish -c Release -o ./publish -r win-x64 --no-self-contained
+          # Framework-dependent publish targeting .NET 8 on MonsterASP.NET.
+          dotnet publish -c Release -o ./publish
 
           # MonsterASP.NET web root IS the wwwroot folder on FTP.
           # Keep wwwroot intact — deploy its contents into the IIS web root directly.
