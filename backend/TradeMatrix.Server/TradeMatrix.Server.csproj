@@ -3,7 +3,7 @@
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
     <Nullable>enable</Nullable>
-    <ImplicitUsings>enable</ImplicitUsings>
+    <EnableDefaultContentItems>false</EnableDefaultContentItems>
   </PropertyGroup>
 
   <ItemGroup>
@@ -18,12 +18,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Update="wwwroot\**">
-      <CopyToPublishDirectory>Always</CopyToPublishDirectory>
-    </Content>
-    <Content Update="web.config">
-      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-    </Content>
+    <Content Include="wwwroot\**" CopyToPublishDirectory="Always" />
+    <Content Include="web.config" CopyToPublishDirectory="PreserveNewest" />
+    <Content Include="appsettings.json" CopyToPublishDirectory="PreserveNewest" />
+    <Content Include="appsettings.*.json" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

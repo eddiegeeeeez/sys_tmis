@@ -97,6 +97,9 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 var app = builder.Build();
 
+Console.WriteLine($"[STARTUP] ContentRootPath: {app.Environment.ContentRootPath}");
+Console.WriteLine($"[STARTUP] WebRootPath: {app.Environment.WebRootPath}");
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
