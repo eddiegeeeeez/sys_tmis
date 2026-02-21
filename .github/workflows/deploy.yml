@@ -1,4 +1,4 @@
-name: Deploy to MonsterASP.NET
+name: Deploy Full Stack App to MonsterASP.NET
 
 on:
   push:
@@ -7,8 +7,8 @@ on:
   workflow_dispatch:
 
 jobs:
-  web-deploy:
-    name: Deploy
+  build-and-deploy:
+    name: Build & Deploy
     runs-on: ubuntu-latest
 
     steps:
@@ -22,15 +22,21 @@ jobs:
           cache: "npm"
           cache-dependency-path: frontend/package-lock.json
 
-      - name: Install Dependencies
+      - name: Build Frontend
         run: |
           cd frontend
           npm ci
-
-      - name: Build
-        run: |
-          cd frontend
           npm run build
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "9.0.x"
+
+      - name: Build & Publish Backend
+        run: |
+          cd backend/TradeMatrix.Server
+          dotnet publish -c Release -o ./publish
 
       - name: FTP Deploy
         uses: SamKirkland/FTP-Deploy-Action@v4.3.4
@@ -38,7 +44,11 @@ jobs:
           server: ${{ secrets.FTP_SERVER }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
-          local-dir: ./backend/TradeMatrix.Server/wwwroot/
+          local-dir: ./backend/TradeMatrix.Server/publish/
           server-dir: /wwwroot/
           protocol: ftp
           port: 21
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/node_modules/**
