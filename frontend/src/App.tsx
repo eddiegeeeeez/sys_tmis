@@ -26,6 +26,7 @@ import { RolePermissionsEditor } from './features/admin/pages/RolePermissionsEdi
 import { SystemConfig } from './features/admin/pages/SystemConfig';
 import { DatabaseAdmin } from './features/admin/pages/DatabaseAdmin';
 import { Security } from './features/admin/pages/Security';
+import { Archive } from './features/admin/pages/Archive';
 
 const App: React.FC = () => {
   // Initialize state from localStorage for instantaneous session restoration
@@ -268,6 +269,16 @@ const App: React.FC = () => {
                 </ProtectedRoute>
               } />
 
+              <Route path="admin/archive" element={
+                <ProtectedRoute
+                  isLoggedIn={isLoggedIn}
+                  currentRole={currentRole}
+                  allowedRoles={[UserRole.SUPER_ADMIN]}
+                >
+                  <Archive />
+                </ProtectedRoute>
+              } />
+
               {/* System Admin Specific Routes */}
               <Route path="system/users" element={
                 <ProtectedRoute
@@ -296,6 +307,16 @@ const App: React.FC = () => {
                   allowedRoles={[UserRole.SYSTEM_ADMIN]}
                 >
                   <Security />
+                </ProtectedRoute>
+              } />
+
+              <Route path="system/archive" element={
+                <ProtectedRoute
+                  isLoggedIn={isLoggedIn}
+                  currentRole={currentRole}
+                  allowedRoles={[UserRole.SYSTEM_ADMIN]}
+                >
+                  <Archive />
                 </ProtectedRoute>
               } />
 

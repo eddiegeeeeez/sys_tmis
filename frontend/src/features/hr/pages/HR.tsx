@@ -5,11 +5,11 @@ import { Input } from '../../../components/ui/Input';
 import { Badge } from '../../../components/ui/Badge';
 import { StatusDot } from '../../../components/ui/StatusDot';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../../../components/ui/Tabs';
-import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../../components/ui/Table';
+import { ColumnDef } from '@tanstack/react-table';
+import { DataTable } from '../../../components/ui/data-table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../../../components/ui/Dialog';
 import { Label } from '../../../components/ui/Label';
 import { Select } from '../../../components/ui/Select';
-import { Pagination } from '../../../components/ui/Pagination';
 import { Avatar, AvatarFallback } from '../../../components/ui/Avatar';
 import { MOCK_EMPLOYEES, MOCK_PAYROLL, MOCK_ATTENDANCE } from '../../../lib/mockData';
 import { Users, Banknote, Clock, Plus, MoreHorizontal, FileText, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
@@ -18,42 +18,76 @@ import { Employee, PayrollRecord, Attendance } from '../../../types';
 const ITEMS_PER_PAGE = 10;
 
 const EmployeesTab = () => {
-    const [sortConfig, setSortConfig] = useState<{ key: keyof Employee; direction: 'asc' | 'desc' } | null>(null);
     const [isAddEmployeeOpen, setIsAddEmployeeOpen] = useState(false);
-    const [currentPage, setCurrentPage] = useState(1);
 
-    const handleSort = (key: keyof Employee) => {
-        let direction: 'asc' | 'desc' = 'asc';
-        if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
-            direction = 'desc';
+    const columns: ColumnDef<Employee>[] = [
+        {
+            accessorKey: "EmployeeID",
+            header: ({ column }) => (
+                <Button variant="ghost" className="hover:bg-transparent -ml-3 text-xs font-semibold" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
+                    ID <ArrowUpDown className="ml-2 h-4 w-4" />
+                </Button>
+            ),
+            cell: ({ row }) => <span className="font-mono text-xs text-zinc-500 dark:text-zinc-400">{row.getValue("EmployeeID")}</span>
+        },
+        {
+            accessorKey: "FirstName",
+            header: ({ column }) => (
+                <Button variant="ghost" className="hover:bg-transparent -ml-3 text-xs font-semibold" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
+                    Name <ArrowUpDown className="ml-2 h-4 w-4" />
+                </Button>
+            ),
+            cell: ({ row }) => {
+                const emp = row.original;
+                return (
+                    <div className="flex items-center gap-2">
+                        <Avatar className="h-8 w-8">
+                            <AvatarFallback>{emp.FirstName[0]}{emp.LastName[0]}</AvatarFallback>
+                        </Avatar>
+                        <span>{emp.FirstName} {emp.LastName}</span>
+                    </div>
+                );
+            }
+        },
+        {
+            accessorKey: "Position",
+            header: ({ column }) => (
+                <Button variant="ghost" className="hover:bg-transparent -ml-3 text-xs font-semibold" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
+                    Position <ArrowUpDown className="ml-2 h-4 w-4" />
+                </Button>
+            ),
+            cell: ({ row }) => <span className="text-zinc-700 dark:text-zinc-300">{row.getValue("Position")}</span>
+        },
+        {
+            accessorKey: "Department",
+            header: ({ column }) => (
+                <Button variant="ghost" className="hover:bg-transparent -ml-3 text-xs font-semibold" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
+                    Department <ArrowUpDown className="ml-2 h-4 w-4" />
+                </Button>
+            ),
+            cell: ({ row }) => <span className="text-zinc-700 dark:text-zinc-300">{row.getValue("Department")}</span>
+        },
+        {
+            accessorKey: "EmploymentStatus",
+            header: ({ column }) => (
+                <Button variant="ghost" className="hover:bg-transparent -ml-3 text-xs font-semibold" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
+                    Status <ArrowUpDown className="ml-2 h-4 w-4" />
+                </Button>
+            ),
+            cell: ({ row }) => <StatusDot variant="neutral">{row.getValue("EmploymentStatus")}</StatusDot>
+        },
+        {
+            id: "actions",
+            header: () => <div className="text-right text-xs font-semibold pr-2">Actions</div>,
+            cell: () => (
+                <div className="flex justify-end">
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200">
+                        <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                </div>
+            )
         }
-        setSortConfig({ key, direction });
-    };
-
-    const sortedEmployees = useMemo(() => {
-        let data = [...MOCK_EMPLOYEES];
-        if (sortConfig) {
-            data.sort((a, b) => {
-                if (a[sortConfig.key] < b[sortConfig.key]) return sortConfig.direction === 'asc' ? -1 : 1;
-                if (a[sortConfig.key] > b[sortConfig.key]) return sortConfig.direction === 'asc' ? 1 : -1;
-                return 0;
-            });
-        }
-        return data;
-    }, [sortConfig]);
-
-    const totalPages = Math.ceil(sortedEmployees.length / ITEMS_PER_PAGE);
-    const paginatedEmployees = sortedEmployees.slice(
-        (currentPage - 1) * ITEMS_PER_PAGE,
-        currentPage * ITEMS_PER_PAGE
-    );
-
-    const SortIcon = ({ column }: { column: keyof Employee }) => {
-        if (sortConfig?.key !== column) return <ArrowUpDown className="ml-2 h-4 w-4 text-zinc-300 opacity-0 group-hover:opacity-100 transition-opacity" />;
-        return sortConfig.direction === 'asc'
-            ? <ArrowUp className="ml-2 h-4 w-4 text-zinc-900 dark:text-zinc-50" />
-            : <ArrowDown className="ml-2 h-4 w-4 text-zinc-900 dark:text-zinc-50" />;
-    };
+    ];
 
     const handleSaveEmployee = (e: React.FormEvent) => {
         e.preventDefault();
@@ -142,97 +176,84 @@ const EmployeesTab = () => {
                     <Plus className="h-4 w-4 mr-2" /> Add Employee
                 </Button>
             </div>
-            <div className="rounded-md border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900">
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead className="w-[100px] cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-800" onClick={() => handleSort('EmployeeID')}>
-                                <div className="flex items-center">ID <SortIcon column="EmployeeID" /></div>
-                            </TableHead>
-                            <TableHead className="cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-800" onClick={() => handleSort('FirstName')}>
-                                <div className="flex items-center">Name <SortIcon column="FirstName" /></div>
-                            </TableHead>
-                            <TableHead className="cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-800" onClick={() => handleSort('Position')}>
-                                <div className="flex items-center">Position <SortIcon column="Position" /></div>
-                            </TableHead>
-                            <TableHead className="cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-800" onClick={() => handleSort('Department')}>
-                                <div className="flex items-center">Department <SortIcon column="Department" /></div>
-                            </TableHead>
-                            <TableHead className="cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-800" onClick={() => handleSort('EmploymentStatus')}>
-                                <div className="flex items-center">Status <SortIcon column="EmploymentStatus" /></div>
-                            </TableHead>
-                            <TableHead className="text-right">Actions</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {paginatedEmployees.map((emp) => (
-                            <TableRow key={emp.EmployeeID} className="hover:bg-zinc-50 dark:hover:bg-zinc-800/50">
-                                <TableCell className="font-mono text-xs text-zinc-500 dark:text-zinc-400">{emp.EmployeeID}</TableCell>
-                                <TableCell className="font-medium text-zinc-900 dark:text-zinc-100">
-                                    <div className="flex items-center gap-2">
-                                        <Avatar className="h-8 w-8">
-                                            <AvatarFallback>{emp.FirstName[0]}{emp.LastName[0]}</AvatarFallback>
-                                        </Avatar>
-                                        {emp.FirstName} {emp.LastName}
-                                    </div>
-                                </TableCell>
-                                <TableCell className="text-zinc-700 dark:text-zinc-300">{emp.Position}</TableCell>
-                                <TableCell className="text-zinc-700 dark:text-zinc-300">{emp.Department}</TableCell>
-                                <TableCell><StatusDot variant="neutral">{emp.EmploymentStatus}</StatusDot></TableCell>
-                                <TableCell className="text-right">
-                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200"><MoreHorizontal className="h-4 w-4" /></Button>
-                                </TableCell>
-                            </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
-                <Pagination
-                    currentPage={currentPage}
-                    totalPages={totalPages}
-                    onPageChange={setCurrentPage}
-                />
+            <div className="rounded-md border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 overflow-hidden">
+                <DataTable columns={columns} data={MOCK_EMPLOYEES} />
             </div>
         </div>
     );
 };
 
 const PayrollTab = () => {
-    const [sortConfig, setSortConfig] = useState<{ key: keyof PayrollRecord; direction: 'asc' | 'desc' } | null>(null);
     const [isPayrollModalOpen, setIsPayrollModalOpen] = useState(false);
-    const [currentPage, setCurrentPage] = useState(1);
 
-    const handleSort = (key: keyof PayrollRecord) => {
-        let direction: 'asc' | 'desc' = 'asc';
-        if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
-            direction = 'desc';
+    const columns: ColumnDef<PayrollRecord>[] = [
+        {
+            accessorKey: "PayrollID",
+            header: ({ column }) => (
+                <Button variant="ghost" className="hover:bg-transparent -ml-3 text-xs font-semibold" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
+                    Payroll ID <ArrowUpDown className="ml-2 h-4 w-4" />
+                </Button>
+            ),
+            cell: ({ row }) => <span className="font-mono text-xs text-zinc-500 dark:text-zinc-400">{row.getValue("PayrollID")}</span>
+        },
+        {
+            accessorKey: "EmployeeName",
+            header: ({ column }) => (
+                <Button variant="ghost" className="hover:bg-transparent -ml-3 text-xs font-semibold" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
+                    Employee <ArrowUpDown className="ml-2 h-4 w-4" />
+                </Button>
+            ),
+            cell: ({ row }) => <span className="font-medium text-zinc-900 dark:text-zinc-100">{row.getValue("EmployeeName")}</span>
+        },
+        {
+            accessorKey: "BasicSalary",
+            header: ({ column }) => (
+                <Button variant="ghost" className="hover:bg-transparent -ml-3 text-xs font-semibold" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
+                    Basic Salary <ArrowUpDown className="ml-2 h-4 w-4" />
+                </Button>
+            ),
+            cell: ({ row }) => <span className="text-zinc-900 dark:text-zinc-100">${(row.getValue("BasicSalary") as number).toFixed(2)}</span>
+        },
+        {
+            accessorKey: "TotalDeductions",
+            header: ({ column }) => (
+                <Button variant="ghost" className="hover:bg-transparent -ml-3 text-xs font-semibold" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
+                    Deductions <ArrowUpDown className="ml-2 h-4 w-4" />
+                </Button>
+            ),
+            cell: ({ row }) => <span className="text-red-600 dark:text-red-400">-${(row.getValue("TotalDeductions") as number).toFixed(2)}</span>
+        },
+        {
+            accessorKey: "NetPay",
+            header: ({ column }) => (
+                <Button variant="ghost" className="hover:bg-transparent -ml-3 text-xs font-semibold" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
+                    Net Pay <ArrowUpDown className="ml-2 h-4 w-4" />
+                </Button>
+            ),
+            cell: ({ row }) => <span className="font-bold text-emerald-700 dark:text-emerald-400">${(row.getValue("NetPay") as number).toFixed(2)}</span>
+        },
+        {
+            accessorKey: "Status",
+            header: ({ column }) => (
+                <Button variant="ghost" className="hover:bg-transparent -ml-3 text-xs font-semibold" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
+                    Status <ArrowUpDown className="ml-2 h-4 w-4" />
+                </Button>
+            ),
+            cell: ({ row }) => {
+                const status = row.getValue("Status") as string;
+                return <StatusDot variant={status === 'Paid' ? 'success' : 'warning'}>{status}</StatusDot>;
+            }
+        },
+        {
+            id: "actions",
+            header: () => <div className="text-right text-xs font-semibold pr-2">Payslip</div>,
+            cell: () => (
+                <div className="flex justify-end">
+                    <Button variant="outline" size="icon" className="h-8 w-8"><FileText className="h-4 w-4" /></Button>
+                </div>
+            )
         }
-        setSortConfig({ key, direction });
-    };
-
-    const sortedPayroll = useMemo(() => {
-        let data = [...MOCK_PAYROLL];
-        if (sortConfig) {
-            data.sort((a, b) => {
-                if (a[sortConfig.key] < b[sortConfig.key]) return sortConfig.direction === 'asc' ? -1 : 1;
-                if (a[sortConfig.key] > b[sortConfig.key]) return sortConfig.direction === 'asc' ? 1 : -1;
-                return 0;
-            });
-        }
-        return data;
-    }, [sortConfig]);
-
-    const totalPages = Math.ceil(sortedPayroll.length / ITEMS_PER_PAGE);
-    const paginatedPayroll = sortedPayroll.slice(
-        (currentPage - 1) * ITEMS_PER_PAGE,
-        currentPage * ITEMS_PER_PAGE
-    );
-
-    const SortIcon = ({ column }: { column: keyof PayrollRecord }) => {
-        if (sortConfig?.key !== column) return <ArrowUpDown className="ml-2 h-4 w-4 text-zinc-300 opacity-0 group-hover:opacity-100 transition-opacity" />;
-        return sortConfig.direction === 'asc'
-            ? <ArrowUp className="ml-2 h-4 w-4 text-zinc-900 dark:text-zinc-50" />
-            : <ArrowDown className="ml-2 h-4 w-4 text-zinc-900 dark:text-zinc-50" />;
-    };
+    ];
 
     const handleRunPayroll = () => {
         console.log("Running Payroll");
@@ -297,95 +318,64 @@ const PayrollTab = () => {
                     </CardContent>
                 </Card>
             </div>
-            <div className="rounded-md border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900">
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead className="cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-800" onClick={() => handleSort('PayrollID')}>
-                                <div className="flex items-center">Payroll ID <SortIcon column="PayrollID" /></div>
-                            </TableHead>
-                            <TableHead className="cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-800" onClick={() => handleSort('EmployeeName')}>
-                                <div className="flex items-center">Employee <SortIcon column="EmployeeName" /></div>
-                            </TableHead>
-                            <TableHead className="cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-800" onClick={() => handleSort('BasicSalary')}>
-                                <div className="flex items-center">Basic Salary <SortIcon column="BasicSalary" /></div>
-                            </TableHead>
-                            <TableHead className="cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-800" onClick={() => handleSort('TotalDeductions')}>
-                                <div className="flex items-center">Deductions <SortIcon column="TotalDeductions" /></div>
-                            </TableHead>
-                            <TableHead className="cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-800" onClick={() => handleSort('NetPay')}>
-                                <div className="flex items-center">Net Pay <SortIcon column="NetPay" /></div>
-                            </TableHead>
-                            <TableHead className="cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-800" onClick={() => handleSort('Status')}>
-                                <div className="flex items-center">Status <SortIcon column="Status" /></div>
-                            </TableHead>
-                            <TableHead className="text-right">Payslip</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {paginatedPayroll.map((pay) => (
-                            <TableRow key={pay.PayrollID} className="hover:bg-zinc-50 dark:hover:bg-zinc-800/50">
-                                <TableCell className="font-mono text-xs text-zinc-500 dark:text-zinc-400">{pay.PayrollID}</TableCell>
-                                <TableCell className="font-medium text-zinc-900 dark:text-zinc-100">{pay.EmployeeName}</TableCell>
-                                <TableCell className="text-zinc-900 dark:text-zinc-100">${pay.BasicSalary.toFixed(2)}</TableCell>
-                                <TableCell className="text-red-600 dark:text-red-400">-${pay.TotalDeductions.toFixed(2)}</TableCell>
-                                <TableCell className="font-bold text-emerald-700 dark:text-emerald-400">${pay.NetPay.toFixed(2)}</TableCell>
-                                <TableCell>
-                                    <StatusDot variant={pay.Status === 'Paid' ? 'success' : 'warning'}>{pay.Status}</StatusDot>
-                                </TableCell>
-                                <TableCell className="text-right">
-                                    <Button variant="outline" size="icon" className="h-8 w-8"><FileText className="h-4 w-4" /></Button>
-                                </TableCell>
-                            </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
-                <Pagination
-                    currentPage={currentPage}
-                    totalPages={totalPages}
-                    onPageChange={setCurrentPage}
-                />
+            <div className="rounded-md border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 overflow-hidden">
+                <DataTable columns={columns} data={MOCK_PAYROLL} />
             </div>
         </div>
     );
 };
 
 const AttendanceTab = () => {
-    const [sortConfig, setSortConfig] = useState<{ key: keyof Attendance; direction: 'asc' | 'desc' } | null>(null);
-    const [currentPage, setCurrentPage] = useState(1);
-
-    const handleSort = (key: keyof Attendance) => {
-        let direction: 'asc' | 'desc' = 'asc';
-        if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
-            direction = 'desc';
+    const columns: ColumnDef<Attendance>[] = [
+        {
+            accessorKey: "EmployeeName",
+            header: ({ column }) => (
+                <Button variant="ghost" className="hover:bg-transparent -ml-3 text-xs font-semibold" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
+                    Employee <ArrowUpDown className="ml-2 h-4 w-4" />
+                </Button>
+            ),
+            cell: ({ row }) => <span className="font-medium text-zinc-900 dark:text-zinc-100">{row.getValue("EmployeeName")}</span>
+        },
+        {
+            accessorKey: "Date",
+            header: ({ column }) => (
+                <Button variant="ghost" className="hover:bg-transparent -ml-3 text-xs font-semibold" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
+                    Date <ArrowUpDown className="ml-2 h-4 w-4" />
+                </Button>
+            ),
+            cell: ({ row }) => <span className="text-zinc-700 dark:text-zinc-300">{row.getValue("Date")}</span>
+        },
+        {
+            accessorKey: "TimeIn",
+            header: ({ column }) => (
+                <Button variant="ghost" className="hover:bg-transparent -ml-3 text-xs font-semibold" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
+                    Time In <ArrowUpDown className="ml-2 h-4 w-4" />
+                </Button>
+            ),
+            cell: ({ row }) => <span className="text-emerald-600 dark:text-emerald-400">{row.getValue("TimeIn")}</span>
+        },
+        {
+            accessorKey: "TimeOut",
+            header: ({ column }) => (
+                <Button variant="ghost" className="hover:bg-transparent -ml-3 text-xs font-semibold" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
+                    Time Out <ArrowUpDown className="ml-2 h-4 w-4" />
+                </Button>
+            ),
+            cell: ({ row }) => <span className="text-zinc-500 dark:text-zinc-400">{row.getValue("TimeOut")}</span>
+        },
+        {
+            accessorKey: "Status",
+            header: ({ column }) => (
+                <Button variant="ghost" className="hover:bg-transparent -ml-3 text-xs font-semibold" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
+                    Status <ArrowUpDown className="ml-2 h-4 w-4" />
+                </Button>
+            ),
+            cell: ({ row }) => {
+                const status = row.getValue("Status") as string;
+                return <StatusDot variant={status === 'Present' ? 'success' : status === 'Late' ? 'warning' : 'neutral'}>{status}</StatusDot>;
+            }
         }
-        setSortConfig({ key, direction });
-    };
-
-    const sortedAttendance = useMemo(() => {
-        let data = [...MOCK_ATTENDANCE];
-        if (sortConfig) {
-            data.sort((a, b) => {
-                if (a[sortConfig.key] < b[sortConfig.key]) return sortConfig.direction === 'asc' ? -1 : 1;
-                if (a[sortConfig.key] > b[sortConfig.key]) return sortConfig.direction === 'asc' ? 1 : -1;
-                return 0;
-            });
-        }
-        return data;
-    }, [sortConfig]);
-
-    const totalPages = Math.ceil(sortedAttendance.length / ITEMS_PER_PAGE);
-    const paginatedAttendance = sortedAttendance.slice(
-        (currentPage - 1) * ITEMS_PER_PAGE,
-        currentPage * ITEMS_PER_PAGE
-    );
-
-    const SortIcon = ({ column }: { column: keyof Attendance }) => {
-        if (sortConfig?.key !== column) return <ArrowUpDown className="ml-2 h-4 w-4 text-zinc-300 opacity-0 group-hover:opacity-100 transition-opacity" />;
-        return sortConfig.direction === 'asc'
-            ? <ArrowUp className="ml-2 h-4 w-4 text-zinc-900 dark:text-zinc-50" />
-            : <ArrowDown className="ml-2 h-4 w-4 text-zinc-900 dark:text-zinc-50" />;
-    };
+    ];
 
     return (
         <div className="space-y-4">
@@ -393,48 +383,8 @@ const AttendanceTab = () => {
                 <h3 className="text-lg font-medium tracking-tight text-zinc-900 dark:text-zinc-50">Daily Attendance Log</h3>
                 <div className="text-sm text-zinc-500 bg-white dark:bg-zinc-900 border dark:border-zinc-800 px-3 py-1 rounded">Date: Today</div>
             </div>
-            <div className="rounded-md border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900">
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead className="cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-800" onClick={() => handleSort('EmployeeName')}>
-                                <div className="flex items-center">Employee <SortIcon column="EmployeeName" /></div>
-                            </TableHead>
-                            <TableHead className="cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-800" onClick={() => handleSort('Date')}>
-                                <div className="flex items-center">Date <SortIcon column="Date" /></div>
-                            </TableHead>
-                            <TableHead className="cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-800" onClick={() => handleSort('TimeIn')}>
-                                <div className="flex items-center">Time In <SortIcon column="TimeIn" /></div>
-                            </TableHead>
-                            <TableHead className="cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-800" onClick={() => handleSort('TimeOut')}>
-                                <div className="flex items-center">Time Out <SortIcon column="TimeOut" /></div>
-                            </TableHead>
-                            <TableHead className="cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-800" onClick={() => handleSort('Status')}>
-                                <div className="flex items-center">Status <SortIcon column="Status" /></div>
-                            </TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {paginatedAttendance.map((att) => (
-                            <TableRow key={att.AttendanceID} className="hover:bg-zinc-50 dark:hover:bg-zinc-800/50">
-                                <TableCell className="font-medium text-zinc-900 dark:text-zinc-100">{att.EmployeeName}</TableCell>
-                                <TableCell className="text-zinc-700 dark:text-zinc-300">{att.Date}</TableCell>
-                                <TableCell className="text-emerald-600 dark:text-emerald-400">{att.TimeIn}</TableCell>
-                                <TableCell className="text-zinc-500 dark:text-zinc-400">{att.TimeOut}</TableCell>
-                                <TableCell>
-                                    <StatusDot variant={att.Status === 'Present' ? 'success' : att.Status === 'Late' ? 'warning' : 'neutral'}>
-                                        {att.Status}
-                                    </StatusDot>
-                                </TableCell>
-                            </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
-                <Pagination
-                    currentPage={currentPage}
-                    totalPages={totalPages}
-                    onPageChange={setCurrentPage}
-                />
+            <div className="rounded-md border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 overflow-hidden">
+                <DataTable columns={columns} data={MOCK_ATTENDANCE} />
             </div>
         </div>
     );

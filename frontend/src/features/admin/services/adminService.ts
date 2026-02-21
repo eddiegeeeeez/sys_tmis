@@ -18,8 +18,8 @@ export interface ApiResponse<T = any> {
 
 export const adminService = {
     // User Management
-    getUsers: (page = 1, pageSize = 10, search = '', role = '') =>
-        api.get<ApiResponse<PaginatedResponse<User>>>('/users/list', { params: { page, pageSize, search, role } }),
+    getUsers: (page = 1, pageSize = 10, search = '', role = '', isArchived?: boolean) =>
+        api.get<ApiResponse<PaginatedResponse<User>>>('/users/list', { params: { page, pageSize, search, role, isArchived } }),
 
     getUser: (id: string | number) =>
         api.get<ApiResponse<User>>(`/users/${id}`),
@@ -40,8 +40,8 @@ export const adminService = {
         api.post<ApiResponse<boolean>>(`/users/${id}/reset-password`, data),
 
     // Role Management
-    getRoles: () =>
-        api.get<ApiResponse<Role[]>>('/roles'),
+    getRoles: (isArchived?: boolean) =>
+        api.get<ApiResponse<Role[]>>('/roles', { params: { isArchived } }),
 
     getRole: (id: string | number) =>
         api.get<ApiResponse<Role>>(`/roles/${id}`),

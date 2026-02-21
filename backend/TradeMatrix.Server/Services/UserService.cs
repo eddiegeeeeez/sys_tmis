@@ -21,9 +21,14 @@ namespace TradeMatrix.Server.Services
             _logger = logger;
         }
 
-        public async Task<PaginatedResponse<UserDto>> GetUsersAsync(int page, int pageSize, string? search, string? role)
+        public async Task<PaginatedResponse<UserDto>> GetUsersAsync(int page, int pageSize, string? search, string? role, bool? isArchived = false)
         {
             var query = _context.Users.AsQueryable();
+
+            if (isArchived.HasValue)
+            {
+                query = query.Where(u => u.IsArchived == isArchived.Value);
+            }
 
             if (!string.IsNullOrEmpty(search))
             {

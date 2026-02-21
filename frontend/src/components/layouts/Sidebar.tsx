@@ -4,7 +4,7 @@ import { UserRole } from '../../types';
 import {
   LayoutDashboard, ShoppingCart, Package, Users, LogOut,
   CircuitBoard, Shield, Settings, Database, Lock,
-  Briefcase, Truck, Wallet, UserSquare2
+  Briefcase, Truck, Wallet, UserSquare2, ArchiveRestore
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '../ui/Avatar';
 import { cn } from '../../lib/utils';
@@ -34,6 +34,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentRole }) => {
               { id: 'admin/users', label: 'User Management', icon: Users },
               { id: 'admin/roles', label: 'Role Management', icon: Shield },
               { id: 'admin/security', label: 'Audit Logs', icon: Lock },
+              { id: 'admin/archive', label: 'Archive', icon: ArchiveRestore },
             ]
           }
         ];
@@ -46,6 +47,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentRole }) => {
               { id: 'system/users', label: 'User Management', icon: Users },
               { id: 'system/roles', label: 'Role Management', icon: Shield },
               { id: 'system/security', label: 'Audit Logs', icon: Lock },
+              { id: 'system/archive', label: 'Archive', icon: ArchiveRestore },
             ]
           }
         ];

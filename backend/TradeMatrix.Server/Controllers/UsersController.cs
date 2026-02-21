@@ -29,11 +29,12 @@ namespace TradeMatrix.Server.Controllers
             [FromQuery] int page = 1, 
             [FromQuery] int pageSize = 10, 
             [FromQuery] string? search = null, 
-            [FromQuery] string? role = null)
+            [FromQuery] string? role = null,
+            [FromQuery] bool? isArchived = false)
         {
             try
             {
-                var result = await _userService.GetUsersAsync(page, pageSize, search, role);
+                var result = await _userService.GetUsersAsync(page, pageSize, search, role, isArchived);
                 return Ok(ApiResponse<PaginatedResponse<UserDto>>.SuccessResponse(result));
             }
             catch (Exception ex)

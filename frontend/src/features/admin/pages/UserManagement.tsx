@@ -2,20 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '../../../components/ui/Button';
 import { Badge } from '../../../components/ui/Badge';
 import { Input } from '../../../components/ui/Input';
-import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../../components/ui/Table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../../../components/ui/Dialog';
 import { Label } from '../../../components/ui/Label';
-import { Select } from '../../../components/ui/Select';
-import { Pagination } from '../../../components/ui/Pagination';
-import { User, MoreHorizontal, ArrowUpDown, ArrowUp, ArrowDown, Search, Edit, Trash2, Archive, UserCheck, UserPlus } from 'lucide-react';
+import { User, ArrowUpDown, Search, Edit, Trash2, Archive, UserPlus } from 'lucide-react';
 import { User as UserType, Role } from '../../../types';
 import { Skeleton } from '../../../components/ui/Skeleton';
 import { adminService } from '../services/adminService';
 import { StatusDot } from '../../../components/ui/StatusDot';
-import { useSort } from '../../../hooks/useSort';
 import { AuthConfirmationModal } from '../../../components/common/AuthConfirmationModal';
-
-const ITEMS_PER_PAGE = 10;
+import { ColumnDef } from '@tanstack/react-table';
+import { DataTable } from '../../../components/ui/data-table';
 
 export const UserManagement: React.FC = () => {
   // 1. Core State
@@ -54,12 +50,8 @@ export const UserManagement: React.FC = () => {
     });
   }, [users, searchTerm, currentUserRole]);
 
-  // 3. Pagination & Sorting Hooks
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [totalUsers, setTotalUsers] = useState(0);
+  // 3. Removed manual pagination & sorting hooks
 
-  const { items: sortedUsers, requestSort, sortConfig } = useSort(filteredUsers);
 
   // 4. Feature States (Create/Edit/Delete)
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
@@ -84,7 +76,7 @@ export const UserManagement: React.FC = () => {
 
   useEffect(() => {
     fetchUsers();
-  }, [currentPage, searchTerm]); // Re-fetch when page or search changes
+  }, [searchTerm]); // Re-fetch when search changes
 
   const fetchRoles = async () => {
     try {
@@ -112,13 +104,11 @@ export const UserManagement: React.FC = () => {
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      // Using the 'list' endpoint which supports pagination and search via service
-      const response = await adminService.getUsers(currentPage, ITEMS_PER_PAGE, searchTerm);
+      // Fetch maximum items to allow standard client-side pagination via DataTable
+      const response = await adminService.getUsers(1, 1000, searchTerm);
       const paginatedData = response.data.data;
 
       setUsers(paginatedData?.data || []);
-      setTotalPages(paginatedData?.pages || 1);
-      setTotalUsers(paginatedData?.total || 0);
     } catch (error) {
       console.error('Error fetching users:', error);
     } finally {
@@ -201,17 +191,114 @@ export const UserManagement: React.FC = () => {
     }
   };
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    setCurrentPage(1); // Reset to first page on search
-    fetchUsers();
-  };
-
-  const getSortIcon = (key: string) => {
-    if (sortConfig.key !== key) return <ArrowUpDown className="ml-2 h-4 w-4" />;
-    if (sortConfig.order === 'asc') return <ArrowUp className="ml-2 h-4 w-4" />;
-    return <ArrowDown className="ml-2 h-4 w-4" />;
-  };
+  const columns: ColumnDef<UserType>[] = [
+    {
+      accessorKey: "name",
+      header: ({ column }) => {
+        return (
+          <Button
+            variant="ghost"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+            className="-ml-3 hover:bg-transparent text-xs font-semibold"
+          >
+            Name
+            <ArrowUpDown className="ml-2 h-4 w-4" />
+          </Button>
+        )
+      },
+      cell: ({ row }) => <span className="font-medium text-zinc-900 dark:text-zinc-100">{row.getValue("name")}</span>
+    },
+    {
+      accessorKey: "email",
+      header: ({ column }) => {
+        return (
+          <Button
+            variant="ghost"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+            className="-ml-3 hover:bg-transparent text-xs font-semibold"
+          >
+            Email
+            <ArrowUpDown className="ml-2 h-4 w-4" />
+          </Button>
+        )
+      },
+      cell: ({ row }) => <span className="text-zinc-500 dark:text-zinc-400">{row.getValue("email")}</span>
+    },
+    {
+      accessorKey: "role",
+      header: ({ column }) => {
+        return (
+          <Button
+            variant="ghost"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+            className="-ml-3 hover:bg-transparent text-xs font-semibold"
+          >
+            Role
+            <ArrowUpDown className="ml-2 h-4 w-4" />
+          </Button>
+        )
+      },
+      cell: ({ row }) => (
+        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-700/10 dark:bg-blue-400/10 dark:text-blue-400 dark:ring-blue-400/30">
+          {row.getValue("role")}
+        </span>
+      ),
+    },
+    {
+      id: "status",
+      accessorFn: (row) => row.isArchived ? "Archived" : (row.status === 'Active' || row.isActive ? 'Active' : 'Inactive'),
+      header: ({ column }) => {
+        return (
+          <Button
+            variant="ghost"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+            className="-ml-3 hover:bg-transparent text-xs font-semibold"
+          >
+            Status
+            <ArrowUpDown className="ml-2 h-4 w-4" />
+          </Button>
+        )
+      },
+      cell: ({ row }) => {
+        const user = row.original;
+        const status = user.status || (user.isActive ? 'Active' : 'Inactive');
+        return (
+          <StatusDot variant={user.isArchived ? 'neutral' : ((status === 'Active' || user.isActive) ? 'success' : 'neutral')}>
+            {user.isArchived ? 'Archived' : ((status === 'Active' || user.isActive) ? 'Active' : 'Inactive')}
+          </StatusDot>
+        );
+      },
+    },
+    {
+      id: "actions",
+      header: () => <div className="text-right text-xs font-semibold pr-2">Actions</div>,
+      cell: ({ row }) => {
+        const user = row.original;
+        if (currentUserRole !== 'SuperAdmin' && (user.role === 'SuperAdmin' || user.role === 'SystemAdmin')) {
+          return <div className="flex justify-end"><span className="text-xs text-zinc-400 italic px-2">Protected</span></div>;
+        }
+        return (
+          <div className="flex justify-end gap-1">
+            <Button variant="ghost" size="icon" className="h-8 w-8 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200" title="Edit User" onClick={() => { setEditingUser(user); setIsEditUserOpen(true); }}>
+              <Edit className="h-4 w-4" />
+            </Button>
+            {user.isArchived ? (
+              <Button variant="ghost" size="icon" className="h-8 w-8 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50" title="Restore User" onClick={() => handleRestoreUser(user)}>
+                <UserPlus className="h-4 w-4" />
+              </Button>
+            ) : (
+              <Button variant="ghost" size="icon" className="h-8 w-8 text-zinc-400 hover:text-amber-600 hover:bg-amber-50" title="Archive User" onClick={() => handleArchiveUser(user)}>
+                <Archive className="h-4 w-4" />
+              </Button>
+            )}
+            <Button variant="ghost" size="icon" className="h-8 w-8 text-zinc-400 hover:text-red-600 dark:hover:text-red-400" title="Delete User" onClick={() => { setUserToDelete(user); setIsDeleteModalOpen(true); }}>
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
+        );
+      },
+    }
+  ];
 
   return (
     <div className="space-y-6">
@@ -368,102 +455,21 @@ export const UserManagement: React.FC = () => {
         </div>
       </div>
 
-      <div className="rounded-md border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>
-                <Button variant="ghost" size="sm" onClick={() => requestSort('name')} className="-ml-3 hover:bg-transparent">
-                  Name {getSortIcon('name')}
-                </Button>
-              </TableHead>
-              <TableHead>
-                <Button variant="ghost" size="sm" onClick={() => requestSort('email')} className="-ml-3 hover:bg-transparent">
-                  Email {getSortIcon('email')}
-                </Button>
-              </TableHead>
-              <TableHead>
-                <Button variant="ghost" size="sm" onClick={() => requestSort('role')} className="-ml-3 hover:bg-transparent">
-                  Role {getSortIcon('role')}
-                </Button>
-              </TableHead>
-              <TableHead>
-                <Button variant="ghost" size="sm" onClick={() => requestSort('isActive')} className="-ml-3 hover:bg-transparent">
-                  Status {getSortIcon('isActive')}
-                </Button>
-              </TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {loading ? (
-              Array.from({ length: 5 }).map((_, i) => (
-                <TableRow key={i}>
-                  <TableCell><Skeleton className="h-5 w-32" /></TableCell>
-                  <TableCell><Skeleton className="h-5 w-48" /></TableCell>
-                  <TableCell><Skeleton className="h-5 w-24" /></TableCell>
-                  <TableCell><Skeleton className="h-5 w-20" /></TableCell>
-                  <TableCell className="text-right"><Skeleton className="h-8 w-8 ml-auto rounded-full" /></TableCell>
-                </TableRow>
-              ))
-            ) : sortedUsers.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={5} className="text-center py-8 text-zinc-500">No users found.</TableCell>
-              </TableRow>
-            ) : (
-              sortedUsers.map((user) => (
-                <TableRow key={user.id} className="hover:bg-zinc-50 dark:hover:bg-zinc-800/50">
-                  <TableCell className="font-medium text-zinc-900 dark:text-zinc-100">{user.name}</TableCell>
-                  <TableCell className="text-zinc-500 dark:text-zinc-400">{user.email}</TableCell>
-                  <TableCell>
-                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-700/10 dark:bg-blue-400/10 dark:text-blue-400 dark:ring-blue-400/30">
-                      {user.role}
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    <StatusDot variant={user.isArchived ? 'neutral' : (user.status === 'Active' || user.isActive ? 'success' : 'neutral')}>
-                      {user.isArchived ? 'Archived' : (user.status === 'Active' || user.isActive ? 'Active' : 'Inactive')}
-                    </StatusDot>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-1">
-                      {/* Only show actions if current user is SuperAdmin OR if target is not SuperAdmin/Admin */}
-                      {(currentUserRole === 'SuperAdmin' || (user.role !== 'SuperAdmin' && user.role !== 'SystemAdmin')) ? (
-                        <>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200" title="Edit User" onClick={() => { setEditingUser(user); setIsEditUserOpen(true); }}>
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          {user.isArchived ? (
-                            <Button variant="ghost" size="icon" className="h-8 w-8 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50" title="Restore User" onClick={() => handleRestoreUser(user)}>
-                              <UserPlus className="h-4 w-4" />
-                            </Button>
-                          ) : (
-                            <Button variant="ghost" size="icon" className="h-8 w-8 text-zinc-400 hover:text-amber-600 hover:bg-amber-50" title="Archive User" onClick={() => handleArchiveUser(user)}>
-                              <Archive className="h-4 w-4" />
-                            </Button>
-                          )}
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-zinc-400 hover:text-red-600 dark:hover:text-red-400" title="Delete User" onClick={() => { setUserToDelete(user); setIsDeleteModalOpen(true); }}>
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </>
-                      ) : (
-                        <span className="text-xs text-zinc-400 italic px-2">Protected</span>
-                      )}
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-        {!loading && users.length > 0 && (
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={setCurrentPage}
-          />
-        )}
-      </div>
+      {loading ? (
+        <div className="space-y-4 flex flex-col flex-1 min-h-0">
+          <div className="rounded-md border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 overflow-hidden flex flex-col flex-1">
+            <div className="p-4 space-y-4">
+              <Skeleton className="h-8 w-full" />
+              <Skeleton className="h-8 w-full" />
+              <Skeleton className="h-8 w-full" />
+              <Skeleton className="h-8 w-full" />
+              <Skeleton className="h-8 w-full" />
+            </div>
+          </div>
+        </div>
+      ) : (
+        <DataTable columns={columns} data={filteredUsers} />
+      )}
     </div>
   );
 };

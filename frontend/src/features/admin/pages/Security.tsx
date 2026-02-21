@@ -3,7 +3,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui
 import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
 import { Badge } from '../../../components/ui/Badge';
-import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../../components/ui/Table';
 import { Select } from '../../../components/ui/Select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../../../components/ui/Dialog';
 import {
@@ -16,7 +15,8 @@ import { StatusDot } from '../../../components/ui/StatusDot';
 import { adminService } from '../services/adminService';
 import { useSort } from '../../../hooks/useSort';
 import { ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
-import { Pagination } from '../../../components/ui/Pagination';
+import { ColumnDef } from '@tanstack/react-table';
+import { DataTable } from '../../../components/ui/data-table';
 
 export const Security: React.FC = () => {
     const [searchTerm, setSearchTerm] = useState('');
@@ -25,8 +25,6 @@ export const Security: React.FC = () => {
     const [isDetailsOpen, setIsDetailsOpen] = useState(false);
     const [logs, setLogs] = useState<LogEntry[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [currentPage, setCurrentPage] = useState(1);
-    const itemsPerPage = 10;
 
     const { items: sortedLogs, requestSort, sortConfig } = useSort(logs, 'timestamp', 'desc');
 
@@ -64,13 +62,6 @@ export const Security: React.FC = () => {
         });
     }, [sortedLogs, searchTerm, statusFilter]);
 
-    const totalPages = Math.max(1, Math.ceil(filteredLogs.length / itemsPerPage));
-    const paginatedLogs = filteredLogs.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
-
-    useEffect(() => {
-        setCurrentPage(1);
-    }, [searchTerm, statusFilter]);
-
     const getSortIcon = (key: string) => {
         if (sortConfig.key !== key) return <ArrowUpDown className="ml-2 h-4 w-4" />;
         if (sortConfig.order === 'asc') return <ArrowUp className="ml-2 h-4 w-4" />;
@@ -100,6 +91,125 @@ export const Security: React.FC = () => {
             default: return 'text-zinc-500 dark:text-zinc-400';
         }
     };
+
+    const columns: ColumnDef<LogEntry>[] = [
+        {
+            accessorKey: "timestamp",
+            header: ({ column }) => {
+                return (
+                    <Button
+                        variant="ghost"
+                        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+                        className="-ml-3 hover:bg-transparent text-xs font-semibold"
+                    >
+                        Timestamp
+                        <ArrowUpDown className="ml-2 h-4 w-4" />
+                    </Button>
+                )
+            },
+            cell: ({ row }) => {
+                const date = new Date(row.getValue("timestamp") as Date);
+                return (
+                    <span className="font-mono text-xs text-zinc-500 dark:text-zinc-400 whitespace-nowrap">
+                        {date.toLocaleString(undefined, {
+                            month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit'
+                        })}
+                    </span>
+                );
+            }
+        },
+        {
+            id: "actor",
+            accessorFn: (row) => row.actor.name,
+            header: ({ column }) => {
+                return (
+                    <Button
+                        variant="ghost"
+                        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+                        className="-ml-3 hover:bg-transparent text-xs font-semibold"
+                    >
+                        Actor
+                        <ArrowUpDown className="ml-2 h-4 w-4" />
+                    </Button>
+                )
+            },
+            cell: ({ row }) => {
+                const log = row.original;
+                return (
+                    <div className="flex flex-col mt-1">
+                        <span className="font-medium text-sm text-zinc-900 dark:text-zinc-100">{log.actor.name}</span>
+                        <span className="text-xs text-zinc-400">{log.actor.email}</span>
+                    </div>
+                );
+            }
+        },
+        {
+            id: "event",
+            accessorFn: (row) => row.event,
+            header: ({ column }) => {
+                return (
+                    <Button
+                        variant="ghost"
+                        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+                        className="-ml-3 hover:bg-transparent text-xs font-semibold"
+                    >
+                        Event / Resource
+                        <ArrowUpDown className="ml-2 h-4 w-4" />
+                    </Button>
+                )
+            },
+            cell: ({ row }) => {
+                const log = row.original;
+                return (
+                    <div className="flex flex-col items-start mt-1">
+                        <span className="font-mono text-xs font-semibold text-zinc-700 dark:text-zinc-300 bg-zinc-100 dark:bg-zinc-800 w-fit px-1.5 py-0.5 rounded border border-zinc-200 dark:border-zinc-700 mb-1">{log.event}</span>
+                        <span className="text-xs text-zinc-500 dark:text-zinc-400 truncate max-w-[200px]" title={log.resource}>{log.resource}</span>
+                    </div>
+                );
+            }
+        },
+        {
+            id: "ip",
+            accessorFn: (row) => row.actor.ip,
+            header: () => <div className="text-xs font-semibold text-zinc-500 dark:text-zinc-400">IP Address</div>,
+            cell: ({ row }) => <span className="font-mono text-xs text-zinc-500 dark:text-zinc-400">{row.original.actor.ip}</span>
+        },
+        {
+            accessorKey: "status",
+            header: ({ column }) => {
+                return (
+                    <Button
+                        variant="ghost"
+                        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+                        className="-ml-3 hover:bg-transparent text-xs font-semibold"
+                    >
+                        Status
+                        <ArrowUpDown className="ml-2 h-4 w-4" />
+                    </Button>
+                )
+            },
+            cell: ({ row }) => getStatusBadge(row.getValue("status"))
+        },
+        {
+            accessorKey: "severity",
+            header: () => <div className="text-xs font-semibold text-zinc-500 dark:text-zinc-400">Severity</div>,
+            cell: ({ row }) => <span className={`text-xs ${getSeverityColor(row.getValue("severity"))}`}>{row.getValue("severity")}</span>
+        },
+        {
+            id: "actions",
+            header: () => <div className="text-right text-xs font-semibold pr-2">Actions</div>,
+            cell: ({ row }) => {
+                const log = row.original;
+                return (
+                    <div className="flex justify-end mt-0.5">
+                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-50" onClick={() => handleViewDetails(log)}>
+                            <Eye className="h-4 w-4" />
+                        </Button>
+                    </div>
+                );
+            }
+        }
+    ];
 
     return (
         <div className="space-y-6 h-[calc(100vh-100px)] flex flex-col">
@@ -233,104 +343,19 @@ export const Security: React.FC = () => {
                 </Card>
 
                 {/* Data Table */}
-                <div className="flex-1 rounded-md border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 overflow-hidden flex flex-col">
-                    <div className="overflow-auto flex-1">
-                        <Table>
-                            <TableHeader className="bg-zinc-50 dark:bg-zinc-800/50 sticky top-0 z-10">
-                                <TableRow>
-                                    <TableHead className="w-[180px]">
-                                        <Button variant="ghost" size="sm" onClick={() => requestSort('timestamp')} className="-ml-3 hover:bg-transparent">
-                                            Timestamp {getSortIcon('timestamp')}
-                                        </Button>
-                                    </TableHead>
-                                    <TableHead>
-                                        <Button variant="ghost" size="sm" onClick={() => requestSort('actor.name')} className="-ml-3 hover:bg-transparent">
-                                            Actor {getSortIcon('actor.name')}
-                                        </Button>
-                                    </TableHead>
-                                    <TableHead>
-                                        <Button variant="ghost" size="sm" onClick={() => requestSort('event')} className="-ml-3 hover:bg-transparent">
-                                            Event / Resource {getSortIcon('event')}
-                                        </Button>
-                                    </TableHead>
-                                    <TableHead className="w-[140px]">IP Address</TableHead>
-                                    <TableHead className="w-[100px]">
-                                        <Button variant="ghost" size="sm" onClick={() => requestSort('status')} className="-ml-3 hover:bg-transparent">
-                                            Status {getSortIcon('status')}
-                                        </Button>
-                                    </TableHead>
-                                    <TableHead className="w-[80px]">Severity</TableHead>
-                                    <TableHead className="w-[80px] text-right">Actions</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {isLoading ? (
-                                    Array.from({ length: 10 }).map((_, i) => (
-                                        <TableRow key={i}>
-                                            <TableCell><Skeleton className="h-4 w-32" /></TableCell>
-                                            <TableCell><Skeleton className="h-10 w-40" /></TableCell>
-                                            <TableCell><Skeleton className="h-10 w-full" /></TableCell>
-                                            <TableCell><Skeleton className="h-4 w-24" /></TableCell>
-                                            <TableCell><Skeleton className="h-5 w-16" /></TableCell>
-                                            <TableCell><Skeleton className="h-4 w-12" /></TableCell>
-                                            <TableCell className="text-right"><Skeleton className="h-8 w-8 ml-auto rounded-md" /></TableCell>
-                                        </TableRow>
-                                    ))
-                                ) : paginatedLogs.map((log) => (
-                                    <TableRow key={log.id} className="group cursor-default hover:bg-zinc-50/80 dark:hover:bg-zinc-800/50">
-                                        <TableCell className="font-mono text-xs text-zinc-500 dark:text-zinc-400 whitespace-nowrap">
-                                            {new Date(log.timestamp).toLocaleString(undefined, {
-                                                month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit'
-                                            })}
-                                        </TableCell>
-                                        <TableCell>
-                                            <div className="flex flex-col">
-                                                <span className="font-medium text-sm text-zinc-900 dark:text-zinc-100">{log.actor.name}</span>
-                                                <span className="text-xs text-zinc-400">{log.actor.email}</span>
-                                            </div>
-                                        </TableCell>
-                                        <TableCell>
-                                            <div className="flex flex-col">
-                                                <span className="font-mono text-xs font-semibold text-zinc-700 dark:text-zinc-300 bg-zinc-100 dark:bg-zinc-800 w-fit px-1.5 py-0.5 rounded border border-zinc-200 dark:border-zinc-700 mb-1">{log.event}</span>
-                                                <span className="text-xs text-zinc-500 dark:text-zinc-400 truncate max-w-[200px]" title={log.resource}>{log.resource}</span>
-                                            </div>
-                                        </TableCell>
-                                        <TableCell className="font-mono text-xs text-zinc-500 dark:text-zinc-400">
-                                            {log.actor.ip}
-                                        </TableCell>
-                                        <TableCell>
-                                            {getStatusBadge(log.status)}
-                                        </TableCell>
-                                        <TableCell>
-                                            <span className={`text-xs ${getSeverityColor(log.severity)}`}>{log.severity}</span>
-                                        </TableCell>
-                                        <TableCell className="text-right">
-                                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-zinc-100 dark:hover:bg-zinc-700" onClick={() => handleViewDetails(log)}>
-                                                <Eye className="h-4 w-4 text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-50" />
-                                            </Button>
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
-                                {filteredLogs.length === 0 && (
-                                    <TableRow>
-                                        <TableCell colSpan={7} className="text-center py-10 text-zinc-500 dark:text-zinc-400">
-                                            No audit logs found matching your criteria.
-                                        </TableCell>
-                                    </TableRow>
-                                )}
-                            </TableBody>
-                        </Table>
+                {isLoading ? (
+                    <div className="flex-1 rounded-md border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 overflow-hidden flex flex-col p-4 space-y-4">
+                        <Skeleton className="h-8 w-full" />
+                        <Skeleton className="h-8 w-full" />
+                        <Skeleton className="h-8 w-full" />
+                        <Skeleton className="h-8 w-full" />
+                        <Skeleton className="h-8 w-full" />
                     </div>
-                    {!isLoading && filteredLogs.length > 0 && (
-                        <div className="border-t border-zinc-200 dark:border-zinc-800">
-                            <Pagination
-                                currentPage={currentPage}
-                                totalPages={totalPages}
-                                onPageChange={setCurrentPage}
-                            />
-                        </div>
-                    )}
-                </div>
+                ) : (
+                    <div className="flex-1 overflow-hidden flex flex-col min-h-0">
+                        <DataTable columns={columns} data={filteredLogs} />
+                    </div>
+                )}
             </div>
         </div>
     );

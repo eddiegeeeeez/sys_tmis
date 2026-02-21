@@ -16,9 +16,16 @@ namespace TradeMatrix.Server.Services
             _logger = logger;
         }
 
-        public async Task<IEnumerable<RoleDto>> GetRolesAsync()
+        public async Task<IEnumerable<RoleDto>> GetRolesAsync(bool? isArchived = false)
         {
-            return await _context.Roles
+            var query = _context.Roles.AsQueryable();
+
+            if (isArchived.HasValue)
+            {
+                query = query.Where(r => r.IsArchived == isArchived.Value);
+            }
+
+            return await query
                 .Select(r => new RoleDto
                 {
                     Id = r.Id,

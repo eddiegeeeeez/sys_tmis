@@ -5,11 +5,11 @@ import { Badge } from '../../../components/ui/Badge';
 import { StatusDot } from '../../../components/ui/StatusDot';
 import { Input } from '../../../components/ui/Input';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../../../components/ui/Tabs';
-import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../../components/ui/Table';
+import { ColumnDef } from '@tanstack/react-table';
+import { DataTable } from '../../../components/ui/data-table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../../../components/ui/Dialog';
 import { Label } from '../../../components/ui/Label';
 import { Select } from '../../../components/ui/Select';
-import { Pagination } from '../../../components/ui/Pagination';
 import { MOCK_SUPPLIERS, MOCK_PO } from '../../../lib/mockData';
 import { Truck, PackagePlus, Plus, Phone, Mail, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import { PurchaseOrder } from '../../../types';
@@ -18,43 +18,68 @@ import { UserSquare2 } from 'lucide-react';
 const ITEMS_PER_PAGE = 10;
 
 export const Procurement: React.FC = () => {
-    const [sortConfig, setSortConfig] = useState<{ key: keyof PurchaseOrder; direction: 'asc' | 'desc' } | null>(null);
     const [isSupplierModalOpen, setIsSupplierModalOpen] = useState(false);
     const [isPOModalOpen, setIsPOModalOpen] = useState(false);
-    const [currentPage, setCurrentPage] = useState(1);
 
-    const handleSort = (key: keyof PurchaseOrder) => {
-        let direction: 'asc' | 'desc' = 'asc';
-        if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
-            direction = 'desc';
+    const columns: ColumnDef<PurchaseOrder>[] = [
+        {
+            accessorKey: "PONumber",
+            header: ({ column }) => (
+                <Button variant="ghost" className="hover:bg-transparent -ml-3 text-xs font-semibold" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
+                    PO Number <ArrowUpDown className="ml-2 h-4 w-4" />
+                </Button>
+            ),
+            cell: ({ row }) => <span className="font-mono text-xs font-semibold text-zinc-900 dark:text-zinc-100">{row.getValue("PONumber")}</span>
+        },
+        {
+            accessorKey: "SupplierName",
+            header: ({ column }) => (
+                <Button variant="ghost" className="hover:bg-transparent -ml-3 text-xs font-semibold" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
+                    Supplier <ArrowUpDown className="ml-2 h-4 w-4" />
+                </Button>
+            ),
+            cell: ({ row }) => <span className="text-zinc-700 dark:text-zinc-300">{row.getValue("SupplierName")}</span>
+        },
+        {
+            accessorKey: "OrderDate",
+            header: ({ column }) => (
+                <Button variant="ghost" className="hover:bg-transparent -ml-3 text-xs font-semibold" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
+                    Order Date <ArrowUpDown className="ml-2 h-4 w-4" />
+                </Button>
+            ),
+            cell: ({ row }) => <span className="text-zinc-700 dark:text-zinc-300">{row.getValue("OrderDate")}</span>
+        },
+        {
+            accessorKey: "ExpectedDeliveryDate",
+            header: ({ column }) => (
+                <Button variant="ghost" className="hover:bg-transparent -ml-3 text-xs font-semibold" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
+                    Expected Delivery <ArrowUpDown className="ml-2 h-4 w-4" />
+                </Button>
+            ),
+            cell: ({ row }) => <span className="text-zinc-700 dark:text-zinc-300">{row.getValue("ExpectedDeliveryDate")}</span>
+        },
+        {
+            accessorKey: "TotalAmount",
+            header: ({ column }) => (
+                <Button variant="ghost" className="hover:bg-transparent -ml-3 text-xs font-semibold" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
+                    Total Amount <ArrowUpDown className="ml-2 h-4 w-4" />
+                </Button>
+            ),
+            cell: ({ row }) => <span className="font-medium text-zinc-900 dark:text-zinc-100">${(row.getValue("TotalAmount") as number).toFixed(2)}</span>
+        },
+        {
+            accessorKey: "Status",
+            header: ({ column }) => (
+                <Button variant="ghost" className="hover:bg-transparent -ml-3 text-xs font-semibold" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
+                    Status <ArrowUpDown className="ml-2 h-4 w-4" />
+                </Button>
+            ),
+            cell: ({ row }) => {
+                const status = row.getValue("Status") as string;
+                return <StatusDot variant={status === 'Received' ? 'success' : 'warning'}>{status}</StatusDot>;
+            }
         }
-        setSortConfig({ key, direction });
-    };
-
-    const sortedPOs = useMemo(() => {
-        let data = [...MOCK_PO];
-        if (sortConfig) {
-            data.sort((a, b) => {
-                if (a[sortConfig.key] < b[sortConfig.key]) return sortConfig.direction === 'asc' ? -1 : 1;
-                if (a[sortConfig.key] > b[sortConfig.key]) return sortConfig.direction === 'asc' ? 1 : -1;
-                return 0;
-            });
-        }
-        return data;
-    }, [sortConfig]);
-
-    const totalPages = Math.ceil(sortedPOs.length / ITEMS_PER_PAGE);
-    const paginatedPOs = sortedPOs.slice(
-        (currentPage - 1) * ITEMS_PER_PAGE,
-        currentPage * ITEMS_PER_PAGE
-    );
-
-    const SortIcon = ({ column }: { column: keyof PurchaseOrder }) => {
-        if (sortConfig?.key !== column) return <ArrowUpDown className="ml-2 h-4 w-4 text-zinc-300 opacity-0 group-hover:opacity-100 transition-opacity" />;
-        return sortConfig.direction === 'asc'
-            ? <ArrowUp className="ml-2 h-4 w-4 text-zinc-900 dark:text-zinc-50" />
-            : <ArrowDown className="ml-2 h-4 w-4 text-zinc-900 dark:text-zinc-50" />;
-    };
+    ];
 
     return (
         <div className="space-y-6">
@@ -154,51 +179,9 @@ export const Procurement: React.FC = () => {
                 </div>
 
                 <TabsContent value="po" className="space-y-4">
-                    <div className="rounded-md border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900">
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead className="cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-800" onClick={() => handleSort('PONumber')}>
-                                        <div className="flex items-center">PO Number <SortIcon column="PONumber" /></div>
-                                    </TableHead>
-                                    <TableHead className="cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-800" onClick={() => handleSort('SupplierName')}>
-                                        <div className="flex items-center">Supplier <SortIcon column="SupplierName" /></div>
-                                    </TableHead>
-                                    <TableHead className="cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-800" onClick={() => handleSort('OrderDate')}>
-                                        <div className="flex items-center">Order Date <SortIcon column="OrderDate" /></div>
-                                    </TableHead>
-                                    <TableHead className="cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-800" onClick={() => handleSort('ExpectedDeliveryDate')}>
-                                        <div className="flex items-center">Expected Delivery <SortIcon column="ExpectedDeliveryDate" /></div>
-                                    </TableHead>
-                                    <TableHead className="cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-800" onClick={() => handleSort('TotalAmount')}>
-                                        <div className="flex items-center">Total Amount <SortIcon column="TotalAmount" /></div>
-                                    </TableHead>
-                                    <TableHead className="cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-800" onClick={() => handleSort('Status')}>
-                                        <div className="flex items-center">Status <SortIcon column="Status" /></div>
-                                    </TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {paginatedPOs.map(po => (
-                                    <TableRow key={po.PurchaseOrderID} className="hover:bg-zinc-50 dark:hover:bg-zinc-800/50">
-                                        <TableCell className="font-mono text-xs font-semibold text-zinc-900 dark:text-zinc-100">{po.PONumber}</TableCell>
-                                        <TableCell className="text-zinc-700 dark:text-zinc-300">{po.SupplierName}</TableCell>
-                                        <TableCell className="text-zinc-700 dark:text-zinc-300">{po.OrderDate}</TableCell>
-                                        <TableCell className="text-zinc-700 dark:text-zinc-300">{po.ExpectedDeliveryDate}</TableCell>
-                                        <TableCell className="font-medium text-zinc-900 dark:text-zinc-100">${po.TotalAmount.toFixed(2)}</TableCell>
-                                        <TableCell>
-                                            <StatusDot variant={po.Status === 'Received' ? 'success' : 'warning'}>{po.Status}</StatusDot>
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
+                    <div className="rounded-md border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 overflow-hidden">
+                        <DataTable columns={columns} data={MOCK_PO} />
                     </div>
-                    <Pagination
-                        currentPage={currentPage}
-                        totalPages={totalPages}
-                        onPageChange={setCurrentPage}
-                    />
                 </TabsContent>
 
                 <TabsContent value="suppliers">

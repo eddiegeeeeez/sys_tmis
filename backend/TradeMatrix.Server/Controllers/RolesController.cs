@@ -21,11 +21,11 @@ namespace TradeMatrix.Server.Controllers
 
         // GET: api/Roles
         [HttpGet]
-        public async Task<ActionResult<ApiResponse<IEnumerable<RoleDto>>>> GetRoles()
+        public async Task<ActionResult<ApiResponse<IEnumerable<RoleDto>>>> GetRoles([FromQuery] bool? isArchived = false)
         {
             try
             {
-                var roles = await _roleService.GetRolesAsync();
+                var roles = await _roleService.GetRolesAsync(isArchived);
                 return Ok(ApiResponse<IEnumerable<RoleDto>>.SuccessResponse(roles));
             }
             catch (Exception ex)

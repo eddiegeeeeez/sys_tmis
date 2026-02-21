@@ -4,11 +4,11 @@ import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
 import { Badge } from '../../../components/ui/Badge';
 import { StatusDot } from '../../../components/ui/StatusDot';
-import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../../components/ui/Table';
+import { ColumnDef } from '@tanstack/react-table';
+import { DataTable } from '../../../components/ui/data-table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../../../components/ui/Dialog';
 import { Label } from '../../../components/ui/Label';
 import { Select } from '../../../components/ui/Select';
-import { Pagination } from '../../../components/ui/Pagination';
 import { Search, ArrowUpCircle, Filter, MoreHorizontal, Download, ArrowUpDown, ArrowUp, ArrowDown, X } from 'lucide-react';
 import { Product } from '../../../types';
 
@@ -30,25 +30,10 @@ const INVENTORY_DATA: Product[] = [
 const ITEMS_PER_PAGE = 10;
 
 export const Inventory: React.FC = () => {
-    const [sortConfig, setSortConfig] = useState<{ key: keyof Product; direction: 'asc' | 'desc' } | null>(null);
     const [filterTerm, setFilterTerm] = useState('');
     const [categoryFilter, setCategoryFilter] = useState('All');
     const [stockStatusFilter, setStockStatusFilter] = useState('All');
     const [isAddProductOpen, setIsAddProductOpen] = useState(false);
-    const [currentPage, setCurrentPage] = useState(1);
-
-    // Reset to page 1 when filters change
-    useEffect(() => {
-        setCurrentPage(1);
-    }, [filterTerm, categoryFilter, stockStatusFilter]);
-
-    const handleSort = (key: keyof Product) => {
-        let direction: 'asc' | 'desc' = 'asc';
-        if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
-            direction = 'desc';
-        }
-        setSortConfig({ key, direction });
-    };
 
     const uniqueCategories = useMemo(() => {
         const categories = new Set(INVENTORY_DATA.map(item => item.category));
@@ -82,29 +67,8 @@ export const Inventory: React.FC = () => {
             });
         }
 
-        // Sort
-        if (sortConfig) {
-            data.sort((a, b) => {
-                if (a[sortConfig.key] < b[sortConfig.key]) return sortConfig.direction === 'asc' ? -1 : 1;
-                if (a[sortConfig.key] > b[sortConfig.key]) return sortConfig.direction === 'asc' ? 1 : -1;
-                return 0;
-            });
-        }
         return data;
-    }, [sortConfig, filterTerm, categoryFilter, stockStatusFilter]);
-
-    const totalPages = Math.ceil(processedData.length / ITEMS_PER_PAGE);
-    const paginatedData = processedData.slice(
-        (currentPage - 1) * ITEMS_PER_PAGE,
-        currentPage * ITEMS_PER_PAGE
-    );
-
-    const SortIcon = ({ column }: { column: keyof Product }) => {
-        if (sortConfig?.key !== column) return <ArrowUpDown className="ml-2 h-4 w-4 text-zinc-300 opacity-0 group-hover:opacity-100 transition-opacity" />;
-        return sortConfig.direction === 'asc'
-            ? <ArrowUp className="ml-2 h-4 w-4 text-zinc-900 dark:text-zinc-50" />
-            : <ArrowDown className="ml-2 h-4 w-4 text-zinc-900 dark:text-zinc-50" />;
-    };
+    }, [filterTerm, categoryFilter, stockStatusFilter]);
 
     const renderStockBadge = (stock: number) => {
         if (stock === 0) {
@@ -127,6 +91,102 @@ export const Inventory: React.FC = () => {
         setCategoryFilter('All');
         setStockStatusFilter('All');
     };
+
+    const columns: ColumnDef<Product>[] = [
+        {
+            accessorKey: "name",
+            header: ({ column }) => {
+                return (
+                    <Button
+                        variant="ghost"
+                        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+                        className="-ml-3 hover:bg-transparent text-xs font-semibold"
+                    >
+                        Product Name
+                        <ArrowUpDown className="ml-2 h-4 w-4" />
+                    </Button>
+                )
+            },
+            cell: ({ row }) => <span className="font-medium text-zinc-900 dark:text-zinc-50">{row.getValue("name")}</span>
+        },
+        {
+            accessorKey: "sku",
+            header: ({ column }) => {
+                return (
+                    <Button
+                        variant="ghost"
+                        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+                        className="-ml-3 hover:bg-transparent text-xs font-semibold"
+                    >
+                        SKU
+                        <ArrowUpDown className="ml-2 h-4 w-4" />
+                    </Button>
+                )
+            },
+            cell: ({ row }) => <span className="text-zinc-500 font-mono text-xs dark:text-zinc-400">{row.getValue("sku")}</span>
+        },
+        {
+            accessorKey: "category",
+            header: ({ column }) => {
+                return (
+                    <Button
+                        variant="ghost"
+                        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+                        className="-ml-3 hover:bg-transparent text-xs font-semibold"
+                    >
+                        Category
+                        <ArrowUpDown className="ml-2 h-4 w-4" />
+                    </Button>
+                )
+            },
+            cell: ({ row }) => <Badge variant="secondary" className="font-normal">{row.getValue("category")}</Badge>
+        },
+        {
+            accessorKey: "price",
+            header: ({ column }) => {
+                return (
+                    <Button
+                        variant="ghost"
+                        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+                        className="-ml-3 hover:bg-transparent text-xs font-semibold"
+                    >
+                        Price
+                        <ArrowUpDown className="ml-2 h-4 w-4" />
+                    </Button>
+                )
+            },
+            cell: ({ row }) => <span className="text-zinc-900 dark:text-zinc-50">${(row.getValue("price") as number).toFixed(2)}</span>
+        },
+        {
+            accessorKey: "stock",
+            header: ({ column }) => {
+                return (
+                    <Button
+                        variant="ghost"
+                        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+                        className="-ml-3 hover:bg-transparent text-xs font-semibold"
+                    >
+                        Stock Status
+                        <ArrowUpDown className="ml-2 h-4 w-4" />
+                    </Button>
+                )
+            },
+            cell: ({ row }) => renderStockBadge(row.getValue("stock") as number)
+        },
+        {
+            id: "actions",
+            header: () => <div className="text-right text-xs font-semibold pr-2">Actions</div>,
+            cell: ({ row }) => {
+                return (
+                    <div className="flex justify-end">
+                        <Button size="sm" variant="ghost" className="h-8 w-8 p-0">
+                            <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                    </div>
+                );
+            }
+        }
+    ];
 
     const hasActiveFilters = filterTerm !== '' || categoryFilter !== 'All' || stockStatusFilter !== 'All';
 
@@ -260,108 +320,9 @@ export const Inventory: React.FC = () => {
                 </div>
             </div>
 
-            {/* Desktop/Tablet Table View */}
-            <Card className="hidden md:block overflow-hidden border-zinc-200 shadow-sm dark:border-zinc-800">
-                <CardContent className="p-0">
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-sm text-left">
-                            <thead className="text-xs text-zinc-500 uppercase bg-zinc-50/50 border-b border-zinc-100 dark:bg-zinc-800/50 dark:border-zinc-800 dark:text-zinc-400">
-                                <tr>
-                                    <th className="px-6 py-4 font-medium cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800 group select-none transition-colors" onClick={() => handleSort('name')}>
-                                        <div className="flex items-center">Product Name <SortIcon column="name" /></div>
-                                    </th>
-                                    <th className="px-6 py-4 font-medium cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800 group select-none transition-colors" onClick={() => handleSort('sku')}>
-                                        <div className="flex items-center">SKU <SortIcon column="sku" /></div>
-                                    </th>
-                                    <th className="px-6 py-4 font-medium cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800 group select-none transition-colors" onClick={() => handleSort('category')}>
-                                        <div className="flex items-center">Category <SortIcon column="category" /></div>
-                                    </th>
-                                    <th className="px-6 py-4 font-medium cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800 group select-none transition-colors" onClick={() => handleSort('price')}>
-                                        <div className="flex items-center">Price <SortIcon column="price" /></div>
-                                    </th>
-                                    <th className="px-6 py-4 font-medium cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800 group select-none transition-colors" onClick={() => handleSort('stock')}>
-                                        <div className="flex items-center">Stock Status <SortIcon column="stock" /></div>
-                                    </th>
-                                    <th className="px-6 py-4 font-medium text-right">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
-                                {paginatedData.map((product) => (
-                                    <tr key={product.id} className="bg-white hover:bg-zinc-50/50 transition-colors dark:bg-zinc-900 dark:hover:bg-zinc-800/50">
-                                        <td className="px-6 py-4 font-medium text-zinc-900 dark:text-zinc-50">{product.name}</td>
-                                        <td className="px-6 py-4 text-zinc-500 font-mono text-xs dark:text-zinc-400">{product.sku}</td>
-                                        <td className="px-6 py-4">
-                                            <Badge variant="secondary" className="font-normal">{product.category}</Badge>
-                                        </td>
-                                        <td className="px-6 py-4 text-zinc-900 dark:text-zinc-50">${product.price.toFixed(2)}</td>
-                                        <td className="px-6 py-4">
-                                            {renderStockBadge(product.stock)}
-                                        </td>
-                                        <td className="px-6 py-4 text-right">
-                                            <Button size="sm" variant="ghost" className="h-8 w-8 p-0">
-                                                <MoreHorizontal className="h-4 w-4" />
-                                            </Button>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                        {processedData.length === 0 && (
-                            <div className="p-8 text-center text-zinc-500 dark:text-zinc-400">
-                                No products found matching your filters.
-                            </div>
-                        )}
-                    </div>
-                    <Pagination
-                        currentPage={currentPage}
-                        totalPages={totalPages}
-                        onPageChange={setCurrentPage}
-                    />
-                </CardContent>
-            </Card>
-
-            {/* Mobile Card View */}
-            <div className="md:hidden space-y-4">
-                {paginatedData.map((product) => (
-                    <Card key={product.id} className="border-zinc-200 dark:border-zinc-800">
-                        <CardContent className="p-4 space-y-4">
-                            <div className="flex justify-between items-start">
-                                <div>
-                                    <h3 className="font-semibold text-zinc-900 dark:text-zinc-50">{product.name}</h3>
-                                    <p className="text-xs text-zinc-500 font-mono mt-1 dark:text-zinc-400">{product.sku}</p>
-                                </div>
-                                <Button size="sm" variant="ghost" className="h-8 w-8 p-0 -mr-2">
-                                    <MoreHorizontal className="h-4 w-4" />
-                                </Button>
-                            </div>
-
-                            <div className="flex items-center justify-between text-sm">
-                                <span className="text-zinc-500 dark:text-zinc-400">Category</span>
-                                <Badge variant="secondary" className="font-normal">{product.category}</Badge>
-                            </div>
-
-                            <div className="flex items-center justify-between text-sm">
-                                <span className="text-zinc-500 dark:text-zinc-400">Price</span>
-                                <span className="font-medium text-zinc-900 dark:text-zinc-50">${product.price.toFixed(2)}</span>
-                            </div>
-
-                            <div className="flex items-center justify-between text-sm pt-2 border-t border-zinc-100 dark:border-zinc-800">
-                                <span className="text-zinc-500 dark:text-zinc-400">Status</span>
-                                {renderStockBadge(product.stock)}
-                            </div>
-                        </CardContent>
-                    </Card>
-                ))}
-                {processedData.length === 0 && (
-                    <div className="p-8 text-center text-zinc-500 bg-white rounded-lg border border-dashed border-zinc-300 dark:bg-zinc-900 dark:border-zinc-700 dark:text-zinc-400">
-                        No products found.
-                    </div>
-                )}
-                <Pagination
-                    currentPage={currentPage}
-                    totalPages={totalPages}
-                    onPageChange={setCurrentPage}
-                />
+            {/* Unified Data Table View */}
+            <div className="overflow-hidden border border-zinc-200 shadow-sm dark:border-zinc-800 rounded-md">
+                <DataTable columns={columns} data={processedData} />
             </div>
         </div>
     );

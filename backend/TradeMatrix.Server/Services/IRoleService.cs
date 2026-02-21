@@ -4,7 +4,7 @@ namespace TradeMatrix.Server.Services
 {
     public interface IRoleService
     {
-        Task<IEnumerable<RoleDto>> GetRolesAsync();
+        Task<IEnumerable<RoleDto>> GetRolesAsync(bool? isArchived = false);
         Task<RoleDto?> GetRoleByIdAsync(int id);
         Task<ApiResponse<RoleDto>> CreateRoleAsync(CreateRoleDto createRoleDto);
         Task<ApiResponse<RoleDto>> UpdateRoleAsync(int id, UpdateRoleDto updateRoleDto);

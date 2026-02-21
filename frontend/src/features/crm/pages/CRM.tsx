@@ -4,11 +4,11 @@ import { Button } from '../../../components/ui/Button';
 import { Badge } from '../../../components/ui/Badge';
 import { StatusDot } from '../../../components/ui/StatusDot';
 import { Input } from '../../../components/ui/Input';
-import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../../components/ui/Table';
+import { ColumnDef } from '@tanstack/react-table';
+import { DataTable } from '../../../components/ui/data-table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../../../components/ui/Dialog';
 import { Label } from '../../../components/ui/Label';
 import { Select } from '../../../components/ui/Select';
-import { Pagination } from '../../../components/ui/Pagination';
 import { Avatar, AvatarFallback } from '../../../components/ui/Avatar';
 import { MOCK_CUSTOMERS } from '../../../lib/mockData';
 import { UserSquare2, Star, Plus, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
@@ -17,42 +17,75 @@ import { Customer } from '../../../types';
 const ITEMS_PER_PAGE = 10;
 
 export const CRM: React.FC = () => {
-    const [sortConfig, setSortConfig] = useState<{ key: keyof Customer; direction: 'asc' | 'desc' } | null>(null);
     const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
-    const [currentPage, setCurrentPage] = useState(1);
 
-    const handleSort = (key: keyof Customer) => {
-        let direction: 'asc' | 'desc' = 'asc';
-        if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
-            direction = 'desc';
+    const columns: ColumnDef<Customer>[] = [
+        {
+            accessorKey: "CustomerID",
+            header: ({ column }) => (
+                <Button variant="ghost" className="hover:bg-transparent -ml-3 text-xs font-semibold" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
+                    Customer ID <ArrowUpDown className="ml-2 h-4 w-4" />
+                </Button>
+            ),
+            cell: ({ row }) => <span className="font-mono text-xs text-zinc-500 dark:text-zinc-400">{row.getValue("CustomerID")}</span>
+        },
+        {
+            accessorKey: "CustomerName",
+            header: ({ column }) => (
+                <Button variant="ghost" className="hover:bg-transparent -ml-3 text-xs font-semibold" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
+                    Name <ArrowUpDown className="ml-2 h-4 w-4" />
+                </Button>
+            ),
+            cell: ({ row }) => (
+                <div className="flex items-center gap-2">
+                    <Avatar className="h-8 w-8">
+                        <AvatarFallback><UserSquare2 className="h-4 w-4 text-zinc-500" /></AvatarFallback>
+                    </Avatar>
+                    <span className="font-medium text-zinc-900 dark:text-zinc-100">{row.getValue("CustomerName")}</span>
+                </div>
+            )
+        },
+        {
+            accessorKey: "CustomerType",
+            header: ({ column }) => (
+                <Button variant="ghost" className="hover:bg-transparent -ml-3 text-xs font-semibold" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
+                    Type <ArrowUpDown className="ml-2 h-4 w-4" />
+                </Button>
+            ),
+            cell: ({ row }) => <StatusDot variant="info">{row.getValue("CustomerType")}</StatusDot>
+        },
+        {
+            accessorKey: "ContactNumber",
+            header: ({ column }) => (
+                <Button variant="ghost" className="hover:bg-transparent -ml-3 text-xs font-semibold" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
+                    Contact <ArrowUpDown className="ml-2 h-4 w-4" />
+                </Button>
+            ),
+            cell: ({ row }) => <span className="text-zinc-700 dark:text-zinc-300">{row.getValue("ContactNumber")}</span>
+        },
+        {
+            accessorKey: "LoyaltyPoints",
+            header: ({ column }) => (
+                <Button variant="ghost" className="hover:bg-transparent -ml-3 text-xs font-semibold" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
+                    Loyalty Points <ArrowUpDown className="ml-2 h-4 w-4" />
+                </Button>
+            ),
+            cell: ({ row }) => (
+                <div className="flex items-center gap-1 font-semibold text-amber-600 dark:text-amber-500">
+                    <Star className="h-3 w-3 fill-current" /> {row.getValue("LoyaltyPoints")}
+                </div>
+            )
+        },
+        {
+            id: "actions",
+            header: () => <div className="text-right text-xs font-semibold pr-2">Actions</div>,
+            cell: () => (
+                <div className="flex justify-end">
+                    <Button variant="ghost" size="sm">Edit</Button>
+                </div>
+            )
         }
-        setSortConfig({ key, direction });
-    };
-
-    const sortedCustomers = useMemo(() => {
-        let data = [...MOCK_CUSTOMERS];
-        if (sortConfig) {
-            data.sort((a, b) => {
-                if (a[sortConfig.key] < b[sortConfig.key]) return sortConfig.direction === 'asc' ? -1 : 1;
-                if (a[sortConfig.key] > b[sortConfig.key]) return sortConfig.direction === 'asc' ? 1 : -1;
-                return 0;
-            });
-        }
-        return data;
-    }, [sortConfig]);
-
-    const totalPages = Math.ceil(sortedCustomers.length / ITEMS_PER_PAGE);
-    const paginatedCustomers = sortedCustomers.slice(
-        (currentPage - 1) * ITEMS_PER_PAGE,
-        currentPage * ITEMS_PER_PAGE
-    );
-
-    const SortIcon = ({ column }: { column: keyof Customer }) => {
-        if (sortConfig?.key !== column) return <ArrowUpDown className="ml-2 h-4 w-4 text-zinc-300 opacity-0 group-hover:opacity-100 transition-opacity" />;
-        return sortConfig.direction === 'asc'
-            ? <ArrowUp className="ml-2 h-4 w-4 text-zinc-900 dark:text-zinc-50" />
-            : <ArrowDown className="ml-2 h-4 w-4 text-zinc-900 dark:text-zinc-50" />;
-    };
+    ];
 
     return (
         <div className="space-y-6">
@@ -108,61 +141,8 @@ export const CRM: React.FC = () => {
                 </Button>
             </div>
 
-            <div className="rounded-md border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900">
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead className="cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-800" onClick={() => handleSort('CustomerID')}>
-                                <div className="flex items-center">Customer ID <SortIcon column="CustomerID" /></div>
-                            </TableHead>
-                            <TableHead className="cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-800" onClick={() => handleSort('CustomerName')}>
-                                <div className="flex items-center">Name <SortIcon column="CustomerName" /></div>
-                            </TableHead>
-                            <TableHead className="cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-800" onClick={() => handleSort('CustomerType')}>
-                                <div className="flex items-center">Type <SortIcon column="CustomerType" /></div>
-                            </TableHead>
-                            <TableHead className="cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-800" onClick={() => handleSort('ContactNumber')}>
-                                <div className="flex items-center">Contact <SortIcon column="ContactNumber" /></div>
-                            </TableHead>
-                            <TableHead className="cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-800" onClick={() => handleSort('LoyaltyPoints')}>
-                                <div className="flex items-center">Loyalty Points <SortIcon column="LoyaltyPoints" /></div>
-                            </TableHead>
-                            <TableHead className="text-right">Actions</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {paginatedCustomers.map(cust => (
-                            <TableRow key={cust.CustomerID} className="hover:bg-zinc-50 dark:hover:bg-zinc-800/50">
-                                <TableCell className="font-mono text-xs text-zinc-500 dark:text-zinc-400">{cust.CustomerID}</TableCell>
-                                <TableCell className="font-medium text-zinc-900 dark:text-zinc-100">
-                                    <div className="flex items-center gap-2">
-                                        <Avatar className="h-8 w-8">
-                                            <AvatarFallback><UserSquare2 className="h-4 w-4 text-zinc-500" /></AvatarFallback>
-                                        </Avatar>
-                                        {cust.CustomerName}
-                                    </div>
-                                </TableCell>
-                                <TableCell>
-                                    <StatusDot variant="info">{cust.CustomerType}</StatusDot>
-                                </TableCell>
-                                <TableCell className="text-zinc-700 dark:text-zinc-300">{cust.ContactNumber}</TableCell>
-                                <TableCell>
-                                    <div className="flex items-center gap-1 font-semibold text-amber-600 dark:text-amber-500">
-                                        <Star className="h-3 w-3 fill-current" /> {cust.LoyaltyPoints}
-                                    </div>
-                                </TableCell>
-                                <TableCell className="text-right">
-                                    <Button variant="ghost" size="sm">Edit</Button>
-                                </TableCell>
-                            </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
-                <Pagination
-                    currentPage={currentPage}
-                    totalPages={totalPages}
-                    onPageChange={setCurrentPage}
-                />
+            <div className="rounded-md border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 overflow-hidden">
+                <DataTable columns={columns} data={MOCK_CUSTOMERS} />
             </div>
         </div>
     );

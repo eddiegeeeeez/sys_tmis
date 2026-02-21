@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
 import { Badge } from '../../../components/ui/Badge';
-import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../../components/ui/Table';
+import { ColumnDef } from '@tanstack/react-table';
+import { DataTable } from '../../../components/ui/data-table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../../../components/ui/Dialog';
 import { Input } from '../../../components/ui/Input';
 import { Label } from '../../../components/ui/Label';
@@ -164,6 +165,133 @@ export const RoleManagement: React.FC = () => {
         if (sortConfig.order === 'asc') return <ArrowUp className="ml-2 h-4 w-4" />;
         return <ArrowDown className="ml-2 h-4 w-4" />;
     };
+
+    const columns: ColumnDef<Role>[] = [
+        {
+            accessorKey: "name",
+            header: ({ column }) => {
+                return (
+                    <Button
+                        variant="ghost"
+                        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+                        className="-ml-3 hover:bg-transparent text-xs font-semibold"
+                    >
+                        Role Name
+                        <ArrowUpDown className="ml-2 h-4 w-4" />
+                    </Button>
+                )
+            },
+            cell: ({ row }) => {
+                const role = row.original;
+                return (
+                    <div className="flex items-center gap-2 mt-1">
+                        <Shield className="h-4 w-4 text-zinc-400 dark:text-zinc-500" />
+                        <span className="font-semibold text-zinc-900 dark:text-zinc-100">{role.name}</span>
+                        {role.isSystemRole && <Badge variant="outline" className="ml-2 font-normal bg-zinc-50 dark:bg-zinc-950 dark:border-zinc-700 dark:text-zinc-400">System</Badge>}
+                        {role.isArchived && <Badge variant="secondary" className="ml-2 font-normal bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-500">Archived</Badge>}
+                    </div>
+                );
+            }
+        },
+        {
+            accessorKey: "description",
+            header: () => <div className="text-xs font-semibold text-zinc-500 dark:text-zinc-400">Description</div>,
+            cell: ({ row }) => <span className="line-clamp-2 mt-1 text-zinc-500 dark:text-zinc-400">{row.getValue("description")}</span>
+        },
+        {
+            id: "status",
+            accessorFn: (row) => row.isArchived ? 'Archived' : 'Active',
+            header: ({ column }) => {
+                return (
+                    <Button
+                        variant="ghost"
+                        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+                        className="-ml-3 hover:bg-transparent text-xs font-semibold"
+                    >
+                        Status
+                        <ArrowUpDown className="ml-2 h-4 w-4" />
+                    </Button>
+                )
+            },
+            cell: ({ row }) => {
+                const role = row.original;
+                return (
+                    <StatusDot variant={role.isArchived ? 'neutral' : 'success'}>
+                        {role.isArchived ? 'Archived' : 'Active'}
+                    </StatusDot>
+                );
+            }
+        },
+        {
+            id: "actions",
+            header: () => <div className="text-right text-xs font-semibold pr-2">Actions</div>,
+            cell: ({ row }) => {
+                const role = row.original;
+                return (
+                    <div className="flex justify-end gap-1 mt-0.5">
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 px-2 text-xs font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200"
+                            onClick={() => setViewingRole(role)}
+                        >
+                            <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 px-2 text-xs font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200"
+                            onClick={() => { setEditingRole(role as any); setIsEditRoleOpen(true); }}
+                        >
+                            <Edit className="h-4 w-4" />
+                        </Button>
+                        {!role.isSystemRole && (
+                            role.isArchived ? (
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-8 px-2 text-xs font-medium text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
+                                    onClick={() => handleRestoreRole(role)}
+                                    title="Restore Role"
+                                >
+                                    <Plus className="h-4 w-4" />
+                                </Button>
+                            ) : (
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-8 px-2 text-xs font-medium text-zinc-600 dark:text-zinc-400 hover:text-amber-600 hover:bg-amber-50"
+                                    onClick={() => handleArchiveRole(role)}
+                                    title="Archive Role"
+                                >
+                                    <Archive className="h-4 w-4" />
+                                </Button>
+                            )
+                        )}
+                        {!role.isSystemRole && (
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 px-2 text-xs font-medium text-zinc-600 dark:text-zinc-400 hover:text-red-900 dark:hover:text-red-200"
+                                onClick={() => { setRoleToDelete(role); setIsDeleteModalOpen(true); }}
+                            >
+                                <Trash2 className="h-4 w-4 text-red-500" />
+                            </Button>
+                        )}
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-8 px-3 ml-2 text-xs font-medium"
+                            onClick={() => handleEditPermissionsClick(role.name)}
+                            title="Edit Permissions"
+                        >
+                            <Shield className="h-3.5 w-3.5 mr-1" /> Perms
+                        </Button>
+                    </div>
+                );
+            }
+        }
+    ];
 
     const renderSkeleton = () => (
         <div className="space-y-6">
@@ -495,110 +623,8 @@ export const RoleManagement: React.FC = () => {
                     })}
                 </div>
             ) : (
-                <div className="rounded-md border border-zinc-200 bg-white overflow-hidden shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-                    <Table>
-                        <TableHeader className="bg-zinc-50/50 dark:bg-zinc-800/50">
-                            <TableRow>
-                                <TableHead className="w-[200px] text-zinc-500 dark:text-zinc-400">
-                                    <Button variant="ghost" size="sm" onClick={() => requestSort('name')} className="-ml-3 hover:bg-transparent">
-                                        Role Name {getSortIcon('name')}
-                                    </Button>
-                                </TableHead>
-                                <TableHead className="text-zinc-500 dark:text-zinc-400">Description</TableHead>
-                                <TableHead className="w-[120px] text-zinc-500 dark:text-zinc-400">
-                                    <Button variant="ghost" size="sm" onClick={() => requestSort('isSystemRole')} className="-ml-3 hover:bg-transparent">
-                                        Type {getSortIcon('isSystemRole')}
-                                    </Button>
-                                </TableHead>
-                                <TableHead className="text-right w-[280px] text-zinc-500 dark:text-zinc-400">Actions</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {sortedRoles.map((role) => {
-                                return (
-                                    <TableRow key={role.id} className="hover:bg-zinc-50/50 dark:hover:bg-zinc-800/50">
-                                        <TableCell className="font-semibold text-zinc-900 dark:text-zinc-100 align-top">
-                                            <div className="flex items-center gap-2 mt-1">
-                                                <Shield className="h-4 w-4 text-zinc-400 dark:text-zinc-500" />
-                                                {role.name}
-                                                {role.isArchived && <Badge variant="secondary" className="ml-2 font-normal bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-500">Archived</Badge>}
-                                            </div>
-                                        </TableCell>
-                                        <TableCell className="text-zinc-500 dark:text-zinc-400 align-top">
-                                            <span className="line-clamp-2 mt-1">{role.description}</span>
-                                        </TableCell>
-                                        <TableCell>
-                                            <StatusDot variant={role.isArchived ? 'neutral' : 'success'}>
-                                                {role.isArchived ? 'Archived' : 'Active'}
-                                            </StatusDot>
-                                        </TableCell>
-                                        <TableCell className="text-right align-top">
-                                            <div className="flex justify-end gap-1 mt-0.5">
-                                                <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    className="h-8 px-2 text-xs font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200"
-                                                    onClick={() => setViewingRole(role)}
-                                                >
-                                                    <Eye className="h-4 w-4" />
-                                                </Button>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    className="h-8 px-2 text-xs font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200"
-                                                    onClick={() => { setEditingRole(role as any); setIsEditRoleOpen(true); }}
-                                                >
-                                                    <Edit className="h-4 w-4" />
-                                                </Button>
-                                                {!role.isSystemRole && (
-                                                    role.isArchived ? (
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="sm"
-                                                            className="h-8 px-2 text-xs font-medium text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
-                                                            onClick={() => handleRestoreRole(role)}
-                                                            title="Restore Role"
-                                                        >
-                                                            <Plus className="h-4 w-4" />
-                                                        </Button>
-                                                    ) : (
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="sm"
-                                                            className="h-8 px-2 text-xs font-medium text-zinc-600 dark:text-zinc-400 hover:text-amber-600 hover:bg-amber-50"
-                                                            onClick={() => handleArchiveRole(role)}
-                                                            title="Archive Role"
-                                                        >
-                                                            <Archive className="h-4 w-4" />
-                                                        </Button>
-                                                    )
-                                                )}
-                                                {!role.isSystemRole && (
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        className="h-8 px-2 text-xs font-medium text-zinc-600 dark:text-zinc-400 hover:text-red-900 dark:hover:text-red-200"
-                                                        onClick={() => { setRoleToDelete(role); setIsDeleteModalOpen(true); }}
-                                                    >
-                                                        <Trash2 className="h-4 w-4 text-red-500" />
-                                                    </Button>
-                                                )}
-                                                <Button
-                                                    variant="outline"
-                                                    size="sm"
-                                                    className="h-8 px-3 ml-2 text-xs font-medium"
-                                                    onClick={() => handleEditPermissionsClick(role.name)}
-                                                    title="Edit Permissions"
-                                                >
-                                                    <Shield className="h-3.5 w-3.5 mr-1" /> Perms
-                                                </Button>
-                                            </div>
-                                        </TableCell>
-                                    </TableRow>
-                                )
-                            })}
-                        </TableBody>
-                    </Table>
+                <div className="overflow-hidden">
+                    <DataTable columns={columns} data={sortedRoles} />
                 </div>
             )}
         </div>
