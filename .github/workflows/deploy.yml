@@ -38,6 +38,14 @@ jobs:
           cd backend/TradeMatrix.Server
           dotnet publish -c Release -o ./publish
 
+          # INDUSTRY STANDARD: Flatten the directory structure
+          # Move static files from wwwroot/ to root for 1:1 path matching
+          echo "Flattening publish directory..."
+          if [ -d "./publish/wwwroot" ]; then
+            cp -r ./publish/wwwroot/* ./publish/
+            rm -rf ./publish/wwwroot
+          fi
+
       - name: FTP Deploy
         uses: SamKirkland/FTP-Deploy-Action@v4.3.4
         with:
@@ -48,6 +56,7 @@ jobs:
           server-dir: /
           protocol: ftp
           port: 21
+          # Manual cleanup is being handled by the user now
           dangerous-clean-slate: false
           exclude: |
             **/.git*
