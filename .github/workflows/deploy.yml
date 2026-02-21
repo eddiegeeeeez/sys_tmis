@@ -37,9 +37,9 @@ jobs:
         run: |
           cd backend/TradeMatrix.Server
 
-          # Framework-dependent publish targeting .NET 8 LTS.
-          # MonsterASP.NET shared hosting has .NET 8 installed.
-          dotnet publish -c Release -o ./publish
+          # Framework-dependent publish explicitly targeting win-x64.
+          # MonsterASP.NET app pool must be set to 64-bit [x64] to match.
+          dotnet publish -c Release -o ./publish -r win-x64 --no-self-contained
 
           # MonsterASP.NET requires frontend assets at the publish root
           # alongside the DLLs so ASP.NET Core owns ALL requests.
