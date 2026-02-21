@@ -45,7 +45,7 @@ jobs:
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
           local-dir: ./backend/TradeMatrix.Server/publish/
-          server-dir: /
+          server-dir: /wwwroot/
           protocol: ftp
           port: 21
           # Force full re-upload to clear stale assets. Remove after first successful deploy.
