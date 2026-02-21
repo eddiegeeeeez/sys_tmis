@@ -13,15 +13,15 @@ export interface Expense {
 
 export const financeService = {
     getExpenses: async () => {
-        const response = await api.get<ApiResponse<Expense[]>>('/api/finance/expenses');
+        const response = await api.get<ApiResponse<Expense[]>>('finance/expenses');
         return response.data;
     },
     createExpense: async (data: Partial<Expense>) => {
-        const response = await api.post<ApiResponse<Expense>>('/api/finance/expenses', data);
+        const response = await api.post<ApiResponse<Expense>>('finance/expenses', data);
         return response.data;
     },
     getSummary: async (month: number, year: number) => {
-        const response = await api.get<ApiResponse<number>>(`/api/finance/summary?month=${month}&year=${year}`);
+        const response = await api.get<ApiResponse<number>>(`finance/summary?month=${month}&year=${year}`);
         return response.data;
     }
 };

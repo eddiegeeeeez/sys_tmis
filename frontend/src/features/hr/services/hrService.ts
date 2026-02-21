@@ -42,27 +42,27 @@ export interface PayrollRecord {
 
 export const hrService = {
     getEmployees: async () => {
-        const response = await api.get<ApiResponse<Employee[]>>('/api/hr/employees');
+        const response = await api.get<ApiResponse<Employee[]>>('hr/employees');
         return response.data;
     },
     createEmployee: async (data: Partial<Employee>) => {
-        const response = await api.post<ApiResponse<Employee>>('/api/hr/employees', data);
+        const response = await api.post<ApiResponse<Employee>>('hr/employees', data);
         return response.data;
     },
     getAttendance: async (date?: string) => {
-        const response = await api.get<ApiResponse<Attendance[]>>(`/api/hr/attendance${date ? `?date=${date}` : ''}`);
+        const response = await api.get<ApiResponse<Attendance[]>>(`hr/attendance${date ? `?date=${date}` : ''}`);
         return response.data;
     },
     logAttendance: async (data: Partial<Attendance>) => {
-        const response = await api.post<ApiResponse<Attendance>>('/api/hr/attendance', data);
+        const response = await api.post<ApiResponse<Attendance>>('hr/attendance', data);
         return response.data;
     },
     getPayrollRecords: async () => {
-        const response = await api.get<ApiResponse<PayrollRecord[]>>('/api/payroll');
+        const response = await api.get<ApiResponse<PayrollRecord[]>>('payroll');
         return response.data;
     },
     runPayroll: async (data: { payPeriodStart: string; payPeriodEnd: string }) => {
-        const response = await api.post<ApiResponse<boolean>>('/api/payroll/run', data);
+        const response = await api.post<ApiResponse<boolean>>('payroll/run', data);
         return response.data;
     }
 };

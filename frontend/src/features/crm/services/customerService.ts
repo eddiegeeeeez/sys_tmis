@@ -14,15 +14,15 @@ export interface Customer {
 
 export const customerService = {
     getCustomers: async () => {
-        const response = await api.get<ApiResponse<Customer[]>>('/api/customer');
+        const response = await api.get<ApiResponse<Customer[]>>('customer');
         return response.data;
     },
     createCustomer: async (data: Partial<Customer>) => {
-        const response = await api.post<ApiResponse<Customer>>('/api/customer', data);
+        const response = await api.post<ApiResponse<Customer>>('customer', data);
         return response.data;
     },
     updateCustomer: async (id: number, data: Partial<Customer>) => {
-        const response = await api.put<ApiResponse<Customer>>(`/api/customer/${id}`, data);
+        const response = await api.put<ApiResponse<Customer>>(`customer/${id}`, data);
         return response.data;
     }
 };
