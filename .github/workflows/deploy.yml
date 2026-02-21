@@ -37,8 +37,6 @@ jobs:
         run: |
           cd backend/TradeMatrix.Server
           dotnet publish -c Release -o ./publish
-          echo "Listing publish directory contents:"
-          ls -R ./publish
 
       - name: FTP Deploy
         uses: SamKirkland/FTP-Deploy-Action@v4.3.4

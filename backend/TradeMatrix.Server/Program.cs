@@ -106,7 +106,10 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
-// Add custom middleware
+// 1. Health check (High Priority, no Auth required)
+app.MapGet("/api/health-check", () => Results.Ok(new { status = "Healthy", time = DateTime.UtcNow }));
+
+// 2. Custom middleware
 app.UseMiddleware<GlobalExceptionHandlingMiddleware>();
 
 if (!app.Environment.IsDevelopment())
@@ -114,7 +117,7 @@ if (!app.Environment.IsDevelopment())
     app.UseHttpsRedirection();
 }
 
-// Security headers middleware
+// 3. Security headers middleware (Optimized)
 app.Use(async (context, next) =>
 {
     context.Response.OnStarting(() =>
@@ -142,15 +145,18 @@ app.Use(async (context, next) =>
     await next();
 });
 
+// 4. Static Files & Routing
 app.UseStaticFiles();
+app.UseRouting();
 app.UseCors("AllowFrontend");
 
+// 5. Auth & Endpoints
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
 
-// Only fallback to index.html for non-API requests that don't look like files
+// 6. SPA Fallback
 app.MapFallbackToFile("index.html");
 
 // using (var scope = app.Services.CreateScope())
