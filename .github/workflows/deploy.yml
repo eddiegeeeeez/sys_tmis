@@ -37,23 +37,17 @@ jobs:
         run: |
           cd backend/TradeMatrix.Server
 
-          # Framework-dependent publish explicitly targeting win-x64.
-          # MonsterASP.NET app pool must be set to 64-bit [x64] to match.
+          # Framework-dependent publish targeting win-x64 to match MonsterASP.NET 64-bit app pool.
           dotnet publish -c Release -o ./publish -r win-x64 --no-self-contained
 
-          # MonsterASP.NET requires frontend assets at the publish root
-          # alongside the DLLs so ASP.NET Core owns ALL requests.
-          # Without this, IIS serves index.html as a static file and
-          # ASP.NET Core never starts, causing every /api/* call to 404.
-          echo "Flattening wwwroot into publish root..."
+          # MonsterASP.NET web root IS the wwwroot folder on FTP.
+          # Keep wwwroot intact — deploy its contents into the IIS web root directly.
+          # The DLLs and web.config go to wwwroot root, static files go to wwwroot/assets/
+          echo "Moving wwwroot contents up to publish root..."
           if [ -d "./publish/wwwroot" ]; then
             cp -r ./publish/wwwroot/. ./publish/
             rm -rf ./publish/wwwroot
           fi
-
-          # Create the logs directory and a placeholder so FTP uploads it
-          mkdir -p ./publish/logs
-          touch ./publish/logs/.gitkeep
 
       - name: FTP Deploy
         uses: SamKirkland/FTP-Deploy-Action@v4.3.4
@@ -62,7 +56,7 @@ jobs:
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
           local-dir: ./backend/TradeMatrix.Server/publish/
-          server-dir: /
+          server-dir: /wwwroot/
           protocol: ftp
           port: 21
           dangerous-clean-slate: false
