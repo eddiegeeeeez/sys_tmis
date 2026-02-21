@@ -48,6 +48,8 @@ jobs:
           server-dir: /
           protocol: ftp
           port: 21
+          # Force full re-upload to clear stale assets. Remove after first successful deploy.
+          dangerous-clean-slate: true
           exclude: |
             **/.git*
             **/.git*/**
