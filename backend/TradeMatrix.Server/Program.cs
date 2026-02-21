@@ -4,7 +4,6 @@ using TradeMatrix.Server.Middleware;
 using TradeMatrix.Server.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
-using Microsoft.AspNetCore.StaticFiles;
 using System.Text;
 using TradeMatrix.Server.Filters;
 
@@ -152,16 +151,7 @@ app.Use(async (context, next) =>
 });
 
 // 4. Static Files & Routing
-// Restrict which file types can be served to prevent exposing DLLs, config, etc.
-var contentTypeProvider = new FileExtensionContentTypeProvider();
-contentTypeProvider.Mappings.Remove(".json");   // block appsettings.json etc.
-contentTypeProvider.Mappings.Remove(".config"); // block web.config etc.
-contentTypeProvider.Mappings.Remove(".xml");    // block .xml files
-app.UseStaticFiles(new StaticFileOptions
-{
-    ContentTypeProvider = contentTypeProvider,
-    ServeUnknownFileTypes = false, // blocks .dll, .exe, etc.
-});
+app.UseStaticFiles();
 app.UseRouting();
 app.UseCors("AllowFrontend");
 
