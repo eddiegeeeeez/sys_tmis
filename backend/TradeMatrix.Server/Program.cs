@@ -15,13 +15,6 @@ builder.Services.AddControllers(options =>
     options.Filters.Add<AuditLogAttribute>();
 });
 
-// INDUSTRY STANDARD: Flatten static files into the app root 
-// Reduces path nesting issues and simplifies production routing
-if (!builder.Environment.IsDevelopment())
-{
-    builder.Environment.WebRootPath = builder.Environment.ContentRootPath;
-}
-
 builder.Services.AddOpenApi();
 builder.Services.AddLogging(config =>
 {
