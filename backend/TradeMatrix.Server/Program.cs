@@ -25,7 +25,6 @@ if (!builder.Environment.IsDevelopment())
     builder.Environment.WebRootPath = builder.Environment.ContentRootPath;
 }
 
-builder.Services.AddOpenApi();
 builder.Services.AddLogging(config =>
 {
     config.ClearProviders();
@@ -112,10 +111,6 @@ Console.WriteLine($"[STARTUP] ContentRootPath: {app.Environment.ContentRootPath}
 Console.WriteLine($"[STARTUP] WebRootPath: {app.Environment.WebRootPath}");
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.MapOpenApi();
-}
 
 // 1. Health check (High Priority, no Auth required)
 app.MapGet("/api/health-check", () => Results.Ok(new { status = "Healthy", time = DateTime.UtcNow }));

@@ -23,13 +23,6 @@ namespace TradeMatrix.Server.Data
         public DbSet<Customer> Customers { get; set; }
         public DbSet<Expense> Expenses { get; set; }
 
-        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        {
-            base.OnConfiguring(optionsBuilder);
-            optionsBuilder.ConfigureWarnings(w => 
-                w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
-        }
-
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
