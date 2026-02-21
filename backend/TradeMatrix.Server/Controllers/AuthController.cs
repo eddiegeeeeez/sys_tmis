@@ -133,10 +133,19 @@ namespace TradeMatrix.Server.Controllers
         [Authorize]
         public async Task<IActionResult> VerifyPassword([FromBody] VerifyPasswordDto dto)
         {
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
-            if (!int.TryParse(userIdClaim?.Value, out int userId))
+            var userIdClaim = User.FindFirst("id") ?? 
+                             User.FindFirst(ClaimTypes.NameIdentifier) ?? 
+                             User.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier");
+
+            if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
             {
-                return Unauthorized();
+                // Fallback: try to find any integer claim if specific ones fail
+                userIdClaim = User.Claims.FirstOrDefault(c => int.TryParse(c.Value, out _));
+                
+                if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out userId))
+                {
+                    return Unauthorized(new { message = "Invalid token claims" });
+                }
             }
 
             var user = await _context.Users.FindAsync(userId);

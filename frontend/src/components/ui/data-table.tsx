@@ -97,9 +97,11 @@ export function DataTable<TData, TValue>({
                     </Table>
                 </div>
             </div>
-            <div className="flex items-center justify-between px-2 shrink-0 border-t border-zinc-200 dark:border-zinc-800 pt-2">
+
+            {/* Pagination Controls - Moved Outside for Global Consistency */}
+            <div className="flex items-center justify-between px-2 shrink-0 py-1">
                 <div className="flex-1 text-xs text-zinc-500 dark:text-zinc-400">
-                    Showing {table.getFilteredRowModel().rows.length} rows
+                    Showing {table.getFilteredRowModel().rows.length} records
                 </div>
                 <div className="flex items-center space-x-6 lg:space-x-8">
                     <div className="flex items-center justify-center text-xs font-medium text-zinc-900 dark:text-zinc-50">
@@ -109,7 +111,7 @@ export function DataTable<TData, TValue>({
                     <div className="flex items-center space-x-2">
                         <Button
                             variant="outline"
-                            className="hidden h-7 w-7 p-0 lg:flex"
+                            className="hidden h-8 w-8 p-0 lg:flex border-zinc-200 dark:border-zinc-800"
                             onClick={() => table.setPageIndex(0)}
                             disabled={!table.getCanPreviousPage()}
                         >
@@ -118,7 +120,7 @@ export function DataTable<TData, TValue>({
                         </Button>
                         <Button
                             variant="outline"
-                            className="h-7 w-7 p-0"
+                            className="h-8 w-8 p-0 border-zinc-200 dark:border-zinc-800"
                             onClick={() => table.previousPage()}
                             disabled={!table.getCanPreviousPage()}
                         >
@@ -127,7 +129,7 @@ export function DataTable<TData, TValue>({
                         </Button>
                         <Button
                             variant="outline"
-                            className="h-7 w-7 p-0"
+                            className="h-8 w-8 p-0 border-zinc-200 dark:border-zinc-800"
                             onClick={() => table.nextPage()}
                             disabled={!table.getCanNextPage()}
                         >
@@ -136,7 +138,7 @@ export function DataTable<TData, TValue>({
                         </Button>
                         <Button
                             variant="outline"
-                            className="hidden h-7 w-7 p-0 lg:flex"
+                            className="hidden h-8 w-8 p-0 lg:flex border-zinc-200 dark:border-zinc-800"
                             onClick={() => table.setPageIndex(table.getPageCount() - 1)}
                             disabled={!table.getCanNextPage()}
                         >

@@ -3,7 +3,7 @@ import { User, UserRole, Employee, PayrollRecord, Attendance, Supplier, Purchase
 // --- Existing User Data ---
 export const MOCK_USERS: User[] = [
   { id: '1', name: 'Pamela Mendoza', email: 'pamela@tradematrix.com', role: UserRole.SUPER_ADMIN, status: 'Active', lastLogin: 'Just now' },
-  { id: '2', name: 'System Admin', email: 'admin@tradematrix.com', role: UserRole.SYSTEM_ADMIN, status: 'Active', lastLogin: '2 hours ago' },
+  { id: '2', name: 'Admin User', email: 'admin@tradematrix.com', role: UserRole.SUPER_ADMIN, status: 'Active', lastLogin: '2 hours ago' },
   { id: '3', name: 'John Smith', email: 'john.s@tradematrix.com', role: UserRole.MANAGER, status: 'Active', lastLogin: 'Yesterday' },
   { id: '4', name: 'Sarah Connor', email: 'sarah.c@tradematrix.com', role: UserRole.CASHIER, status: 'Active', lastLogin: 'Today 9:00 AM' },
   { id: '5', name: 'Michael Chen', email: 'm.chen@tradematrix.com', role: UserRole.INVENTORY_CLERK, status: 'Inactive', lastLogin: '3 days ago' },
@@ -115,7 +115,7 @@ export const EXTENDED_AUDIT_LOGS: LogEntry[] = [
 
 export const ROLES_LIST = [
   { name: UserRole.SUPER_ADMIN, users: 1, desc: 'Full system access with developer tools.' },
-  { name: UserRole.SYSTEM_ADMIN, users: 2, desc: 'Manage configurations and users.' },
+
   { name: UserRole.MANAGER, users: 5, desc: 'Store operations, inventory and reports.' },
   { name: UserRole.CASHIER, users: 12, desc: 'POS access and basic stock check.' },
   { name: UserRole.INVENTORY_CLERK, users: 3, desc: 'Stock management and receiving.' },

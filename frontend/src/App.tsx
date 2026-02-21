@@ -16,8 +16,8 @@ import { POS } from './features/pos/pages/POS';
 import { Inventory } from './features/inventory/pages/Inventory';
 import { HR } from './features/hr/pages/HR';
 import { Procurement } from './features/procurement/pages/Procurement';
-import { CRM } from './features/crm/pages/CRM';
-import { Finance } from './features/finance/pages/Finance';
+import CRM from './features/crm/pages/CRM';
+import Finance from './features/finance/pages/Finance';
 
 // Admin Pages
 import { UserManagement } from './features/admin/pages/UserManagement';
@@ -43,6 +43,7 @@ const App: React.FC = () => {
     }
     return UserRole.MANAGER;
   });
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   React.useEffect(() => {
     const checkAuth = async () => {
@@ -105,9 +106,14 @@ const App: React.FC = () => {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    setIsLoggedIn(false);
+    setIsLoggingOut(true);
+    // Add a small delay for smoother transition
+    setTimeout(() => {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      setIsLoggedIn(false);
+      setIsLoggingOut(false);
+    }, 800);
   };
 
   return (
@@ -115,6 +121,14 @@ const App: React.FC = () => {
       <ErrorBoundary>
         <Router>
           <PageTitle />
+          {isLoggingOut && (
+            <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-white/80 dark:bg-zinc-950/80 backdrop-blur-sm transition-all duration-300">
+              <div className="flex flex-col items-center space-y-4">
+                <div className="h-10 w-10 border-4 border-zinc-200 border-t-brand-600 rounded-full animate-spin dark:border-zinc-800 dark:border-t-brand-500" />
+                <p className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Signing out safely...</p>
+              </div>
+            </div>
+          )}
           <Routes>
             {/* Public Routes */}
             <Route path="/login" element={
@@ -141,7 +155,7 @@ const App: React.FC = () => {
                 <ProtectedRoute
                   isLoggedIn={isLoggedIn}
                   currentRole={currentRole}
-                  allowedRoles={[UserRole.SUPER_ADMIN, UserRole.SYSTEM_ADMIN, UserRole.MANAGER, UserRole.CASHIER, UserRole.INVENTORY_CLERK]}
+                  allowedRoles={[UserRole.SUPER_ADMIN, UserRole.MANAGER, UserRole.CASHIER, UserRole.INVENTORY_CLERK]}
                 >
                   <Dashboard currentRole={currentRole} />
                 </ProtectedRoute>
@@ -279,46 +293,7 @@ const App: React.FC = () => {
                 </ProtectedRoute>
               } />
 
-              {/* System Admin Specific Routes */}
-              <Route path="system/users" element={
-                <ProtectedRoute
-                  isLoggedIn={isLoggedIn}
-                  currentRole={currentRole}
-                  allowedRoles={[UserRole.SYSTEM_ADMIN]}
-                >
-                  <UserManagement />
-                </ProtectedRoute>
-              } />
 
-              <Route path="system/roles" element={
-                <ProtectedRoute
-                  isLoggedIn={isLoggedIn}
-                  currentRole={currentRole}
-                  allowedRoles={[UserRole.SYSTEM_ADMIN]}
-                >
-                  <RoleManagement />
-                </ProtectedRoute>
-              } />
-
-              <Route path="system/security" element={
-                <ProtectedRoute
-                  isLoggedIn={isLoggedIn}
-                  currentRole={currentRole}
-                  allowedRoles={[UserRole.SYSTEM_ADMIN]}
-                >
-                  <Security />
-                </ProtectedRoute>
-              } />
-
-              <Route path="system/archive" element={
-                <ProtectedRoute
-                  isLoggedIn={isLoggedIn}
-                  currentRole={currentRole}
-                  allowedRoles={[UserRole.SYSTEM_ADMIN]}
-                >
-                  <Archive />
-                </ProtectedRoute>
-              } />
 
               <Route path="unauthorized" element={<Unauthorized onBack={() => { }} />} />
             </Route>

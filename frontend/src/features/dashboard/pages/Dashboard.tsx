@@ -142,87 +142,7 @@ const SuperAdminDashboard = () => (
   </div>
 );
 
-/**
- * System Admin View
- * Focus: User Management, Staff Oversight, Operational Security
- */
-const SystemAdminDashboard = () => (
-  <div className="space-y-6">
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-      <Card className="border-l-4 border-l-blue-500">
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Total Staff</CardTitle>
-          <Users className="h-4 w-4 text-blue-500" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">20</div>
-          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">Cashiers & Clerks managed</p>
-        </CardContent>
-      </Card>
-      <Card className="border-l-4 border-l-orange-500">
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Active Sessions</CardTitle>
-          <Activity className="h-4 w-4 text-orange-500" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">12</div>
-          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">Live staff interactions</p>
-        </CardContent>
-      </Card>
-      <Card className="border-l-4 border-l-indigo-500">
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Account Updates</CardTitle>
-          <ClipboardList className="h-4 w-4 text-indigo-500" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">5</div>
-          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">Modified in last 7 days</p>
-        </CardContent>
-      </Card>
-      <Card className="border-l-4 border-l-red-500">
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Failed Logins</CardTitle>
-          <AlertCircle className="h-4 w-4 text-red-500" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">2</div>
-          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">Across managed roles</p>
-        </CardContent>
-      </Card>
-    </div>
 
-    <Card className="border-zinc-200 dark:border-zinc-800">
-      <CardHeader>
-        <CardTitle>Recent Staff Activity</CardTitle>
-        <CardDescription>Latest actions taken by managed accounts.</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          {[
-            { user: 'Cashier John', action: 'Logged In', time: '5 mins ago' },
-            { user: 'Clerk Sarah', action: 'Created Purchase Order', time: '1 hour ago' },
-            { user: 'Cashier Mike', action: 'Failed Login Attempt', time: '2 hours ago' },
-            { user: 'Clerk David', action: 'Updated Inventory Item', time: '3 hours ago' },
-          ].map((item, i) => (
-            <div key={i} className="flex items-center justify-between p-3 border rounded-lg hover:bg-zinc-50 dark:border-zinc-800 dark:hover:bg-zinc-800/50 transition-colors">
-              <div className="flex items-center gap-3">
-                <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xs font-bold">
-                  {item.user.charAt(item.user.indexOf(' ') + 1)}
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-sm font-medium text-zinc-900 dark:text-zinc-200">{item.user}</span>
-                  <span className="text-xs text-zinc-500 dark:text-zinc-400">{item.action}</span>
-                </div>
-              </div>
-              <span className="text-xs text-zinc-400 font-mono">{item.time}</span>
-            </div>
-          ))}
-        </div>
-        <Button variant="outline" className="w-full mt-6">View All Audit Logs</Button>
-      </CardContent>
-    </Card>
-  </div>
-);
 
 /**
  * Manager View
@@ -348,7 +268,7 @@ const CashierDashboard = () => (
               <CardTitle className="text-sm text-zinc-400 font-medium">My Sales (Today)</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold">$1,240.50</div>
+              <div className="text-2xl font-bold text-zinc-50">$1,240.50</div>
               <p className="text-xs text-zinc-400 mt-1">24 Transactions</p>
             </CardContent>
           </Card>
@@ -357,7 +277,7 @@ const CashierDashboard = () => (
               <CardTitle className="text-sm text-zinc-500 dark:text-zinc-400 font-medium">Items Sold</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-zinc-900 dark:text-zinc-50">86</div>
+              <div className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">86</div>
               <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">Units</p>
             </CardContent>
           </Card>
@@ -366,7 +286,7 @@ const CashierDashboard = () => (
               <CardTitle className="text-sm text-zinc-500 dark:text-zinc-400 font-medium">Register Status</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-xl font-bold text-emerald-600 flex items-center gap-2">
+              <div className="text-2xl font-bold text-emerald-600 flex items-center gap-2">
                 <div className="h-3 w-3 rounded-full bg-emerald-500 animate-pulse"></div>
                 Online
               </div>
@@ -447,7 +367,7 @@ const InventoryDashboard = () => (
           <CardTitle className="text-sm text-zinc-600 dark:text-zinc-400 font-medium">Low Stock Alerts</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-3xl font-bold text-red-600">5</div>
+          <div className="text-2xl font-bold text-red-600">5</div>
           <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">Items below reorder level</p>
         </CardContent>
       </Card>
@@ -456,7 +376,7 @@ const InventoryDashboard = () => (
           <CardTitle className="text-sm text-zinc-600 dark:text-zinc-400 font-medium">Pending Deliveries</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-3xl font-bold text-zinc-900 dark:text-zinc-50">3</div>
+          <div className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">3</div>
           <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">Expected today</p>
         </CardContent>
       </Card>
@@ -465,7 +385,7 @@ const InventoryDashboard = () => (
           <CardTitle className="text-sm text-zinc-600 dark:text-zinc-400 font-medium">Total SKUs</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-3xl font-bold text-zinc-900 dark:text-zinc-50">2,350</div>
+          <div className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">2,350</div>
           <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">In 12 Categories</p>
         </CardContent>
       </Card>
@@ -568,8 +488,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentRole }) => {
     switch (currentRole) {
       case UserRole.SUPER_ADMIN:
         return <SuperAdminDashboard />;
-      case UserRole.SYSTEM_ADMIN:
-        return <SystemAdminDashboard />;
       case UserRole.CASHIER:
         return <CashierDashboard />;
       case UserRole.INVENTORY_CLERK:
@@ -583,7 +501,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentRole }) => {
   const getWelcomeMessage = () => {
     switch (currentRole) {
       case UserRole.SUPER_ADMIN:
-      case UserRole.SYSTEM_ADMIN:
         return "System Overview & Health";
       case UserRole.CASHIER:
         return "Register & Sales Terminal";

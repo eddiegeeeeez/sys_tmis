@@ -8,7 +8,8 @@ RUN npm ci
 
 # Copy source code and build
 COPY . .
-RUN npm run build
+# Override outDir to 'dist' for Docker (vite.config.ts defaults to ../backend/.../wwwroot for CI/CD)
+RUN npx vite build --outDir dist
 
 # Production runtime stage
 FROM nginx:alpine

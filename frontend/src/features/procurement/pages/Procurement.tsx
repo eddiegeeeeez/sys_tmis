@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
 import { Badge } from '../../../components/ui/Badge';
@@ -10,72 +10,147 @@ import { DataTable } from '../../../components/ui/data-table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../../../components/ui/Dialog';
 import { Label } from '../../../components/ui/Label';
 import { Select } from '../../../components/ui/Select';
-import { MOCK_SUPPLIERS, MOCK_PO } from '../../../lib/mockData';
-import { Truck, PackagePlus, Plus, Phone, Mail, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+import { procurementService, Supplier as ApiSupplier, PurchaseOrder as ApiPO } from '../services/procurementService';
+import { Loader2, Truck, PackagePlus, Plus, Phone, Mail, ArrowUpDown, ArrowUp, ArrowDown, UserSquare2 } from 'lucide-react';
 import { PurchaseOrder } from '../../../types';
-import { UserSquare2 } from 'lucide-react';
 
 const ITEMS_PER_PAGE = 10;
 
 export const Procurement: React.FC = () => {
+    const [suppliers, setSuppliers] = useState<ApiSupplier[]>([]);
+    const [purchaseOrders, setPurchaseOrders] = useState<ApiPO[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [isSaving, setIsSaving] = useState(false);
     const [isSupplierModalOpen, setIsSupplierModalOpen] = useState(false);
     const [isPOModalOpen, setIsPOModalOpen] = useState(false);
 
-    const columns: ColumnDef<PurchaseOrder>[] = [
+    // Form States
+    const [newSupplier, setNewSupplier] = useState({
+        companyName: '',
+        contactPerson: '',
+        contactNumber: '',
+        email: '',
+        address: ''
+    });
+
+    const [newPO, setNewPO] = useState({
+        supplierId: '',
+        expectedDeliveryDate: '',
+        items: [] // Simplified for now
+    });
+
+    useEffect(() => {
+        fetchData();
+    }, []);
+
+    const fetchData = async () => {
+        setIsLoading(true);
+        try {
+            const [supRes, poRes] = await Promise.all([
+                procurementService.getSuppliers(),
+                procurementService.getPurchaseOrders()
+            ]);
+            if (supRes.data.success) setSuppliers(supRes.data.data);
+            if (poRes.data.success) setPurchaseOrders(poRes.data.data);
+        } catch (error) {
+            console.error("Failed to fetch procurement data", error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleSaveSupplier = async () => {
+        setIsSaving(true);
+        try {
+            const res = await procurementService.createSupplier(newSupplier);
+            if (res.data.success) {
+                setIsSupplierModalOpen(false);
+                fetchData();
+                setNewSupplier({ companyName: '', contactPerson: '', contactNumber: '', email: '', address: '' });
+            }
+        } catch (error) {
+            console.error("Error saving supplier", error);
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const handleCreatePO = async () => {
+        setIsSaving(true);
+        try {
+            // In a real scenario, we'd add items. For now, creating a basic PO.
+            const res = await procurementService.createPurchaseOrder({
+                ...newPO,
+                supplierId: parseInt(newPO.supplierId),
+                items: []
+            });
+            if (res.data.success) {
+                setIsPOModalOpen(false);
+                fetchData();
+                setNewPO({ supplierId: '', expectedDeliveryDate: '', items: [] });
+            }
+        } catch (error) {
+            console.error("Error creating PO", error);
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const columns: ColumnDef<ApiPO>[] = [
         {
-            accessorKey: "PONumber",
+            accessorKey: "poNumber",
             header: ({ column }) => (
                 <Button variant="ghost" className="hover:bg-transparent -ml-3 text-xs font-semibold" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
                     PO Number <ArrowUpDown className="ml-2 h-4 w-4" />
                 </Button>
             ),
-            cell: ({ row }) => <span className="font-mono text-xs font-semibold text-zinc-900 dark:text-zinc-100">{row.getValue("PONumber")}</span>
+            cell: ({ row }) => <span className="font-mono text-xs font-semibold text-zinc-900 dark:text-zinc-100">{row.getValue("poNumber")}</span>
         },
         {
-            accessorKey: "SupplierName",
+            accessorKey: "supplierName",
             header: ({ column }) => (
                 <Button variant="ghost" className="hover:bg-transparent -ml-3 text-xs font-semibold" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
                     Supplier <ArrowUpDown className="ml-2 h-4 w-4" />
                 </Button>
             ),
-            cell: ({ row }) => <span className="text-zinc-700 dark:text-zinc-300">{row.getValue("SupplierName")}</span>
+            cell: ({ row }) => <span className="text-zinc-700 dark:text-zinc-300">{row.getValue("supplierName") || "N/A"}</span>
         },
         {
-            accessorKey: "OrderDate",
+            accessorKey: "orderDate",
             header: ({ column }) => (
                 <Button variant="ghost" className="hover:bg-transparent -ml-3 text-xs font-semibold" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
                     Order Date <ArrowUpDown className="ml-2 h-4 w-4" />
                 </Button>
             ),
-            cell: ({ row }) => <span className="text-zinc-700 dark:text-zinc-300">{row.getValue("OrderDate")}</span>
+            cell: ({ row }) => <span className="text-zinc-700 dark:text-zinc-300">{new Date(row.getValue("orderDate")).toLocaleDateString()}</span>
         },
         {
-            accessorKey: "ExpectedDeliveryDate",
+            accessorKey: "expectedDeliveryDate",
             header: ({ column }) => (
                 <Button variant="ghost" className="hover:bg-transparent -ml-3 text-xs font-semibold" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
                     Expected Delivery <ArrowUpDown className="ml-2 h-4 w-4" />
                 </Button>
             ),
-            cell: ({ row }) => <span className="text-zinc-700 dark:text-zinc-300">{row.getValue("ExpectedDeliveryDate")}</span>
+            cell: ({ row }) => <span className="text-zinc-700 dark:text-zinc-300">{row.getValue("expectedDeliveryDate") ? new Date(row.getValue("expectedDeliveryDate")).toLocaleDateString() : 'N/A'}</span>
         },
         {
-            accessorKey: "TotalAmount",
+            accessorKey: "totalAmount",
             header: ({ column }) => (
                 <Button variant="ghost" className="hover:bg-transparent -ml-3 text-xs font-semibold" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
                     Total Amount <ArrowUpDown className="ml-2 h-4 w-4" />
                 </Button>
             ),
-            cell: ({ row }) => <span className="font-medium text-zinc-900 dark:text-zinc-100">${(row.getValue("TotalAmount") as number).toFixed(2)}</span>
+            cell: ({ row }) => <span className="font-medium text-zinc-900 dark:text-zinc-100">${(row.getValue("totalAmount") as number).toFixed(2)}</span>
         },
         {
-            accessorKey: "Status",
+            accessorKey: "status",
             header: ({ column }) => (
                 <Button variant="ghost" className="hover:bg-transparent -ml-3 text-xs font-semibold" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
                     Status <ArrowUpDown className="ml-2 h-4 w-4" />
                 </Button>
             ),
             cell: ({ row }) => {
-                const status = row.getValue("Status") as string;
+                const status = row.getValue("status") as string;
                 return <StatusDot variant={status === 'Received' ? 'success' : 'warning'}>{status}</StatusDot>;
             }
         }
@@ -93,30 +168,50 @@ export const Procurement: React.FC = () => {
                     <div className="grid gap-4 py-4">
                         <div className="grid gap-2">
                             <Label>Company Name</Label>
-                            <Input placeholder="e.g. Acme Corp" />
+                            <Input
+                                placeholder="e.g. Acme Corp"
+                                value={newSupplier.companyName}
+                                onChange={e => setNewSupplier({ ...newSupplier, companyName: e.target.value })}
+                            />
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                             <div className="grid gap-2">
                                 <Label>Contact Person</Label>
-                                <Input />
+                                <Input
+                                    value={newSupplier.contactPerson}
+                                    onChange={e => setNewSupplier({ ...newSupplier, contactPerson: e.target.value })}
+                                />
                             </div>
                             <div className="grid gap-2">
                                 <Label>Phone Number</Label>
-                                <Input />
+                                <Input
+                                    value={newSupplier.contactNumber}
+                                    onChange={e => setNewSupplier({ ...newSupplier, contactNumber: e.target.value })}
+                                />
                             </div>
                         </div>
                         <div className="grid gap-2">
                             <Label>Email</Label>
-                            <Input type="email" />
+                            <Input
+                                type="email"
+                                value={newSupplier.email}
+                                onChange={e => setNewSupplier({ ...newSupplier, email: e.target.value })}
+                            />
                         </div>
                         <div className="grid gap-2">
                             <Label>Address</Label>
-                            <Input />
+                            <Input
+                                value={newSupplier.address}
+                                onChange={e => setNewSupplier({ ...newSupplier, address: e.target.value })}
+                            />
                         </div>
                     </div>
                     <DialogFooter>
                         <Button variant="outline" onClick={() => setIsSupplierModalOpen(false)}>Cancel</Button>
-                        <Button onClick={() => setIsSupplierModalOpen(false)}>Save Supplier</Button>
+                        <Button onClick={handleSaveSupplier} disabled={isSaving}>
+                            {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                            Save Supplier
+                        </Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
@@ -131,29 +226,41 @@ export const Procurement: React.FC = () => {
                     <div className="grid gap-4 py-4">
                         <div className="grid gap-2">
                             <Label>Supplier</Label>
-                            <Select>
-                                <option>Select a supplier...</option>
-                                <option>TechGizmos Inc.</option>
-                                <option>Global Apparel Co.</option>
-                            </Select>
+                            <select
+                                className="flex h-10 w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm ring-offset-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-800 dark:bg-zinc-950 dark:ring-offset-zinc-950 dark:focus-visible:ring-zinc-300"
+                                value={newPO.supplierId}
+                                onChange={e => setNewPO({ ...newPO, supplierId: e.target.value })}
+                            >
+                                <option value="">Select a supplier...</option>
+                                {suppliers.map(s => (
+                                    <option key={s.id} value={s.id}>{s.companyName}</option>
+                                ))}
+                            </select>
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                             <div className="grid gap-2">
                                 <Label>Order Date</Label>
-                                <Input type="date" defaultValue={new Date().toISOString().split('T')[0]} />
+                                <Input type="date" defaultValue={new Date().toISOString().split('T')[0]} readOnly />
                             </div>
                             <div className="grid gap-2">
                                 <Label>Expected Delivery</Label>
-                                <Input type="date" />
+                                <Input
+                                    type="date"
+                                    value={newPO.expectedDeliveryDate}
+                                    onChange={e => setNewPO({ ...newPO, expectedDeliveryDate: e.target.value })}
+                                />
                             </div>
                         </div>
                         <div className="border rounded-md p-4 bg-zinc-50 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 min-h-[100px] flex items-center justify-center text-zinc-400 text-sm">
-                            Items list will go here (Product Selector)
+                            Basic PO Creation (Add Items in full implementation)
                         </div>
                     </div>
                     <DialogFooter>
                         <Button variant="outline" onClick={() => setIsPOModalOpen(false)}>Cancel</Button>
-                        <Button onClick={() => setIsPOModalOpen(false)}>Submit Order</Button>
+                        <Button onClick={handleCreatePO} disabled={isSaving || !newPO.supplierId}>
+                            {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                            Submit Order
+                        </Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
@@ -180,7 +287,13 @@ export const Procurement: React.FC = () => {
 
                 <TabsContent value="po" className="space-y-4">
                     <div className="rounded-md border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 overflow-hidden">
-                        <DataTable columns={columns} data={MOCK_PO} />
+                        {isLoading ? (
+                            <div className="h-[300px] flex items-center justify-center">
+                                <Loader2 className="h-8 w-8 animate-spin text-brand-600" />
+                            </div>
+                        ) : (
+                            <DataTable columns={columns} data={purchaseOrders} />
+                        )}
                     </div>
                 </TabsContent>
 
@@ -197,29 +310,40 @@ export const Procurement: React.FC = () => {
                                 <p className="font-medium text-zinc-600 dark:text-zinc-400">Add New Supplier</p>
                             </div>
                         </Card>
-                        {MOCK_SUPPLIERS.map(sup => (
-                            <Card key={sup.SupplierID} className="border-zinc-200 dark:border-zinc-800">
+                        {suppliers.map(sup => (
+                            <Card key={sup.id} className="border-zinc-200 dark:border-zinc-800 shadow-sm hover:shadow-md transition-shadow">
                                 <CardContent className="p-6 space-y-4">
                                     <div className="flex items-start justify-between">
-                                        <div>
-                                            <h4 className="font-bold text-lg text-zinc-900 dark:text-zinc-100">{sup.SupplierName}</h4>
-                                            <p className="text-xs text-zinc-500 dark:text-zinc-400 font-mono">{sup.SupplierID}</p>
+                                        <div className="flex-1">
+                                            <h4 className="font-bold text-lg text-zinc-900 dark:text-zinc-100 line-clamp-1">{sup.companyName}</h4>
+                                            <p className="text-[10px] text-zinc-400 dark:text-zinc-500 font-mono mt-0.5 uppercase tracking-wider">SUP-{sup.id.toString().padStart(4, '0')}</p>
                                         </div>
-                                        <Truck className="h-5 w-5 text-zinc-400" />
+                                        <div className="h-8 w-8 bg-zinc-100 dark:bg-zinc-800 rounded-lg flex items-center justify-center">
+                                            <Truck className="h-4 w-4 text-zinc-500 dark:text-zinc-400" />
+                                        </div>
                                     </div>
-                                    <div className="space-y-2 text-sm text-zinc-600 dark:text-zinc-300">
-                                        <div className="flex items-center gap-2">
-                                            <UserSquare2 className="h-4 w-4" /> {sup.ContactPerson}
+                                    <div className="space-y-2.5 text-sm text-zinc-600 dark:text-zinc-300">
+                                        <div className="flex items-center gap-2.5">
+                                            <div className="h-5 w-5 rounded bg-brand-50 dark:bg-brand-900/30 flex items-center justify-center">
+                                                <UserSquare2 className="h-3 w-3 text-brand-600 dark:text-brand-400" />
+                                            </div>
+                                            <span className="truncate">{sup.contactPerson}</span>
                                         </div>
-                                        <div className="flex items-center gap-2">
-                                            <Phone className="h-4 w-4" /> {sup.ContactNumber}
+                                        <div className="flex items-center gap-2.5">
+                                            <div className="h-5 w-5 rounded bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center">
+                                                <Phone className="h-3 w-3 text-blue-600 dark:text-blue-400" />
+                                            </div>
+                                            <span className="truncate">{sup.contactNumber}</span>
                                         </div>
-                                        <div className="flex items-center gap-2">
-                                            <Mail className="h-4 w-4" /> {sup.Email}
+                                        <div className="flex items-center gap-2.5">
+                                            <div className="h-5 w-5 rounded bg-emerald-50 dark:bg-emerald-900/30 flex items-center justify-center">
+                                                <Mail className="h-3 w-3 text-emerald-600 dark:text-emerald-400" />
+                                            </div>
+                                            <span className="truncate">{sup.email}</span>
                                         </div>
                                     </div>
                                     <div className="pt-2">
-                                        <Button variant="outline" size="sm" className="w-full">View Details</Button>
+                                        <Button variant="outline" size="sm" className="w-full border-zinc-200 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-800">View Details</Button>
                                     </div>
                                 </CardContent>
                             </Card>

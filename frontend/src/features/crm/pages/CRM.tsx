@@ -1,87 +1,116 @@
-import React, { useState, useMemo } from 'react';
-import { Card, CardContent } from '../../../components/ui/Card';
+import { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
-import { Badge } from '../../../components/ui/Badge';
-import { StatusDot } from '../../../components/ui/StatusDot';
 import { Input } from '../../../components/ui/Input';
-import { ColumnDef } from '@tanstack/react-table';
 import { DataTable } from '../../../components/ui/data-table';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../../../components/ui/Dialog';
+import { StatusDot } from '../../../components/ui/StatusDot';
+import { ColumnDef } from '@tanstack/react-table';
+import { Plus, Search, MoreHorizontal, UserPlus, Mail, Phone, MapPin, ArrowUpDown, Loader2 } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../../../components/ui/Dialog';
 import { Label } from '../../../components/ui/Label';
-import { Select } from '../../../components/ui/Select';
-import { Avatar, AvatarFallback } from '../../../components/ui/Avatar';
-import { MOCK_CUSTOMERS } from '../../../lib/mockData';
-import { UserSquare2, Star, Plus, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
-import { Customer } from '../../../types';
+import { customerService, Customer as ApiCustomer } from '../services/customerService';
 
-const ITEMS_PER_PAGE = 10;
+const CRM = () => {
+    const [customers, setCustomers] = useState<ApiCustomer[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [isAddOpen, setIsAddOpen] = useState(false);
+    const [newCustomer, setNewCustomer] = useState<Partial<ApiCustomer>>({
+        customerName: '',
+        customerType: 'Retail',
+        email: '',
+        contactNumber: '',
+        address: ''
+    });
 
-export const CRM: React.FC = () => {
-    const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
+    useEffect(() => {
+        loadCustomers();
+    }, []);
 
-    const columns: ColumnDef<Customer>[] = [
+    const loadCustomers = async () => {
+        setIsLoading(true);
+        try {
+            const response = await customerService.getCustomers();
+            if (response.success && response.data) {
+                setCustomers(response.data);
+            }
+        } catch (error) {
+            console.error("Failed to load customers", error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleCreateCustomer = async (e: React.FormEvent) => {
+        e.preventDefault();
+        try {
+            const response = await customerService.createCustomer(newCustomer);
+            if (response.success) {
+                alert("Customer created successfully");
+                setIsAddOpen(false);
+                setNewCustomer({
+                    customerName: '',
+                    customerType: 'Retail',
+                    email: '',
+                    contactNumber: '',
+                    address: ''
+                });
+                loadCustomers();
+            }
+        } catch (error) {
+            alert("Failed to create customer");
+        }
+    };
+
+    const columns: ColumnDef<ApiCustomer>[] = [
         {
-            accessorKey: "CustomerID",
+            accessorKey: "id",
             header: ({ column }) => (
                 <Button variant="ghost" className="hover:bg-transparent -ml-3 text-xs font-semibold" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
-                    Customer ID <ArrowUpDown className="ml-2 h-4 w-4" />
+                    ID <ArrowUpDown className="ml-2 h-4 w-4" />
                 </Button>
             ),
-            cell: ({ row }) => <span className="font-mono text-xs text-zinc-500 dark:text-zinc-400">{row.getValue("CustomerID")}</span>
+            cell: ({ row }) => <span className="font-mono text-xs text-zinc-500 dark:text-zinc-400">{row.getValue("id")}</span>
         },
         {
-            accessorKey: "CustomerName",
+            accessorKey: "customerName",
             header: ({ column }) => (
-                <Button variant="ghost" className="hover:bg-transparent -ml-3 text-xs font-semibold" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
-                    Name <ArrowUpDown className="ml-2 h-4 w-4" />
+                <Button variant="ghost" className="-ml-3 h-8 data-[state=open]:bg-accent" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
+                    Customer Name <ArrowUpDown className="ml-2 h-4 w-4" />
                 </Button>
             ),
-            cell: ({ row }) => (
-                <div className="flex items-center gap-2">
-                    <Avatar className="h-8 w-8">
-                        <AvatarFallback><UserSquare2 className="h-4 w-4 text-zinc-500" /></AvatarFallback>
-                    </Avatar>
-                    <span className="font-medium text-zinc-900 dark:text-zinc-100">{row.getValue("CustomerName")}</span>
-                </div>
-            )
+            cell: ({ row }) => <span className="font-medium text-zinc-900 dark:text-zinc-100">{row.getValue("customerName")}</span>
         },
         {
-            accessorKey: "CustomerType",
-            header: ({ column }) => (
-                <Button variant="ghost" className="hover:bg-transparent -ml-3 text-xs font-semibold" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
-                    Type <ArrowUpDown className="ml-2 h-4 w-4" />
-                </Button>
-            ),
-            cell: ({ row }) => <StatusDot variant="info">{row.getValue("CustomerType")}</StatusDot>
+            accessorKey: "customerType",
+            header: "Type",
+            cell: ({ row }) => {
+                const type = row.getValue("customerType") as string;
+                const variant = type === 'Corporate' ? 'info' : type === 'Wholesale' ? 'warning' : 'neutral';
+                return <StatusDot variant={variant}>{type}</StatusDot>;
+            }
         },
         {
-            accessorKey: "ContactNumber",
-            header: ({ column }) => (
-                <Button variant="ghost" className="hover:bg-transparent -ml-3 text-xs font-semibold" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
-                    Contact <ArrowUpDown className="ml-2 h-4 w-4" />
-                </Button>
-            ),
-            cell: ({ row }) => <span className="text-zinc-700 dark:text-zinc-300">{row.getValue("ContactNumber")}</span>
+            accessorKey: "email",
+            header: "Email",
+            cell: ({ row }) => <span className="text-zinc-500">{row.getValue("email") || '-'}</span>
         },
         {
-            accessorKey: "LoyaltyPoints",
-            header: ({ column }) => (
-                <Button variant="ghost" className="hover:bg-transparent -ml-3 text-xs font-semibold" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
-                    Loyalty Points <ArrowUpDown className="ml-2 h-4 w-4" />
-                </Button>
-            ),
-            cell: ({ row }) => (
-                <div className="flex items-center gap-1 font-semibold text-amber-600 dark:text-amber-500">
-                    <Star className="h-3 w-3 fill-current" /> {row.getValue("LoyaltyPoints")}
-                </div>
-            )
+            accessorKey: "contactNumber",
+            header: "Contact",
+            cell: ({ row }) => <span className="text-zinc-500">{row.getValue("contactNumber") || '-'}</span>
+        },
+        {
+            accessorKey: "loyaltyPoints",
+            header: "Loyalty Points",
+            cell: ({ row }) => <span className="font-mono">{row.getValue("loyaltyPoints")}</span>
         },
         {
             id: "actions",
-            header: () => <div className="text-right text-xs font-semibold pr-2">Actions</div>,
             cell: () => (
                 <div className="flex justify-end">
-                    <Button variant="ghost" size="sm">Edit</Button>
+                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                        <MoreHorizontal className="h-4 w-4" />
+                    </Button>
                 </div>
             )
         }
@@ -89,61 +118,68 @@ export const CRM: React.FC = () => {
 
     return (
         <div className="space-y-6">
-            {/* Add Customer Modal */}
-            <Dialog open={isCustomerModalOpen} onOpenChange={setIsCustomerModalOpen}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>Add New Customer</DialogTitle>
-                        <DialogDescription>Create a customer profile for loyalty tracking.</DialogDescription>
-                    </DialogHeader>
-                    <div className="grid gap-4 py-4">
-                        <div className="grid gap-2">
-                            <Label>Customer Name</Label>
-                            <Input placeholder="Full Name or Company Name" />
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="grid gap-2">
-                                <Label>Type</Label>
-                                <Select>
-                                    <option>Retail</option>
-                                    <option>Wholesale</option>
-                                    <option>Corporate</option>
-                                </Select>
-                            </div>
-                            <div className="grid gap-2">
-                                <Label>Contact Number</Label>
-                                <Input placeholder="+1 234..." />
-                            </div>
-                        </div>
-                        <div className="grid gap-2">
-                            <Label>Email Address</Label>
-                            <Input type="email" />
-                        </div>
-                        <div className="grid gap-2">
-                            <Label>Address</Label>
-                            <Input />
-                        </div>
-                    </div>
-                    <DialogFooter>
-                        <Button variant="outline" onClick={() => setIsCustomerModalOpen(false)}>Cancel</Button>
-                        <Button onClick={() => setIsCustomerModalOpen(false)}>Create Profile</Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
-
             <div className="flex justify-between items-center">
                 <div>
-                    <h2 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">Customers (CRM)</h2>
-                    <p className="text-zinc-500 dark:text-zinc-400 mt-1">Manage customer profiles and loyalty points.</p>
+                    <h2 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">Customer Relations</h2>
+                    <p className="text-sm text-zinc-500 dark:text-zinc-400">Manage your customer records and loyalty programs.</p>
                 </div>
-                <Button onClick={() => setIsCustomerModalOpen(true)}>
-                    <Plus className="mr-2 h-4 w-4" /> Add Customer
+                <Button onClick={() => setIsAddOpen(true)}>
+                    <UserPlus className="h-4 w-4 mr-2" /> Add Customer
                 </Button>
             </div>
 
-            <div className="rounded-md border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 overflow-hidden">
-                <DataTable columns={columns} data={MOCK_CUSTOMERS} />
+            <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Add New Customer</DialogTitle>
+                        <DialogDescription>Enter customer details to create a new profile.</DialogDescription>
+                    </DialogHeader>
+                    <form onSubmit={handleCreateCustomer} className="space-y-4 py-4">
+                        <div className="grid gap-2">
+                            <Label>Full Name / Company Name</Label>
+                            <Input required value={newCustomer.customerName} onChange={e => setNewCustomer({ ...newCustomer, customerName: e.target.value })} />
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="grid gap-2">
+                                <Label>Customer Type</Label>
+                                <select className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                                    value={newCustomer.customerType} onChange={e => setNewCustomer({ ...newCustomer, customerType: e.target.value })}>
+                                    <option value="Retail">Retail</option>
+                                    <option value="Wholesale">Wholesale</option>
+                                    <option value="Corporate">Corporate</option>
+                                </select>
+                            </div>
+                            <div className="grid gap-2">
+                                <Label>Email</Label>
+                                <Input type="email" value={newCustomer.email} onChange={e => setNewCustomer({ ...newCustomer, email: e.target.value })} />
+                            </div>
+                        </div>
+                        <div className="grid gap-2">
+                            <Label>Contact Number</Label>
+                            <Input value={newCustomer.contactNumber} onChange={e => setNewCustomer({ ...newCustomer, contactNumber: e.target.value })} />
+                        </div>
+                        <div className="grid gap-2">
+                            <Label>Address</Label>
+                            <Input value={newCustomer.address} onChange={e => setNewCustomer({ ...newCustomer, address: e.target.value })} />
+                        </div>
+                        <DialogFooter>
+                            <Button type="button" variant="outline" onClick={() => setIsAddOpen(false)}>Cancel</Button>
+                            <Button type="submit">Save Customer</Button>
+                        </DialogFooter>
+                    </form>
+                </DialogContent>
+            </Dialog>
+
+            <div className="rounded-md border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 relative min-h-[400px]">
+                {isLoading && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-white/50 dark:bg-zinc-950/50 z-10">
+                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                    </div>
+                )}
+                <DataTable columns={columns} data={customers} />
             </div>
         </div>
     );
 };
+
+export default CRM;

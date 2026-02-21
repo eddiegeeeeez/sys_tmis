@@ -7,7 +7,7 @@ namespace TradeMatrix.Server.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize(Roles = "SuperAdmin,SystemAdmin")]
+    [Authorize(Roles = "SuperAdmin")]
     public class RolesController : ControllerBase
     {
         private readonly IRoleService _roleService;

@@ -39,18 +39,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentRole }) => {
           }
         ];
 
-      case UserRole.SYSTEM_ADMIN:
-        return [
-          {
-            section: 'Administration', items: [
-              { id: 'dashboard', label: 'Admin Dashboard', icon: LayoutDashboard },
-              { id: 'system/users', label: 'User Management', icon: Users },
-              { id: 'system/roles', label: 'Role Management', icon: Shield },
-              { id: 'system/security', label: 'Audit Logs', icon: Lock },
-              { id: 'system/archive', label: 'Archive', icon: ArchiveRestore },
-            ]
-          }
-        ];
 
       case UserRole.MANAGER:
         return [

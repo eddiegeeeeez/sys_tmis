@@ -4,12 +4,18 @@ import { Badge } from '../../../components/ui/Badge';
 import { Input } from '../../../components/ui/Input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../../../components/ui/Dialog';
 import { Label } from '../../../components/ui/Label';
-import { User, ArrowUpDown, Search, Edit, Trash2, Archive, UserPlus } from 'lucide-react';
-import { User as UserType, Role } from '../../../types';
+import { ArrowUpDown, Search, Edit, Archive, UserPlus, MoreHorizontal, User } from 'lucide-react';
+import { User as UserType, Role, UserRole } from '../../../types';
 import { Skeleton } from '../../../components/ui/Skeleton';
 import { adminService } from '../services/adminService';
 import { StatusDot } from '../../../components/ui/StatusDot';
 import { AuthConfirmationModal } from '../../../components/common/AuthConfirmationModal';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "../../../components/ui/DropdownMenu";
 import { ColumnDef } from '@tanstack/react-table';
 import { DataTable } from '../../../components/ui/data-table';
 
@@ -39,13 +45,6 @@ export const UserManagement: React.FC = () => {
         user.email.toLowerCase().includes(term) ||
         user.role.toLowerCase().includes(term);
 
-      // Security Filter: SystemAdmin should not see SuperAdmin or other SystemAdmin users
-      if (currentUserRole === 'SystemAdmin') {
-        if (user.role === 'SuperAdmin' || user.role === 'SystemAdmin') {
-          return false;
-        }
-      }
-
       return matchesSearch;
     });
   }, [users, searchTerm, currentUserRole]);
@@ -59,7 +58,8 @@ export const UserManagement: React.FC = () => {
     name: '',
     email: '',
     role: '',
-    status: 'Active'
+    status: 'Active',
+    password: 'TradeMatrix2024!' // Default password
   });
   const [createError, setCreateError] = useState('');
 
@@ -85,10 +85,8 @@ export const UserManagement: React.FC = () => {
 
       // Filter roles based on current user role
       let filteredRoles = rolesData || [];
-      if (currentUserRole === 'SystemAdmin') {
-        filteredRoles = filteredRoles.filter((r: Role) => r.name === 'InventoryClerk' || r.name === 'Cashier');
-      } else if (currentUserRole !== 'SuperAdmin') {
-        // Fallback or other roles
+      if (currentUserRole !== 'SuperAdmin') {
+        // Non-SuperAdmin users should not manage roles
         filteredRoles = [];
       }
 
@@ -124,7 +122,7 @@ export const UserManagement: React.FC = () => {
         email: newUser.email,
         role: newUser.role,
         isActive: newUser.status === 'Active',
-        password: 'TradeMatrix2024!' // Default password
+        password: newUser.password
       });
 
       setIsUserModalOpen(false);
@@ -134,7 +132,8 @@ export const UserManagement: React.FC = () => {
         name: '',
         email: '',
         role: roles.length > 0 ? roles[0].name : '',
-        status: 'Active'
+        status: 'Active',
+        password: 'TradeMatrix2024!'
       });
     } catch (error: any) {
       console.error('Error creating user:', error);
@@ -160,25 +159,25 @@ export const UserManagement: React.FC = () => {
     }
   };
 
-  const handleDeleteUser = async () => {
-    if (!userToDelete) return;
-    try {
-      await adminService.deleteUser(userToDelete.id);
-      setIsDeleteModalOpen(false);
-      setUserToDelete(null);
-      fetchUsers();
-    } catch (error: any) {
-      console.error('Error deleting user:', error);
-      // Could set a global error state here if needed
-    }
+  // Archive/Restore logic
+  const [archiveTarget, setArchiveTarget] = useState<UserType | null>(null);
+  const [isArchiveAuthOpen, setIsArchiveAuthOpen] = useState(false);
+
+  const handleArchiveClick = (user: UserType) => {
+    setArchiveTarget(user);
+    setIsArchiveAuthOpen(true);
   };
 
-  const handleArchiveUser = async (user: UserType) => {
+  const handleArchiveConfirm = async () => {
+    if (!archiveTarget) return;
     try {
-      await adminService.archiveUser(user.id);
+      await adminService.archiveUser(archiveTarget.id);
       fetchUsers();
     } catch (error) {
       console.error('Error archiving user:', error);
+    } finally {
+      setIsArchiveAuthOpen(false);
+      setArchiveTarget(null);
     }
   };
 
@@ -274,26 +273,36 @@ export const UserManagement: React.FC = () => {
       header: () => <div className="text-right text-xs font-semibold pr-2">Actions</div>,
       cell: ({ row }) => {
         const user = row.original;
-        if (currentUserRole !== 'SuperAdmin' && (user.role === 'SuperAdmin' || user.role === 'SystemAdmin')) {
+        if (currentUserRole !== 'SuperAdmin' && user.role === 'SuperAdmin') {
           return <div className="flex justify-end"><span className="text-xs text-zinc-400 italic px-2">Protected</span></div>;
         }
         return (
-          <div className="flex justify-end gap-1">
-            <Button variant="ghost" size="icon" className="h-8 w-8 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200" title="Edit User" onClick={() => { setEditingUser(user); setIsEditUserOpen(true); }}>
-              <Edit className="h-4 w-4" />
-            </Button>
-            {user.isArchived ? (
-              <Button variant="ghost" size="icon" className="h-8 w-8 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50" title="Restore User" onClick={() => handleRestoreUser(user)}>
-                <UserPlus className="h-4 w-4" />
-              </Button>
-            ) : (
-              <Button variant="ghost" size="icon" className="h-8 w-8 text-zinc-400 hover:text-amber-600 hover:bg-amber-50" title="Archive User" onClick={() => handleArchiveUser(user)}>
-                <Archive className="h-4 w-4" />
-              </Button>
-            )}
-            <Button variant="ghost" size="icon" className="h-8 w-8 text-zinc-400 hover:text-red-600 dark:hover:text-red-400" title="Delete User" onClick={() => { setUserToDelete(user); setIsDeleteModalOpen(true); }}>
-              <Trash2 className="h-4 w-4" />
-            </Button>
+          <div className="flex justify-end">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-8 w-8 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200">
+                  <MoreHorizontal className="h-4 w-4" />
+                  <span className="sr-only">Open menu</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-[160px] bg-white dark:bg-zinc-900 dark:border-zinc-800">
+                <DropdownMenuItem onClick={() => { setEditingUser(user); setIsEditUserOpen(true); }} className="cursor-pointer">
+                  <Edit className="h-4 w-4 mr-2" />
+                  Edit
+                </DropdownMenuItem>
+                {user.isArchived ? (
+                  <DropdownMenuItem onClick={() => handleRestoreUser(user)} className="cursor-pointer text-emerald-600 hover:text-emerald-700 dark:text-emerald-400">
+                    <UserPlus className="h-4 w-4 mr-2" />
+                    Restore
+                  </DropdownMenuItem>
+                ) : (
+                  <DropdownMenuItem onSelect={(e) => { e.preventDefault(); handleArchiveClick(user); }} className="cursor-pointer text-amber-600 hover:text-amber-700 dark:text-amber-500">
+                    <Archive className="h-4 w-4 mr-2" />
+                    Archive
+                  </DropdownMenuItem>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         );
       },
@@ -302,12 +311,6 @@ export const UserManagement: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <AuthConfirmationModal
-        isOpen={isDeleteModalOpen}
-        onClose={() => setIsDeleteModalOpen(false)}
-        onConfirm={handleDeleteUser}
-        actionDescription={`Are you sure you want to permanently delete user "${userToDelete?.name}"? This action cannot be undone.`}
-      />
 
       <Dialog open={isUserModalOpen} onOpenChange={setIsUserModalOpen}>
         <DialogContent>
@@ -363,8 +366,14 @@ export const UserManagement: React.FC = () => {
             </div>
             <div className="grid gap-2">
               <Label>Temporary Password</Label>
-              <Input type="password" value="TradeMatrix2024!" readOnly className="bg-zinc-50 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400" />
-              <p className="text-xs text-zinc-400">User will be prompted to change this on first login.</p>
+              <Input
+                type="password"
+                value={newUser.password}
+                onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
+                placeholder="Enter temporary password"
+                className="bg-white dark:bg-zinc-950"
+              />
+              <p className="text-xs text-zinc-400 font-mono mt-1">Default: TradeMatrix2024!</p>
             </div>
           </div>
           <DialogFooter>
@@ -470,6 +479,13 @@ export const UserManagement: React.FC = () => {
       ) : (
         <DataTable columns={columns} data={filteredUsers} />
       )}
+
+      <AuthConfirmationModal
+        isOpen={isArchiveAuthOpen}
+        onClose={() => { setIsArchiveAuthOpen(false); setArchiveTarget(null); }}
+        onConfirm={handleArchiveConfirm}
+        actionDescription={`You are about to archive user "${archiveTarget?.name}". This will deactivate their account.`}
+      />
     </div>
   );
 };

@@ -27,8 +27,6 @@ export const AuthConfirmationModal: React.FC<AuthConfirmationModalProps> = ({
     e.preventDefault();
     setError('');
     setIsLoading(true);
-
-    setIsLoading(true);
     try {
       await api.post('/auth/verify-password', { password });
       onConfirm();

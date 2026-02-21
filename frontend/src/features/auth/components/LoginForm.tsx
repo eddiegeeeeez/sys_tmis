@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { cn } from "../../../lib/utils"
 import { Button } from "../../../components/ui/Button"
 import { Input } from "../../../components/ui/Input"
+import { Eye, EyeOff } from 'lucide-react';
 import { UserRole } from '../../../types';
 
 import { useNavigate } from 'react-router-dom';
@@ -19,6 +20,7 @@ export function LoginForm({
 }: LoginFormProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
@@ -31,7 +33,7 @@ export function LoginForm({
     onLogin(role);
 
     // Redirect based on role
-    if (role === UserRole.SUPER_ADMIN || role === UserRole.SYSTEM_ADMIN) {
+    if (role === UserRole.SUPER_ADMIN) {
       navigate('/admin/users');
     } else if (role === UserRole.CASHIER) {
       navigate('/pos');
@@ -95,7 +97,6 @@ export function LoginForm({
               disabled={isLoading}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="bg-white dark:bg-zinc-900"
             />
           </div>
           <div className="grid gap-2">
@@ -105,16 +106,28 @@ export function LoginForm({
               </label>
               <a href="#" className="text-xs text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-300">Forgot password?</a>
             </div>
-            <Input
-              id="password"
-              type="password"
-              autoCapitalize="none"
-              autoCorrect="off"
-              disabled={isLoading}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="bg-white dark:bg-zinc-900"
-            />
+            <div className="relative">
+              <Input
+                id="password"
+                type={showPassword ? "text" : "password"}
+                autoCapitalize="none"
+                autoCorrect="off"
+                disabled={isLoading}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="pr-10"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-2.5 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-300"
+              >
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                <span className="sr-only">
+                  {showPassword ? "Hide password" : "Show password"}
+                </span>
+              </button>
+            </div>
           </div>
           <Button disabled={isLoading} className="mt-2 w-full">
             {isLoading ? "Signing In..." : "Sign In with Email"}

@@ -6,10 +6,17 @@ import { StatusDot } from '../../../components/ui/StatusDot';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../../../components/ui/Tabs';
 import { adminService } from '../services/adminService';
 import { User, Role } from '../../../types';
-import { AlertCircle, ArchiveRestore, RefreshCw, UserSquare2 } from 'lucide-react';
+import { AlertCircle, ArchiveRestore, RefreshCw, UserSquare2, MoreHorizontal, Eye, Shield, User as UserIcon } from 'lucide-react';
 import { ColumnDef } from '@tanstack/react-table';
 import { DataTable } from '../../../components/ui/data-table';
 import { Avatar, AvatarFallback } from '../../../components/ui/Avatar';
+import { Skeleton } from '../../../components/ui/Skeleton';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from "../../../components/ui/DropdownMenu";
 
 export const Archive: React.FC = () => {
     const [archivedUsers, setArchivedUsers] = useState<User[]>([]);
@@ -30,13 +37,12 @@ export const Archive: React.FC = () => {
         setError(null);
         try {
             const [usersRes, rolesRes] = await Promise.all([
-                adminService.getUsers(userPage, ITEMS_PER_PAGE, '', '', true),
+                adminService.getUsers(1, 1000, '', '', true),
                 adminService.getRoles(true)
             ]);
 
             if (usersRes.data.success) {
-                setArchivedUsers(usersRes.data.data.data);
-                setUserTotalPages(usersRes.data.data.pages);
+                setArchivedUsers(usersRes.data.data.data || []);
             }
 
             if (rolesRes.data.success) {
@@ -104,12 +110,22 @@ export const Archive: React.FC = () => {
         },
         {
             id: "actions",
-            header: () => <div className="text-right">Actions</div>,
+            header: () => <div className="text-right pr-2">Actions</div>,
             cell: ({ row }) => (
-                <div className="text-right">
-                    <Button variant="outline" size="sm" onClick={() => handleRestoreUser(row.original.id!)}>
-                        <ArchiveRestore className="mr-2 h-4 w-4" /> Restore
-                    </Button>
+                <div className="flex justify-end">
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200">
+                                <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-[160px] bg-white dark:bg-zinc-900 dark:border-zinc-800">
+                            <DropdownMenuItem onClick={() => handleRestoreUser(row.original.id!)} className="cursor-pointer text-emerald-600 hover:text-emerald-700 dark:text-emerald-400">
+                                <ArchiveRestore className="mr-2 h-4 w-4" />
+                                Restore User
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
                 </div>
             )
         }
@@ -133,27 +149,38 @@ export const Archive: React.FC = () => {
         },
         {
             id: "actions",
-            header: () => <div className="text-right">Actions</div>,
+            header: () => <div className="text-right pr-2">Actions</div>,
             cell: ({ row }) => (
-                <div className="text-right">
-                    <Button variant="outline" size="sm" onClick={() => handleRestoreRole(row.original.id!)}>
-                        <ArchiveRestore className="mr-2 h-4 w-4" /> Restore
-                    </Button>
+                <div className="flex justify-end">
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200">
+                                <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-[160px] bg-white dark:bg-zinc-900 dark:border-zinc-800">
+                            <DropdownMenuItem onClick={() => handleRestoreRole(row.original.id!)} className="cursor-pointer text-emerald-600 hover:text-emerald-700 dark:text-emerald-400">
+                                <ArchiveRestore className="mr-2 h-4 w-4" />
+                                Restore Role
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
                 </div>
             )
         }
     ];
 
-    if (isLoading && archivedUsers.length === 0 && archivedRoles.length === 0) {
-        return (
-            <div className="flex items-center justify-center h-full min-h-[400px]">
-                <div className="flex flex-col items-center gap-2 text-zinc-500">
-                    <RefreshCw className="h-8 w-8 animate-spin text-zinc-400" />
-                    <p>Loading archived records...</p>
-                </div>
-            </div>
-        );
-    }
+    const renderSkeletons = () => (
+        <Card className="border-zinc-200 dark:border-zinc-800">
+            <CardContent className="p-4 space-y-4">
+                <Skeleton className="h-8 w-full" />
+                <Skeleton className="h-12 w-full" />
+                <Skeleton className="h-12 w-full" />
+                <Skeleton className="h-12 w-full" />
+                <Skeleton className="h-12 w-full" />
+            </CardContent>
+        </Card>
+    );
 
     return (
         <div className="space-y-6">
@@ -181,44 +208,23 @@ export const Archive: React.FC = () => {
                 </TabsList>
 
                 <TabsContent value="users" className="space-y-4">
-                    <Card className="border-zinc-200 dark:border-zinc-800">
-                        <CardContent className="p-0">
-                            <DataTable columns={userColumns} data={archivedUsers} />
-                        </CardContent>
-                    </Card>
-
-                    {/* Native Pagination Controls to match API PaginatedResponse structure */}
-                    <div className="flex items-center justify-between mt-4">
-                        <div className="text-sm text-zinc-500 dark:text-zinc-400">
-                            Page {userPage} of {userTotalPages || 1}
-                        </div>
-                        <div className="flex gap-2">
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => setUserPage(p => Math.max(1, p - 1))}
-                                disabled={userPage === 1}
-                            >
-                                Previous
-                            </Button>
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => setUserPage(p => Math.min(userTotalPages, p + 1))}
-                                disabled={userPage >= userTotalPages}
-                            >
-                                Next
-                            </Button>
-                        </div>
-                    </div>
+                    {isLoading ? renderSkeletons() : (
+                        <Card className="border-zinc-200 dark:border-zinc-800">
+                            <CardContent className="p-0">
+                                <DataTable columns={userColumns} data={archivedUsers} />
+                            </CardContent>
+                        </Card>
+                    )}
                 </TabsContent>
 
                 <TabsContent value="roles" className="space-y-4">
-                    <Card className="border-zinc-200 dark:border-zinc-800">
-                        <CardContent className="p-0">
-                            <DataTable columns={roleColumns} data={archivedRoles} />
-                        </CardContent>
-                    </Card>
+                    {isLoading ? renderSkeletons() : (
+                        <Card className="border-zinc-200 dark:border-zinc-800">
+                            <CardContent className="p-0">
+                                <DataTable columns={roleColumns} data={archivedRoles} />
+                            </CardContent>
+                        </Card>
+                    )}
                 </TabsContent>
             </Tabs>
         </div>

@@ -21,6 +21,7 @@ import { DataTable } from '../../../components/ui/data-table';
 export const Security: React.FC = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('All');
+    const [dateFilter, setDateFilter] = useState('');
     const [selectedLog, setSelectedLog] = useState<LogEntry | null>(null);
     const [isDetailsOpen, setIsDetailsOpen] = useState(false);
     const [logs, setLogs] = useState<LogEntry[]>([]);
@@ -58,9 +59,11 @@ export const Security: React.FC = () => {
 
             const matchesStatus = statusFilter === 'All' || log.status === statusFilter;
 
-            return matchesSearch && matchesStatus;
+            const matchesDate = !dateFilter || new Date(log.timestamp).toISOString().split('T')[0] === dateFilter;
+
+            return matchesSearch && matchesStatus && matchesDate;
         });
-    }, [sortedLogs, searchTerm, statusFilter]);
+    }, [sortedLogs, searchTerm, statusFilter, dateFilter]);
 
     const getSortIcon = (key: string) => {
         if (sortConfig.key !== key) return <ArrowUpDown className="ml-2 h-4 w-4" />;
@@ -335,9 +338,20 @@ export const Security: React.FC = () => {
                             </div>
                             <div className="w-[180px] relative">
                                 <Calendar className="absolute left-2.5 top-2.5 h-4 w-4 text-zinc-400 z-10" />
-                                <Input type="date" className="pl-9 bg-white dark:bg-zinc-950" />
+                                <Input
+                                    type="date"
+                                    className="pl-9 bg-white dark:bg-zinc-950"
+                                    value={dateFilter}
+                                    onChange={(e) => setDateFilter(e.target.value)}
+                                />
                             </div>
-                            <Button variant="outline" className="bg-white dark:bg-zinc-950"><Filter className="h-4 w-4 mr-2" /> More</Button>
+                            <Button
+                                variant="outline"
+                                className="bg-white dark:bg-zinc-950"
+                                onClick={() => { setSearchTerm(''); setStatusFilter('All'); setDateFilter(''); }}
+                            >
+                                <RefreshCw className="h-4 w-4" />
+                            </Button>
                         </div>
                     </CardContent>
                 </Card>

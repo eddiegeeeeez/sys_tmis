@@ -1,37 +1,67 @@
-import React, { useState, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
-import { Badge } from '../../../components/ui/Badge';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../../components/ui/Table';
+import { DataTable } from '../../../components/ui/data-table';
 import { StatusDot } from '../../../components/ui/StatusDot';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../../../components/ui/Tabs';
 import { ColumnDef } from '@tanstack/react-table';
-import { DataTable } from '../../../components/ui/data-table';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../../../components/ui/Dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '../../../components/ui/Dialog';
 import { Label } from '../../../components/ui/Label';
 import { Select } from '../../../components/ui/Select';
 import { Avatar, AvatarFallback } from '../../../components/ui/Avatar';
-import { MOCK_EMPLOYEES, MOCK_PAYROLL, MOCK_ATTENDANCE } from '../../../lib/mockData';
-import { Users, Banknote, Clock, Plus, MoreHorizontal, FileText, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+import { MOCK_PAYROLL, MOCK_ATTENDANCE, MOCK_EMPLOYEES } from '../../../lib/mockData';
+import { hrService, Employee as ApiEmployee, Attendance as ApiAttendance, PayrollRecord as ApiPayroll } from '../services/hrService';
+import { Loader2, Users, Banknote, Clock, Plus, MoreHorizontal, FileText, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import { Employee, PayrollRecord, Attendance } from '../../../types';
 
 const ITEMS_PER_PAGE = 10;
 
 const EmployeesTab = () => {
+    const [employees, setEmployees] = useState<ApiEmployee[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
     const [isAddEmployeeOpen, setIsAddEmployeeOpen] = useState(false);
+    const [newEmployee, setNewEmployee] = useState<Partial<ApiEmployee>>({
+        firstName: '',
+        lastName: '',
+        email: '',
+        department: 'Operations',
+        position: '',
+        employmentStatus: 'Full-time',
+        basicSalary: 0
+    });
 
-    const columns: ColumnDef<Employee>[] = [
+    useEffect(() => {
+        loadEmployees();
+    }, []);
+
+    const loadEmployees = async () => {
+        setIsLoading(true);
+        try {
+            const response = await hrService.getEmployees();
+            if (response.success && response.data) {
+                setEmployees(response.data);
+            }
+        } catch (error) {
+            console.error("Failed to load employees", error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const columns: ColumnDef<ApiEmployee>[] = [
         {
-            accessorKey: "EmployeeID",
+            accessorKey: "id",
             header: ({ column }) => (
                 <Button variant="ghost" className="hover:bg-transparent -ml-3 text-xs font-semibold" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
                     ID <ArrowUpDown className="ml-2 h-4 w-4" />
                 </Button>
             ),
-            cell: ({ row }) => <span className="font-mono text-xs text-zinc-500 dark:text-zinc-400">{row.getValue("EmployeeID")}</span>
+            cell: ({ row }) => <span className="font-mono text-xs text-zinc-500 dark:text-zinc-400">{row.getValue("id")}</span>
         },
         {
-            accessorKey: "FirstName",
+            accessorKey: "firstName",
             header: ({ column }) => (
                 <Button variant="ghost" className="hover:bg-transparent -ml-3 text-xs font-semibold" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
                     Name <ArrowUpDown className="ml-2 h-4 w-4" />
@@ -42,39 +72,43 @@ const EmployeesTab = () => {
                 return (
                     <div className="flex items-center gap-2">
                         <Avatar className="h-8 w-8">
-                            <AvatarFallback>{emp.FirstName[0]}{emp.LastName[0]}</AvatarFallback>
+                            <AvatarFallback>{emp.firstName[0]}{emp.lastName[0]}</AvatarFallback>
                         </Avatar>
-                        <span>{emp.FirstName} {emp.LastName}</span>
+                        <span>{emp.firstName} {emp.lastName}</span>
                     </div>
                 );
             }
         },
         {
-            accessorKey: "Position",
+            accessorKey: "position",
             header: ({ column }) => (
                 <Button variant="ghost" className="hover:bg-transparent -ml-3 text-xs font-semibold" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
                     Position <ArrowUpDown className="ml-2 h-4 w-4" />
                 </Button>
             ),
-            cell: ({ row }) => <span className="text-zinc-700 dark:text-zinc-300">{row.getValue("Position")}</span>
+            cell: ({ row }) => <span className="text-zinc-700 dark:text-zinc-300">{row.getValue("position")}</span>
         },
         {
-            accessorKey: "Department",
+            accessorKey: "department",
             header: ({ column }) => (
                 <Button variant="ghost" className="hover:bg-transparent -ml-3 text-xs font-semibold" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
                     Department <ArrowUpDown className="ml-2 h-4 w-4" />
                 </Button>
             ),
-            cell: ({ row }) => <span className="text-zinc-700 dark:text-zinc-300">{row.getValue("Department")}</span>
+            cell: ({ row }) => <span className="text-zinc-700 dark:text-zinc-300">{row.getValue("department")}</span>
         },
         {
-            accessorKey: "EmploymentStatus",
+            accessorKey: "employmentStatus",
             header: ({ column }) => (
                 <Button variant="ghost" className="hover:bg-transparent -ml-3 text-xs font-semibold" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
                     Status <ArrowUpDown className="ml-2 h-4 w-4" />
                 </Button>
             ),
-            cell: ({ row }) => <StatusDot variant="neutral">{row.getValue("EmploymentStatus")}</StatusDot>
+            cell: ({ row }) => {
+                const status = row.getValue("employmentStatus") as string;
+                const variant = status === 'Full-time' ? 'success' : status === 'Part-time' ? 'info' : 'warning';
+                return <StatusDot variant={variant}>{status}</StatusDot>;
+            }
         },
         {
             id: "actions",
@@ -89,10 +123,19 @@ const EmployeesTab = () => {
         }
     ];
 
-    const handleSaveEmployee = (e: React.FormEvent) => {
+    const handleSaveEmployee = async (e: React.FormEvent) => {
         e.preventDefault();
-        console.log("Saving Employee");
-        setIsAddEmployeeOpen(false);
+        try {
+            const response = await hrService.createEmployee(newEmployee);
+            if (response.success) {
+                alert("Employee added successfully");
+                setIsAddEmployeeOpen(false);
+                loadEmployees();
+            }
+        } catch (error) {
+            console.error("Failed to add employee", error);
+            alert("Failed to add employee");
+        }
     }
 
     return (
@@ -108,57 +151,57 @@ const EmployeesTab = () => {
                         <div className="grid grid-cols-2 gap-4">
                             <div className="grid gap-2">
                                 <Label>First Name</Label>
-                                <Input required />
+                                <Input required value={newEmployee.firstName} onChange={e => setNewEmployee({ ...newEmployee, firstName: e.target.value })} />
                             </div>
                             <div className="grid gap-2">
                                 <Label>Last Name</Label>
-                                <Input required />
+                                <Input required value={newEmployee.lastName} onChange={e => setNewEmployee({ ...newEmployee, lastName: e.target.value })} />
                             </div>
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
                             <div className="grid gap-2">
                                 <Label>Email</Label>
-                                <Input type="email" required />
+                                <Input type="email" required value={newEmployee.email} onChange={e => setNewEmployee({ ...newEmployee, email: e.target.value })} />
                             </div>
                             <div className="grid gap-2">
                                 <Label>Phone Number</Label>
-                                <Input />
+                                <Input value={newEmployee.contactNumber} onChange={e => setNewEmployee({ ...newEmployee, contactNumber: e.target.value })} />
                             </div>
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
                             <div className="grid gap-2">
                                 <Label>Department</Label>
-                                <Select>
-                                    <option>Operations</option>
-                                    <option>Sales</option>
-                                    <option>Warehouse</option>
-                                    <option>HR</option>
+                                <Select value={newEmployee.department} onChange={e => setNewEmployee({ ...newEmployee, department: e.target.value })}>
+                                    <option value="Operations">Operations</option>
+                                    <option value="Sales">Sales</option>
+                                    <option value="Warehouse">Warehouse</option>
+                                    <option value="HR">HR</option>
                                 </Select>
                             </div>
                             <div className="grid gap-2">
                                 <Label>Position</Label>
-                                <Input placeholder="e.g. Cashier" />
+                                <Input placeholder="e.g. Cashier" value={newEmployee.position} onChange={e => setNewEmployee({ ...newEmployee, position: e.target.value })} />
                             </div>
                         </div>
 
                         <div className="grid grid-cols-3 gap-4">
                             <div className="grid gap-2">
                                 <Label>Employment</Label>
-                                <Select>
-                                    <option>Full-time</option>
-                                    <option>Part-time</option>
-                                    <option>Contract</option>
+                                <Select value={newEmployee.employmentStatus} onChange={e => setNewEmployee({ ...newEmployee, employmentStatus: e.target.value })}>
+                                    <option value="Full-time">Full-time</option>
+                                    <option value="Part-time">Part-time</option>
+                                    <option value="Contract">Contract</option>
                                 </Select>
                             </div>
                             <div className="grid gap-2">
                                 <Label>Basic Salary</Label>
-                                <Input type="number" placeholder="0.00" />
+                                <Input type="number" placeholder="0.00" value={newEmployee.basicSalary} onChange={e => setNewEmployee({ ...newEmployee, basicSalary: parseFloat(e.target.value) })} />
                             </div>
                             <div className="grid gap-2">
                                 <Label>Hire Date</Label>
-                                <Input type="date" />
+                                <Input type="date" value={newEmployee.hireDate?.split('T')[0]} onChange={e => setNewEmployee({ ...newEmployee, hireDate: e.target.value })} />
                             </div>
                         </div>
 
@@ -176,8 +219,13 @@ const EmployeesTab = () => {
                     <Plus className="h-4 w-4 mr-2" /> Add Employee
                 </Button>
             </div>
-            <div className="rounded-md border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 overflow-hidden">
-                <DataTable columns={columns} data={MOCK_EMPLOYEES} />
+            <div className="rounded-md border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 overflow-hidden relative min-h-[200px]">
+                {isLoading ? (
+                    <div className="absolute inset-0 flex items-center justify-center bg-white/50 dark:bg-zinc-950/50 z-10">
+                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                    </div>
+                ) : null}
+                <DataTable columns={columns} data={employees} />
             </div>
         </div>
     );

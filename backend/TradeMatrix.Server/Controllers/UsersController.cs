@@ -24,7 +24,7 @@ namespace TradeMatrix.Server.Controllers
         /// Get all users with pagination and filtering
         /// </summary>
         [HttpGet("list")]
-        [Authorize(Roles = "SuperAdmin,SystemAdmin")]
+        [Authorize(Roles = "SuperAdmin")]
         public async Task<ActionResult<ApiResponse<PaginatedResponse<UserDto>>>> GetUsers(
             [FromQuery] int page = 1, 
             [FromQuery] int pageSize = 10, 
@@ -48,7 +48,7 @@ namespace TradeMatrix.Server.Controllers
         /// Get a specific user by ID
         /// </summary>
         [HttpGet("{id}")]
-        [Authorize(Roles = "SuperAdmin,SystemAdmin")]
+        [Authorize(Roles = "SuperAdmin")]
         public async Task<ActionResult<UserDetailDto>> GetUser(int id)
         {
             try
@@ -70,7 +70,7 @@ namespace TradeMatrix.Server.Controllers
         /// Create a new user
         /// </summary>
         [HttpPost("create")]
-        [Authorize(Roles = "SuperAdmin,SystemAdmin")]
+        [Authorize(Roles = "SuperAdmin")]
         public async Task<ActionResult<ApiResponse<UserDto>>> CreateUser([FromBody] CreateUserDto createUserDto)
         {
             try
@@ -94,7 +94,7 @@ namespace TradeMatrix.Server.Controllers
         /// Update a user
         /// </summary>
         [HttpPut("{id}")]
-        [Authorize(Roles = "SuperAdmin,SystemAdmin")]
+        [Authorize(Roles = "SuperAdmin")]
         public async Task<ActionResult<ApiResponse<UserDto>>> UpdateUser(int id, [FromBody] UpdateUserDto updateUserDto)
         {
             try
@@ -142,7 +142,7 @@ namespace TradeMatrix.Server.Controllers
         /// Unlock a user account (reset lockout)
         /// </summary>
         [HttpPost("{id}/unlock")]
-        [Authorize(Roles = "SuperAdmin,SystemAdmin")]
+        [Authorize(Roles = "SuperAdmin")]
         public async Task<ActionResult<ApiResponse<bool>>> UnlockUser(int id)
         {
             try
@@ -164,7 +164,7 @@ namespace TradeMatrix.Server.Controllers
         /// Reset a user's password
         /// </summary>
         [HttpPost("{id}/reset-password")]
-        [Authorize(Roles = "SuperAdmin,SystemAdmin")]
+        [Authorize(Roles = "SuperAdmin")]
         public async Task<ActionResult<ApiResponse<bool>>> ResetPassword(int id, [FromBody] ResetPasswordDto resetPasswordDto)
         {
             try
@@ -185,7 +185,7 @@ namespace TradeMatrix.Server.Controllers
         /// Archive a user (deactivate)
         /// </summary>
         [HttpPut("{id}/archive")]
-        [Authorize(Roles = "SuperAdmin,SystemAdmin")]
+        [Authorize(Roles = "SuperAdmin")]
         public async Task<ActionResult<ApiResponse<bool>>> ArchiveUser(int id)
         {
             try
@@ -208,7 +208,7 @@ namespace TradeMatrix.Server.Controllers
         /// Restore an archived user (activate)
         /// </summary>
         [HttpPut("{id}/restore")]
-        [Authorize(Roles = "SuperAdmin,SystemAdmin")]
+        [Authorize(Roles = "SuperAdmin")]
         public async Task<ActionResult<ApiResponse<bool>>> RestoreUser(int id)
         {
             try

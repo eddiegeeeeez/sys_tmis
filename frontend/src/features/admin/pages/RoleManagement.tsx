@@ -8,14 +8,19 @@ import { DataTable } from '../../../components/ui/data-table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../../../components/ui/Dialog';
 import { Input } from '../../../components/ui/Input';
 import { Label } from '../../../components/ui/Label';
-import { LayoutGrid, List, Plus, Shield, Users, Eye, Edit, Trash2, Archive } from 'lucide-react';
+import { LayoutGrid, List, Plus, Shield, Users, Eye, Edit, Archive, ArrowUpDown, ArrowUp, ArrowDown, MoreHorizontal } from 'lucide-react';
 import { Role } from '../../../types';
 import { AuthConfirmationModal } from '../../../components/common/AuthConfirmationModal';
 import { Skeleton } from '../../../components/ui/Skeleton';
 import { StatusDot } from '../../../components/ui/StatusDot';
 import { adminService } from '../services/adminService';
 import { useSort } from '../../../hooks/useSort';
-import { ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from "../../../components/ui/DropdownMenu";
 
 export const RoleManagement: React.FC = () => {
     const navigate = useNavigate();
@@ -48,9 +53,7 @@ export const RoleManagement: React.FC = () => {
     const [editingRole, setEditingRole] = useState<{ id: number; name: string; description: string, isSystemRole: boolean, permissions: string } | null>(null);
     const [editError, setEditError] = useState('');
 
-    // Delete Role State
-    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-    const [roleToDelete, setRoleToDelete] = useState<Role | null>(null);
+    // Feature States
 
     useEffect(() => {
         fetchRoles();
@@ -87,7 +90,7 @@ export const RoleManagement: React.FC = () => {
 
     const handleAuthConfirm = async () => {
         try {
-            if (newRoleName === 'SuperAdmin' || newRoleName === 'SystemAdmin') {
+            if (newRoleName === 'SuperAdmin') {
                 alert(`Cannot create another role named "${newRoleName}"`);
                 return;
             }
@@ -125,24 +128,25 @@ export const RoleManagement: React.FC = () => {
         }
     };
 
-    const handleDeleteRole = async () => {
-        if (!roleToDelete) return;
-        try {
-            await adminService.deleteRole(roleToDelete.id);
-            setIsDeleteModalOpen(false);
-            setRoleToDelete(null);
-            fetchRoles();
-        } catch (error) {
-            console.error('Error deleting role:', error);
-        }
+    // Archive/Restore logic
+    const [archiveTarget, setArchiveTarget] = useState<Role | null>(null);
+    const [isArchiveAuthOpen, setIsArchiveAuthOpen] = useState(false);
+
+    const handleArchiveClick = (role: Role) => {
+        setArchiveTarget(role);
+        setIsArchiveAuthOpen(true);
     };
 
-    const handleArchiveRole = async (role: Role) => {
+    const handleArchiveConfirm = async () => {
+        if (!archiveTarget) return;
         try {
-            await adminService.archiveRole(role.id);
+            await adminService.archiveRole(archiveTarget.id);
             fetchRoles();
         } catch (error) {
             console.error('Error archiving role:', error);
+        } finally {
+            setIsArchiveAuthOpen(false);
+            setArchiveTarget(null);
         }
     };
 
@@ -228,65 +232,42 @@ export const RoleManagement: React.FC = () => {
             cell: ({ row }) => {
                 const role = row.original;
                 return (
-                    <div className="flex justify-end gap-1 mt-0.5">
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-8 px-2 text-xs font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200"
-                            onClick={() => setViewingRole(role)}
-                        >
-                            <Eye className="h-4 w-4" />
-                        </Button>
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-8 px-2 text-xs font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200"
-                            onClick={() => { setEditingRole(role as any); setIsEditRoleOpen(true); }}
-                        >
-                            <Edit className="h-4 w-4" />
-                        </Button>
-                        {!role.isSystemRole && (
-                            role.isArchived ? (
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="h-8 px-2 text-xs font-medium text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
-                                    onClick={() => handleRestoreRole(role)}
-                                    title="Restore Role"
-                                >
-                                    <Plus className="h-4 w-4" />
+                    <div className="flex justify-end">
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-8 w-8 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200">
+                                    <MoreHorizontal className="h-4 w-4" />
+                                    <span className="sr-only">Open menu</span>
                                 </Button>
-                            ) : (
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="h-8 px-2 text-xs font-medium text-zinc-600 dark:text-zinc-400 hover:text-amber-600 hover:bg-amber-50"
-                                    onClick={() => handleArchiveRole(role)}
-                                    title="Archive Role"
-                                >
-                                    <Archive className="h-4 w-4" />
-                                </Button>
-                            )
-                        )}
-                        {!role.isSystemRole && (
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-8 px-2 text-xs font-medium text-zinc-600 dark:text-zinc-400 hover:text-red-900 dark:hover:text-red-200"
-                                onClick={() => { setRoleToDelete(role); setIsDeleteModalOpen(true); }}
-                            >
-                                <Trash2 className="h-4 w-4 text-red-500" />
-                            </Button>
-                        )}
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-8 px-3 ml-2 text-xs font-medium"
-                            onClick={() => handleEditPermissionsClick(role.name)}
-                            title="Edit Permissions"
-                        >
-                            <Shield className="h-3.5 w-3.5 mr-1" /> Perms
-                        </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-[180px] bg-white dark:bg-zinc-900 dark:border-zinc-800">
+                                <DropdownMenuItem onClick={() => setViewingRole(role)} className="cursor-pointer">
+                                    <Eye className="h-4 w-4 mr-2" />
+                                    View Details
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => { setEditingRole(role as any); setIsEditRoleOpen(true); }} className="cursor-pointer">
+                                    <Edit className="h-4 w-4 mr-2" />
+                                    Edit Details
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleEditPermissionsClick(role.name)} className="cursor-pointer">
+                                    <Shield className="h-4 w-4 mr-2" />
+                                    Edit Permissions
+                                </DropdownMenuItem>
+                                {!role.isSystemRole && (
+                                    role.isArchived ? (
+                                        <DropdownMenuItem onClick={() => handleRestoreRole(role)} className="cursor-pointer text-emerald-600 hover:text-emerald-700 dark:text-emerald-400">
+                                            <Plus className="h-4 w-4 mr-2" />
+                                            Restore Role
+                                        </DropdownMenuItem>
+                                    ) : (
+                                        <DropdownMenuItem onSelect={(e) => { e.preventDefault(); handleArchiveClick(role); }} className="cursor-pointer text-amber-600 hover:text-amber-700 dark:text-amber-500">
+                                            <Archive className="h-4 w-4 mr-2" />
+                                            Archive Role
+                                        </DropdownMenuItem>
+                                    )
+                                )}
+                            </DropdownMenuContent>
+                        </DropdownMenu>
                     </div>
                 );
             }
@@ -356,13 +337,6 @@ export const RoleManagement: React.FC = () => {
     return (
         <div className="space-y-6 relative">
 
-            {/* Delete Role Confirmation Modal */}
-            <AuthConfirmationModal
-                isOpen={isDeleteModalOpen}
-                onClose={() => setIsDeleteModalOpen(false)}
-                onConfirm={handleDeleteRole}
-                actionDescription={`Are you sure you want to permanently delete the custom role "${roleToDelete?.name}"? Any users assigned to this role must be reassigned first.`}
-            />
 
             {/* Auth Confirmation Modal for Create Role */}
             <AuthConfirmationModal
@@ -564,26 +538,36 @@ export const RoleManagement: React.FC = () => {
                                             <div className="flex items-center gap-1">
                                                 {role.isSystemRole && <Badge variant="outline" className="font-normal bg-zinc-50 dark:bg-zinc-950 dark:border-zinc-700 dark:text-zinc-400">System</Badge>}
                                                 {role.isArchived && <Badge variant="secondary" className="font-normal bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-500">Archived</Badge>}
-                                                <div className="flex items-center gap-0.5 ml-1 -mr-2">
-                                                    <Button variant="ghost" size="icon" className="h-6 w-6 text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-50" title="Edit Details" onClick={() => { setEditingRole(role as any); setIsEditRoleOpen(true); }}>
-                                                        <Edit className="h-3 w-3" />
-                                                    </Button>
-                                                    {!role.isSystemRole && (
-                                                        <>
-                                                            {role.isArchived ? (
-                                                                <Button variant="ghost" size="icon" className="h-6 w-6 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50" title="Restore Role" onClick={() => handleRestoreRole(role)}>
-                                                                    <Plus className="h-3 w-3" />
-                                                                </Button>
-                                                            ) : (
-                                                                <Button variant="ghost" size="icon" className="h-6 w-6 text-zinc-400 hover:text-amber-600 hover:bg-amber-50" title="Archive Role" onClick={() => handleArchiveRole(role)}>
-                                                                    <Archive className="h-3 w-3" />
-                                                                </Button>
-                                                            )}
-                                                            <Button variant="ghost" size="icon" className="h-6 w-6 text-zinc-400 hover:text-red-600 hover:bg-red-50" title="Delete Role" onClick={() => { setRoleToDelete(role); setIsDeleteModalOpen(true); }}>
-                                                                <Trash2 className="h-3 w-3" />
+                                                <div className="flex items-center gap-0.5 ml-1">
+                                                    <DropdownMenu>
+                                                        <DropdownMenuTrigger asChild>
+                                                            <Button variant="ghost" size="icon" className="h-8 w-8 text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-50">
+                                                                <MoreHorizontal className="h-4 w-4" />
                                                             </Button>
-                                                        </>
-                                                    )}
+                                                        </DropdownMenuTrigger>
+                                                        <DropdownMenuContent align="end" className="w-[180px] bg-white dark:bg-zinc-900 dark:border-zinc-800">
+                                                            <DropdownMenuItem onClick={() => setViewingRole(role)} className="cursor-pointer text-xs">
+                                                                <Eye className="h-4 w-4 mr-2" /> View Details
+                                                            </DropdownMenuItem>
+                                                            <DropdownMenuItem onClick={() => { setEditingRole(role as any); setIsEditRoleOpen(true); }} className="cursor-pointer text-xs">
+                                                                <Edit className="h-4 w-4 mr-2" /> Edit Details
+                                                            </DropdownMenuItem>
+                                                            <DropdownMenuItem onClick={() => handleEditPermissionsClick(role.name)} className="cursor-pointer text-xs">
+                                                                <Shield className="h-4 w-4 mr-2" /> Edit Permissions
+                                                            </DropdownMenuItem>
+                                                            {!role.isSystemRole && (
+                                                                role.isArchived ? (
+                                                                    <DropdownMenuItem onClick={() => handleRestoreRole(role)} className="cursor-pointer text-xs text-emerald-600 hover:text-emerald-700 dark:text-emerald-400">
+                                                                        <Plus className="h-4 w-4 mr-2" /> Restore Role
+                                                                    </DropdownMenuItem>
+                                                                ) : (
+                                                                    <DropdownMenuItem onSelect={(e) => { e.preventDefault(); handleArchiveClick(role); }} className="cursor-pointer text-xs text-amber-600 hover:text-amber-700 dark:text-amber-500">
+                                                                        <Archive className="h-4 w-4 mr-2" /> Archive Role
+                                                                    </DropdownMenuItem>
+                                                                )
+                                                            )}
+                                                        </DropdownMenuContent>
+                                                    </DropdownMenu>
                                                 </div>
                                             </div>
                                         </div>
@@ -627,6 +611,13 @@ export const RoleManagement: React.FC = () => {
                     <DataTable columns={columns} data={sortedRoles} />
                 </div>
             )}
+
+            <AuthConfirmationModal
+                isOpen={isArchiveAuthOpen}
+                onClose={() => { setIsArchiveAuthOpen(false); setArchiveTarget(null); }}
+                onConfirm={handleArchiveConfirm}
+                actionDescription={`You are about to archive the role "${archiveTarget?.name}". Users assigned to this role may lose access.`}
+            />
         </div>
     );
 };

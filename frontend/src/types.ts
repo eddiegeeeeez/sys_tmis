@@ -1,13 +1,18 @@
 // Standard System Roles
 export const UserRole = {
   SUPER_ADMIN: 'SuperAdmin',
-  SYSTEM_ADMIN: 'SystemAdmin',
   MANAGER: 'Manager',
   CASHIER: 'Cashier',
   INVENTORY_CLERK: 'InventoryClerk',
 } as const;
 
 export type UserRole = (typeof UserRole)[keyof typeof UserRole] | string;
+
+export interface ApiResponse<T> {
+  success: boolean;
+  message: string;
+  data: T;
+}
 
 export interface Product {
   id: string;

@@ -105,25 +105,13 @@ namespace TradeMatrix.Server.Services
                 return ApiResponse<UserDto>.ErrorResponse("Invalid role");
             }
 
-            // Security Restriction: SystemAdmin can only create InventoryClerk and Cashier
+            // Security Restriction: Only SuperAdmin can assign the SuperAdmin role
             if (role.Name == "SuperAdmin" && currentUserId != null)
             {
                 var creator = await _context.Users.Include(u => u.Role).FirstOrDefaultAsync(u => u.Id.ToString() == currentUserId);
                 if (creator?.Role.Name != "SuperAdmin")
                 {
                     return ApiResponse<UserDto>.ErrorResponse("Unauthorized to assign SuperAdmin role");
-                }
-            }
-
-            if (currentUserId != null)
-            {
-                var creator = await _context.Users.Include(u => u.Role).FirstOrDefaultAsync(u => u.Id.ToString() == currentUserId);
-                if (creator?.Role.Name == "SystemAdmin")
-                {
-                    if (role.Name != "InventoryClerk" && role.Name != "Cashier")
-                    {
-                        return ApiResponse<UserDto>.ErrorResponse("SystemAdmin can only create Inventory Clerk or Cashier accounts");
-                    }
                 }
             }
 
@@ -193,13 +181,6 @@ namespace TradeMatrix.Server.Services
                     if (role.Name != user.Role.Name && currentUserId != null)
                     {
                         var updater = await _context.Users.Include(u => u.Role).FirstOrDefaultAsync(u => u.Id.ToString() == currentUserId);
-                        if (updater?.Role.Name == "SystemAdmin")
-                        {
-                            if (role.Name != "InventoryClerk" && role.Name != "Cashier")
-                            {
-                                return ApiResponse<UserDto>.ErrorResponse("SystemAdmin can only reassign to Inventory Clerk or Cashier roles");
-                            }
-                        }
                         
                         if (role.Name == "SuperAdmin" && updater?.Role.Name != "SuperAdmin")
                         {

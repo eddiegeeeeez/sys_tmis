@@ -9,39 +9,66 @@ import { DataTable } from '../../../components/ui/data-table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../../../components/ui/Dialog';
 import { Label } from '../../../components/ui/Label';
 import { Select } from '../../../components/ui/Select';
-import { Search, ArrowUpCircle, Filter, MoreHorizontal, Download, ArrowUpDown, ArrowUp, ArrowDown, X } from 'lucide-react';
+import { inventoryService, Product as ApiProduct } from '../services/inventoryService';
+import { procurementService, Supplier } from '../../procurement/services/procurementService';
+import { Loader2, Search, ArrowUpCircle, Filter, MoreHorizontal, Download, ArrowUpDown, ArrowUp, ArrowDown, X } from 'lucide-react';
 import { Product } from '../../../types';
 
-const INVENTORY_DATA: Product[] = [
-    { id: '1', name: 'Wireless Headphones', category: 'Electronics', price: 129.99, stock: 45, sku: 'WH-001' },
-    { id: '2', name: 'Cotton T-Shirt', category: 'Apparel', price: 24.50, stock: 12, sku: 'TS-002' },
-    { id: '3', name: 'Smart Watch', category: 'Electronics', price: 199.00, stock: 3, sku: 'SW-003' },
-    { id: '4', name: 'Running Shoes', category: 'Apparel', price: 89.95, stock: 60, sku: 'RS-004' },
-    { id: '5', name: 'Bluetooth Speaker', category: 'Electronics', price: 59.99, stock: 85, sku: 'BS-005' },
-    { id: '6', name: 'Denim Jeans', category: 'Apparel', price: 49.99, stock: 90, sku: 'DJ-006' },
-    { id: '7', name: 'USB-C Cable', category: 'Electronics', price: 12.99, stock: 0, sku: 'CB-007' },
-    { id: '8', name: 'Gaming Mouse', category: 'Electronics', price: 49.99, stock: 25, sku: 'GM-008' },
-    { id: '9', name: 'Mechanical Keyboard', category: 'Electronics', price: 89.99, stock: 15, sku: 'MK-009' },
-    { id: '10', name: 'Monitor 24"', category: 'Electronics', price: 149.99, stock: 8, sku: 'MN-010' },
-    { id: '11', name: 'Office Chair', category: 'Furniture', price: 199.99, stock: 5, sku: 'OC-011' },
-    { id: '12', name: 'Desk Lamp', category: 'Home', price: 29.99, stock: 30, sku: 'DL-012' },
-];
-
-const ITEMS_PER_PAGE = 10;
-
 export const Inventory: React.FC = () => {
+    const [products, setProducts] = useState<ApiProduct[]>([]);
+    const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [isSaving, setIsSaving] = useState(false);
     const [filterTerm, setFilterTerm] = useState('');
     const [categoryFilter, setCategoryFilter] = useState('All');
     const [stockStatusFilter, setStockStatusFilter] = useState('All');
     const [isAddProductOpen, setIsAddProductOpen] = useState(false);
 
-    const uniqueCategories = useMemo(() => {
-        const categories = new Set(INVENTORY_DATA.map(item => item.category));
-        return ['All', ...Array.from(categories)];
+    // Form State
+    const [newProduct, setNewProduct] = useState({
+        name: '',
+        sku: '',
+        category: 'Electronics',
+        unitOfMeasure: 'pcs',
+        costPrice: 0,
+        sellingPrice: 0,
+        initialStock: 0,
+        reorderLevel: 10,
+        supplierId: ''
+    });
+
+    useEffect(() => {
+        fetchData();
     }, []);
 
+    const fetchData = async () => {
+        setIsLoading(true);
+        try {
+            const [productsRes, suppliersRes] = await Promise.all([
+                inventoryService.getProducts(),
+                procurementService.getSuppliers()
+            ]);
+
+            if (productsRes.data.success) {
+                setProducts(productsRes.data.data);
+            }
+            if (suppliersRes.data.success) {
+                setSuppliers(suppliersRes.data.data);
+            }
+        } catch (error) {
+            console.error("Failed to fetch inventory data", error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const uniqueCategories = useMemo(() => {
+        const categories = new Set(products.map(item => item.category));
+        return ['All', ...Array.from(categories)];
+    }, [products]);
+
     const processedData = useMemo(() => {
-        let data = [...INVENTORY_DATA];
+        let data = [...products];
 
         // Text Filter
         if (filterTerm) {
@@ -61,8 +88,8 @@ export const Inventory: React.FC = () => {
         if (stockStatusFilter !== 'All') {
             data = data.filter(item => {
                 if (stockStatusFilter === 'Out of Stock') return item.stock === 0;
-                if (stockStatusFilter === 'Low Stock') return item.stock > 0 && item.stock < 10;
-                if (stockStatusFilter === 'In Stock') return item.stock >= 10;
+                if (stockStatusFilter === 'Low Stock') return item.stock > 0 && item.stock < item.reorderLevel;
+                if (stockStatusFilter === 'In Stock') return item.stock >= item.reorderLevel;
                 return true;
             });
         }
@@ -70,20 +97,37 @@ export const Inventory: React.FC = () => {
         return data;
     }, [filterTerm, categoryFilter, stockStatusFilter]);
 
-    const renderStockBadge = (stock: number) => {
-        if (stock === 0) {
+    const renderStockBadge = (item: ApiProduct) => {
+        if (item.stock === 0) {
             return <StatusDot variant="error">Out of Stock</StatusDot>;
         }
-        if (stock < 10) {
-            return <StatusDot variant="warning">Low Stock: {stock}</StatusDot>;
+        if (item.stock < item.reorderLevel) {
+            return <StatusDot variant="warning">Low Stock: {item.stock}</StatusDot>;
         }
-        return <StatusDot variant="success">In Stock: {stock}</StatusDot>;
+        return <StatusDot variant="success">In Stock: {item.stock}</StatusDot>;
     };
 
-    const handleSaveProduct = (e: React.FormEvent) => {
+    const handleSaveProduct = async (e: React.FormEvent) => {
         e.preventDefault();
-        console.log("Saving new product...");
-        setIsAddProductOpen(false);
+        setIsSaving(true);
+        try {
+            const res = await inventoryService.createProduct({
+                ...newProduct,
+                supplierId: newProduct.supplierId ? parseInt(newProduct.supplierId) : null
+            });
+            if (res.data.success) {
+                setIsAddProductOpen(false);
+                fetchData();
+                setNewProduct({
+                    name: '', sku: '', category: 'Electronics', unitOfMeasure: 'pcs',
+                    costPrice: 0, sellingPrice: 0, initialStock: 0, reorderLevel: 10, supplierId: ''
+                });
+            }
+        } catch (error) {
+            console.error("Error creating product", error);
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     const clearFilters = () => {
@@ -92,7 +136,7 @@ export const Inventory: React.FC = () => {
         setStockStatusFilter('All');
     };
 
-    const columns: ColumnDef<Product>[] = [
+    const columns: ColumnDef<ApiProduct>[] = [
         {
             accessorKey: "name",
             header: ({ column }) => {
@@ -142,7 +186,7 @@ export const Inventory: React.FC = () => {
             cell: ({ row }) => <Badge variant="secondary" className="font-normal">{row.getValue("category")}</Badge>
         },
         {
-            accessorKey: "price",
+            accessorKey: "sellingPrice",
             header: ({ column }) => {
                 return (
                     <Button
@@ -150,12 +194,12 @@ export const Inventory: React.FC = () => {
                         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
                         className="-ml-3 hover:bg-transparent text-xs font-semibold"
                     >
-                        Price
+                        Selling Price
                         <ArrowUpDown className="ml-2 h-4 w-4" />
                     </Button>
                 )
             },
-            cell: ({ row }) => <span className="text-zinc-900 dark:text-zinc-50">${(row.getValue("price") as number).toFixed(2)}</span>
+            cell: ({ row }) => <span className="text-zinc-900 dark:text-zinc-50 font-medium font-mono">${(row.getValue("sellingPrice") as number).toFixed(2)}</span>
         },
         {
             accessorKey: "stock",
@@ -171,14 +215,14 @@ export const Inventory: React.FC = () => {
                     </Button>
                 )
             },
-            cell: ({ row }) => renderStockBadge(row.getValue("stock") as number)
+            cell: ({ row }) => renderStockBadge(row.original)
         },
         {
             id: "actions",
             header: () => <div className="text-right text-xs font-semibold pr-2">Actions</div>,
             cell: ({ row }) => {
                 return (
-                    <div className="flex justify-end">
+                    <div className="flex justify-end pr-4">
                         <Button size="sm" variant="ghost" className="h-8 w-8 p-0">
                             <MoreHorizontal className="h-4 w-4" />
                         </Button>
@@ -204,66 +248,113 @@ export const Inventory: React.FC = () => {
                         <div className="grid grid-cols-2 gap-4">
                             <div className="grid gap-2">
                                 <Label>Product Name</Label>
-                                <Input placeholder="e.g. Cotton T-Shirt" required />
+                                <Input
+                                    placeholder="e.g. Cotton T-Shirt"
+                                    required
+                                    value={newProduct.name}
+                                    onChange={e => setNewProduct({ ...newProduct, name: e.target.value })}
+                                />
                             </div>
                             <div className="grid gap-2">
                                 <Label>SKU / Barcode</Label>
-                                <Input placeholder="Scan or enter SKU" />
+                                <Input
+                                    placeholder="Scan or enter SKU"
+                                    value={newProduct.sku}
+                                    onChange={e => setNewProduct({ ...newProduct, sku: e.target.value })}
+                                />
                             </div>
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
                             <div className="grid gap-2">
                                 <Label>Category</Label>
-                                <Select>
+                                <select
+                                    className="flex h-10 w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm ring-offset-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-800 dark:bg-zinc-950 dark:ring-offset-zinc-950 dark:focus-visible:ring-zinc-300"
+                                    value={newProduct.category}
+                                    onChange={e => setNewProduct({ ...newProduct, category: e.target.value })}
+                                >
                                     <option>Electronics</option>
                                     <option>Apparel</option>
                                     <option>Home & Living</option>
                                     <option>Accessories</option>
-                                </Select>
+                                </select>
                             </div>
                             <div className="grid gap-2">
                                 <Label>Unit of Measure</Label>
-                                <Select>
-                                    <option>Pieces (pcs)</option>
-                                    <option>Box</option>
-                                    <option>Kilogram (kg)</option>
-                                </Select>
+                                <select
+                                    className="flex h-10 w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm ring-offset-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-800 dark:bg-zinc-950 dark:ring-offset-zinc-950 dark:focus-visible:ring-zinc-300"
+                                    value={newProduct.unitOfMeasure}
+                                    onChange={e => setNewProduct({ ...newProduct, unitOfMeasure: e.target.value })}
+                                >
+                                    <option value="pcs">Pieces (pcs)</option>
+                                    <option value="box">Box</option>
+                                    <option value="kg">Kilogram (kg)</option>
+                                </select>
                             </div>
                         </div>
 
                         <div className="grid grid-cols-3 gap-4">
                             <div className="grid gap-2">
                                 <Label>Cost Price</Label>
-                                <Input type="number" placeholder="0.00" />
+                                <Input
+                                    type="number"
+                                    placeholder="0.00"
+                                    value={newProduct.costPrice}
+                                    onChange={e => setNewProduct({ ...newProduct, costPrice: parseFloat(e.target.value) || 0 })}
+                                />
                             </div>
                             <div className="grid gap-2">
                                 <Label>Selling Price</Label>
-                                <Input type="number" placeholder="0.00" required />
+                                <Input
+                                    type="number"
+                                    placeholder="0.00"
+                                    required
+                                    value={newProduct.sellingPrice}
+                                    onChange={e => setNewProduct({ ...newProduct, sellingPrice: parseFloat(e.target.value) || 0 })}
+                                />
                             </div>
                             <div className="grid gap-2">
                                 <Label>Initial Stock</Label>
-                                <Input type="number" placeholder="0" required />
+                                <Input
+                                    type="number"
+                                    placeholder="0"
+                                    required
+                                    value={newProduct.initialStock}
+                                    onChange={e => setNewProduct({ ...newProduct, initialStock: parseInt(e.target.value) || 0 })}
+                                />
                             </div>
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
                             <div className="grid gap-2">
                                 <Label>Reorder Level</Label>
-                                <Input type="number" placeholder="10" />
+                                <Input
+                                    type="number"
+                                    placeholder="10"
+                                    value={newProduct.reorderLevel}
+                                    onChange={e => setNewProduct({ ...newProduct, reorderLevel: parseInt(e.target.value) || 10 })}
+                                />
                             </div>
                             <div className="grid gap-2">
                                 <Label>Supplier</Label>
-                                <Select>
-                                    <option>TechGizmos Inc.</option>
-                                    <option>Global Apparel Co.</option>
+                                <select
+                                    className="flex h-10 w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm ring-offset-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-800 dark:bg-zinc-950 dark:ring-offset-zinc-950 dark:focus-visible:ring-zinc-300"
+                                    value={newProduct.supplierId}
+                                    onChange={e => setNewProduct({ ...newProduct, supplierId: e.target.value })}
+                                >
                                     <option value="">No Supplier</option>
-                                </Select>
+                                    {suppliers.map(s => (
+                                        <option key={s.id} value={s.id}>{s.companyName}</option>
+                                    ))}
+                                </select>
                             </div>
                         </div>
                         <DialogFooter>
                             <Button type="button" variant="outline" onClick={() => setIsAddProductOpen(false)}>Cancel</Button>
-                            <Button type="submit">Save Product</Button>
+                            <Button type="submit" disabled={isSaving}>
+                                {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                                Save Product
+                            </Button>
                         </DialogFooter>
                     </form>
                 </DialogContent>
@@ -322,7 +413,13 @@ export const Inventory: React.FC = () => {
 
             {/* Unified Data Table View */}
             <div className="overflow-hidden border border-zinc-200 shadow-sm dark:border-zinc-800 rounded-md">
-                <DataTable columns={columns} data={processedData} />
+                {isLoading ? (
+                    <div className="h-[400px] flex items-center justify-center bg-white dark:bg-zinc-900">
+                        <Loader2 className="h-8 w-8 animate-spin text-brand-600" />
+                    </div>
+                ) : (
+                    <DataTable columns={columns} data={processedData} />
+                )}
             </div>
         </div>
     );

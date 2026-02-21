@@ -55,7 +55,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
       </div>
 
       {/* Right Column: Form */}
-      <div className="flex items-center justify-center p-6 bg-zinc-50 transition-colors duration-300">
+      <div className="flex items-center justify-center p-6 bg-zinc-50 dark:bg-zinc-950 transition-colors duration-300">
         <div className="w-full max-w-[400px] space-y-6">
           {/* Mobile Logo for small screens */}
           <div className="lg:hidden flex items-center gap-2 mb-8 justify-center text-zinc-900">

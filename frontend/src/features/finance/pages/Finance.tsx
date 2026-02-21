@@ -1,78 +1,114 @@
-import React, { useState, useMemo } from 'react';
-import { Card, CardContent } from '../../../components/ui/Card';
+import { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
-import { Badge } from '../../../components/ui/Badge';
-import { StatusDot } from '../../../components/ui/StatusDot';
 import { Input } from '../../../components/ui/Input';
-import { ColumnDef } from '@tanstack/react-table';
 import { DataTable } from '../../../components/ui/data-table';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../../../components/ui/Dialog';
+import { StatusDot } from '../../../components/ui/StatusDot';
+import { ColumnDef } from '@tanstack/react-table';
+import { Plus, Wallet, TrendingUp, Receipt, MoreHorizontal, ArrowUpDown, Loader2 } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../../../components/ui/Dialog';
 import { Label } from '../../../components/ui/Label';
-import { Select } from '../../../components/ui/Select';
-import { MOCK_EXPENSES } from '../../../lib/mockData';
-import { Wallet, Plus, Receipt, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
-import { Expense } from '../../../types';
+import { financeService, Expense as ApiExpense } from '../services/financeService';
 
-const ITEMS_PER_PAGE = 10;
+const Finance = () => {
+    const [expenses, setExpenses] = useState<ApiExpense[]>([]);
+    const [totalExpenses, setTotalExpenses] = useState(0);
+    const [isLoading, setIsLoading] = useState(true);
+    const [isAddOpen, setIsAddOpen] = useState(false);
+    const [newExpense, setNewExpense] = useState<Partial<ApiExpense>>({
+        expenseCategory: '',
+        description: '',
+        amount: 0,
+        expenseDate: new Date().toISOString().split('T')[0],
+        status: 'Paid'
+    });
 
-export const Finance: React.FC = () => {
-    const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false);
+    useEffect(() => {
+        loadData();
+    }, []);
 
-    const columns: ColumnDef<Expense>[] = [
+    const loadData = async () => {
+        setIsLoading(true);
+        try {
+            const [expensesRes, summaryRes] = await Promise.all([
+                financeService.getExpenses(),
+                financeService.getSummary(new Date().getMonth() + 1, new Date().getFullYear())
+            ]);
+
+            if (expensesRes.success && expensesRes.data) {
+                setExpenses(expensesRes.data);
+            }
+            if (summaryRes.success && summaryRes.data !== undefined) {
+                setTotalExpenses(summaryRes.data);
+            }
+        } catch (error) {
+            console.error("Failed to load finance data", error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleCreateExpense = async (e: React.FormEvent) => {
+        e.preventDefault();
+        try {
+            const response = await financeService.createExpense(newExpense);
+            if (response.success) {
+                alert("Expense recorded successfully");
+                setIsAddOpen(false);
+                setNewExpense({
+                    expenseCategory: '',
+                    description: '',
+                    amount: 0,
+                    expenseDate: new Date().toISOString().split('T')[0],
+                    status: 'Paid'
+                });
+                loadData();
+            }
+        } catch (error) {
+            alert("Failed to record expense");
+        }
+    };
+
+    const columns: ColumnDef<ApiExpense>[] = [
         {
-            accessorKey: "ExpenseDate",
+            accessorKey: "expenseDate",
             header: ({ column }) => (
-                <Button variant="ghost" className="hover:bg-transparent -ml-3 text-xs font-semibold" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
+                <Button variant="ghost" className="-ml-3 h-8" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
                     Date <ArrowUpDown className="ml-2 h-4 w-4" />
                 </Button>
             ),
-            cell: ({ row }) => <span className="text-zinc-500 dark:text-zinc-400">{row.getValue("ExpenseDate")}</span>
+            cell: ({ row }) => <span className="text-zinc-500">{new Date(row.getValue("expenseDate")).toLocaleDateString()}</span>
         },
         {
-            accessorKey: "ExpenseCategory",
-            header: ({ column }) => (
-                <Button variant="ghost" className="hover:bg-transparent -ml-3 text-xs font-semibold" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
-                    Category <ArrowUpDown className="ml-2 h-4 w-4" />
-                </Button>
-            ),
-            cell: ({ row }) => <Badge variant="outline" className="bg-zinc-100 dark:bg-zinc-800 font-normal">{row.getValue("ExpenseCategory")}</Badge>
+            accessorKey: "expenseCategory",
+            header: "Category",
+            cell: ({ row }) => <span className="font-medium">{row.getValue("expenseCategory")}</span>
         },
         {
-            accessorKey: "Description",
-            header: ({ column }) => (
-                <Button variant="ghost" className="hover:bg-transparent -ml-3 text-xs font-semibold" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
-                    Description <ArrowUpDown className="ml-2 h-4 w-4" />
-                </Button>
-            ),
-            cell: ({ row }) => <span className="font-medium text-zinc-900 dark:text-zinc-100">{row.getValue("Description")}</span>
+            accessorKey: "description",
+            header: "Description",
+            cell: ({ row }) => <span className="text-zinc-500 truncate max-w-[200px]">{row.getValue("description")}</span>
         },
         {
-            accessorKey: "Amount",
-            header: ({ column }) => (
-                <Button variant="ghost" className="hover:bg-transparent -ml-3 text-xs font-semibold" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
-                    Amount <ArrowUpDown className="ml-2 h-4 w-4" />
-                </Button>
-            ),
-            cell: ({ row }) => <span className="font-bold text-zinc-900 dark:text-zinc-100">${(row.getValue("Amount") as number).toFixed(2)}</span>
+            accessorKey: "amount",
+            header: "Amount",
+            cell: ({ row }) => <span className="font-mono font-bold">${parseFloat(row.getValue("amount")).toFixed(2)}</span>
         },
         {
-            accessorKey: "Status",
-            header: ({ column }) => (
-                <Button variant="ghost" className="hover:bg-transparent -ml-3 text-xs font-semibold" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
-                    Status <ArrowUpDown className="ml-2 h-4 w-4" />
-                </Button>
-            ),
+            accessorKey: "status",
+            header: "Status",
             cell: ({ row }) => {
-                const status = row.getValue("Status") as string;
-                return <StatusDot variant={status === 'Paid' ? 'success' : 'neutral'}>{status}</StatusDot>;
+                const status = row.getValue("status") as string;
+                return <StatusDot variant={status === 'Paid' ? 'success' : 'warning'}>{status}</StatusDot>;
             }
         },
         {
             id: "actions",
-            header: () => <div className="text-right text-xs font-semibold pr-2">Receipt</div>,
             cell: () => (
                 <div className="flex justify-end">
-                    <Button variant="ghost" size="icon" className="h-8 w-8"><Receipt className="h-4 w-4" /></Button>
+                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                        <MoreHorizontal className="h-4 w-4" />
+                    </Button>
                 </div>
             )
         }
@@ -80,74 +116,83 @@ export const Finance: React.FC = () => {
 
     return (
         <div className="space-y-6">
-            {/* Record Expense Modal */}
-            <Dialog open={isExpenseModalOpen} onOpenChange={setIsExpenseModalOpen}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>Record New Expense</DialogTitle>
-                        <DialogDescription>Log operational expenses for financial tracking.</DialogDescription>
-                    </DialogHeader>
-                    <div className="grid gap-4 py-4">
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="grid gap-2">
-                                <Label>Date</Label>
-                                <Input type="date" defaultValue={new Date().toISOString().split('T')[0]} />
-                            </div>
-                            <div className="grid gap-2">
-                                <Label>Category</Label>
-                                <Select>
-                                    <option>Utilities</option>
-                                    <option>Rent</option>
-                                    <option>Office Supplies</option>
-                                    <option>Maintenance</option>
-                                    <option>Marketing</option>
-                                </Select>
-                            </div>
-                        </div>
-                        <div className="grid gap-2">
-                            <Label>Description</Label>
-                            <Input placeholder="e.g. October Electricity Bill" />
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="grid gap-2">
-                                <Label>Amount</Label>
-                                <Input type="number" placeholder="0.00" />
-                            </div>
-                            <div className="grid gap-2">
-                                <Label>Reference No.</Label>
-                                <Input placeholder="Invoice/Receipt #" />
-                            </div>
-                        </div>
-                    </div>
-                    <DialogFooter>
-                        <Button variant="outline" onClick={() => setIsExpenseModalOpen(false)}>Cancel</Button>
-                        <Button onClick={() => setIsExpenseModalOpen(false)}>Save Record</Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
-
             <div className="flex justify-between items-center">
                 <div>
-                    <h2 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">Finance & Expenses</h2>
-                    <p className="text-zinc-500 dark:text-zinc-400 mt-1">Track operational costs and expenses.</p>
+                    <h2 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">Financial Management</h2>
+                    <p className="text-sm text-zinc-500 dark:text-zinc-400">Track expenses and monitor financial health.</p>
                 </div>
-                <Button onClick={() => setIsExpenseModalOpen(true)}>
-                    <Plus className="mr-2 h-4 w-4" /> Record Expense
+                <Button onClick={() => setIsAddOpen(true)}>
+                    <Plus className="h-4 w-4 mr-2" /> Record Expense
                 </Button>
             </div>
 
-            <div className="grid gap-4 md:grid-cols-3">
-                <Card className="bg-zinc-900 text-zinc-50 dark:bg-zinc-800 dark:text-zinc-50">
-                    <CardContent className="p-6">
-                        <p className="text-zinc-400 text-sm font-medium">Total Expenses (Oct)</p>
-                        <h3 className="text-3xl font-bold mt-2">$570.00</h3>
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between pb-2">
+                        <CardTitle className="text-sm font-medium">Monthly Expenses</CardTitle>
+                        <Wallet className="h-4 w-4 text-zinc-500" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">${totalExpenses.toFixed(2)}</div>
+                        <p className="text-xs text-zinc-500 mt-1">Total for {new Date().toLocaleString('default', { month: 'long' })}</p>
                     </CardContent>
                 </Card>
             </div>
 
-            <div className="rounded-md border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 overflow-hidden">
-                <DataTable columns={columns} data={MOCK_EXPENSES} />
+            <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Record New Expense</DialogTitle>
+                        <DialogDescription>Add a new expense entry to the ledger.</DialogDescription>
+                    </DialogHeader>
+                    <form onSubmit={handleCreateExpense} className="space-y-4 py-4">
+                        <div className="grid gap-2">
+                            <Label>Category</Label>
+                            <select className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                                value={newExpense.expenseCategory} onChange={e => setNewExpense({ ...newExpense, expenseCategory: e.target.value })}>
+                                <option value="">Select Category</option>
+                                <option value="Utilities">Utilities</option>
+                                <option value="Rent">Rent</option>
+                                <option value="Payroll">Payroll</option>
+                                <option value="Inventory">Inventory</option>
+                                <option value="Office Supplies">Office Supplies</option>
+                                <option value="Maintenance">Maintenance</option>
+                                <option value="Marketing">Marketing</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                        <div className="grid gap-2">
+                            <Label>Description</Label>
+                            <Input required value={newExpense.description} onChange={e => setNewExpense({ ...newExpense, description: e.target.value })} />
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="grid gap-2">
+                                <Label>Amount</Label>
+                                <Input type="number" step="0.01" required value={newExpense.amount} onChange={e => setNewExpense({ ...newExpense, amount: parseFloat(e.target.value) })} />
+                            </div>
+                            <div className="grid gap-2">
+                                <Label>Date</Label>
+                                <Input type="date" required value={newExpense.expenseDate} onChange={e => setNewExpense({ ...newExpense, expenseDate: e.target.value })} />
+                            </div>
+                        </div>
+                        <DialogFooter>
+                            <Button type="button" variant="outline" onClick={() => setIsAddOpen(false)}>Cancel</Button>
+                            <Button type="submit">Complete Record</Button>
+                        </DialogFooter>
+                    </form>
+                </DialogContent>
+            </Dialog>
+
+            <div className="rounded-md border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 relative min-h-[400px]">
+                {isLoading && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-white/50 dark:bg-zinc-950/50 z-10">
+                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                    </div>
+                )}
+                <DataTable columns={columns} data={expenses} />
             </div>
         </div>
     );
 };
+
+export default Finance;
