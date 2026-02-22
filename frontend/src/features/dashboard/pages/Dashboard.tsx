@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { getDashboardSummary, DashboardSummary, emptyDashboard } from '../services/dashboardService';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../../components/ui/Card';
 import { Skeleton } from '../../../components/ui/Skeleton';
 import { Button } from '../../../components/ui/Button';
@@ -17,26 +18,13 @@ interface DashboardProps {
   currentRole: UserRole;
 }
 
-// --- Mock Data ---
-const salesData = [
-  { name: 'Mon', sales: 4000 }, { name: 'Tue', sales: 3000 },
-  { name: 'Wed', sales: 2000 }, { name: 'Thu', sales: 2780 },
-  { name: 'Fri', sales: 1890 }, { name: 'Sat', sales: 2390 },
-  { name: 'Sun', sales: 3490 },
-];
-
-const categoryData = [
-  { name: 'Electronics', value: 400 }, { name: 'Apparel', value: 300 },
-  { name: 'Home', value: 300 }, { name: 'Beauty', value: 200 },
-];
-
+// Static chart data (no matching backend metric available)
 const serverLoadData = [
   { time: '00:00', load: 12 }, { time: '04:00', load: 15 },
   { time: '08:00', load: 45 }, { time: '12:00', load: 78 },
   { time: '16:00', load: 60 }, { time: '20:00', load: 30 },
 ];
 
-// Updated colors for better dark mode visibility (using brand-600, etc.)
 const CHART_COLORS = ['#2563eb', '#0ea5e9', '#f59e0b', '#64748b'];
 
 // --- Sub-Components for Role-Based Views ---
@@ -45,7 +33,7 @@ const CHART_COLORS = ['#2563eb', '#0ea5e9', '#f59e0b', '#64748b'];
  * Super Admin View
  * Focus: System Infrastructure, DB, Global Security
  */
-const SuperAdminDashboard = () => (
+const SuperAdminDashboard = ({ data }: { data: DashboardSummary }) => (
   <div className="space-y-6">
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
       <Card className="border-l-4 border-l-emerald-500">
@@ -64,8 +52,8 @@ const SuperAdminDashboard = () => (
           <Users className="h-4 w-4 text-blue-500" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">24</div>
-          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">4 Admins, 20 Staff</p>
+          <div className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">{data.totalUsers}</div>
+          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">Registered accounts</p>
         </CardContent>
       </Card>
       <Card className="border-l-4 border-l-zinc-500">
@@ -84,7 +72,7 @@ const SuperAdminDashboard = () => (
           <ShieldAlert className="h-4 w-4 text-amber-500" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">3</div>
+          <div className={`text-2xl font-bold ${data.securityAlerts > 0 ? 'text-amber-600' : 'text-zinc-900 dark:text-zinc-50'}`}>{data.securityAlerts}</div>
           <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">Failed login attempts (24h)</p>
         </CardContent>
       </Card>
@@ -121,12 +109,9 @@ const SuperAdminDashboard = () => (
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {[
-              { event: 'Database Backup Completed', time: '10 mins ago', status: 'success' },
-              { event: 'Critical: Schema Migration', time: '1 hour ago', status: 'warning' },
-              { event: 'Admin Session Cleanup', time: '2 hours ago', status: 'info' },
-              { event: 'System Config Updated', time: 'Yesterday', status: 'info' },
-            ].map((item, i) => (
+            {(data.recentEvents.length > 0 ? data.recentEvents : [
+              { event: 'No recent events recorded', time: '', status: 'info' },
+            ]).map((item, i) => (
               <div key={i} className="flex items-center justify-between p-2 rounded-md hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors">
                 <div className="flex items-center gap-3">
                   <StatusDot variant={item.status as any} />
@@ -148,19 +133,17 @@ const SuperAdminDashboard = () => (
  * Manager View
  * Focus: Financials, Sales Performance, Staffing
  */
-const ManagerDashboard = () => (
+const ManagerDashboard = ({ data }: { data: DashboardSummary }) => (
   <div className="space-y-6">
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Total Revenue</CardTitle>
+          <CardTitle className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Monthly Expenses</CardTitle>
           <DollarSign className="h-4 w-4 text-zinc-500" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">$45,231.89</div>
-          <p className="text-xs text-emerald-600 font-medium flex items-center mt-1">
-            +20.1% <span className="text-zinc-400 ml-1 font-normal">from last month</span>
-          </p>
+          <div className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">${data.monthlyExpenses.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">Total expenses this month</p>
         </CardContent>
       </Card>
       <Card>
@@ -169,30 +152,28 @@ const ManagerDashboard = () => (
           <Package className="h-4 w-4 text-zinc-500" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">+2,350</div>
-          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">+180 new items added</p>
+          <div className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">{data.totalProducts.toLocaleString()}</div>
+          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">Total SKUs in inventory</p>
         </CardContent>
       </Card>
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Sales Count</CardTitle>
+          <CardTitle className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Pending Orders</CardTitle>
           <TrendingUp className="h-4 w-4 text-zinc-500" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">+12,234</div>
-          <p className="text-xs text-emerald-600 font-medium flex items-center mt-1">
-            +19% <span className="text-zinc-400 ml-1 font-normal">from last month</span>
-          </p>
+          <div className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">{data.pendingPurchaseOrders}</div>
+          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">Purchase orders awaiting delivery</p>
         </CardContent>
       </Card>
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Active Staff</CardTitle>
+          <CardTitle className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Active Employees</CardTitle>
           <Users className="h-4 w-4 text-zinc-500" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">24</div>
-          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">All departments active</p>
+          <div className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">{data.activeEmployees}</div>
+          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">{data.presentToday} present today</p>
         </CardContent>
       </Card>
     </div>
@@ -200,11 +181,11 @@ const ManagerDashboard = () => (
     <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
       <Card className="col-span-4 border-zinc-200 dark:border-zinc-800 shadow-sm">
         <CardHeader>
-          <CardTitle className="text-lg">Weekly Revenue</CardTitle>
+          <CardTitle className="text-lg">Weekly Expenses</CardTitle>
         </CardHeader>
         <CardContent className="pl-2">
           <ResponsiveContainer width="100%" height={350}>
-            <BarChart data={salesData}>
+            <BarChart data={data.weeklyExpenses}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#52525b" opacity={0.2} />
               <XAxis dataKey="name" stroke="#71717a" fontSize={12} tickLine={false} axisLine={false} />
               <YAxis stroke="#71717a" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `$${value}`} />
@@ -219,13 +200,13 @@ const ManagerDashboard = () => (
       </Card>
       <Card className="col-span-3 border-zinc-200 dark:border-zinc-800 shadow-sm">
         <CardHeader>
-          <CardTitle className="text-lg">Sales by Category</CardTitle>
+          <CardTitle className="text-lg">Expenses by Category</CardTitle>
         </CardHeader>
         <CardContent>
           <ResponsiveContainer width="100%" height={300}>
             <PieChart>
               <Pie
-                data={categoryData}
+                data={data.expensesByCategory.length > 0 ? data.expensesByCategory : [{ name: 'No Data', value: 1 }]}
                 cx="50%"
                 cy="50%"
                 innerRadius={60}
@@ -233,7 +214,7 @@ const ManagerDashboard = () => (
                 paddingAngle={5}
                 dataKey="value"
               >
-                {categoryData.map((entry, index) => (
+                {(data.expensesByCategory.length > 0 ? data.expensesByCategory : [{ name: 'No Data', value: 1 }]).map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} strokeWidth={0} />
                 ))}
               </Pie>
@@ -241,7 +222,7 @@ const ManagerDashboard = () => (
             </PieChart>
           </ResponsiveContainer>
           <div className="grid grid-cols-2 gap-4 mt-4 px-4">
-            {categoryData.map((entry, index) => (
+            {data.expensesByCategory.map((entry, index) => (
               <div key={index} className="flex items-center gap-2">
                 <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: CHART_COLORS[index % CHART_COLORS.length] }}></div>
                 <span className="text-sm font-medium text-zinc-600 dark:text-zinc-400">{entry.name}</span>
@@ -258,7 +239,7 @@ const ManagerDashboard = () => (
  * Cashier View
  * Focus: Personal Sales, Quick Actions, Register Status
  */
-const CashierDashboard = () => (
+const CashierDashboard = ({ data: _data }: { data: DashboardSummary }) => (
   <div className="space-y-6">
     <div className="flex flex-col md:flex-row gap-4">
       <div className="flex-1 space-y-6">
@@ -359,7 +340,7 @@ const CashierDashboard = () => (
  * Inventory Clerk View
  * Focus: Stock Levels, Shipments, POs
  */
-const InventoryDashboard = () => (
+const InventoryDashboard = ({ data }: { data: DashboardSummary }) => (
   <div className="space-y-6">
     <div className="grid gap-4 md:grid-cols-3">
       <Card className="border-l-4 border-l-red-500">
@@ -367,7 +348,7 @@ const InventoryDashboard = () => (
           <CardTitle className="text-sm text-zinc-600 dark:text-zinc-400 font-medium">Low Stock Alerts</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold text-red-600">5</div>
+          <div className={`text-2xl font-bold ${data.lowStockCount > 0 ? 'text-red-600' : 'text-emerald-600'}`}>{data.lowStockCount}</div>
           <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">Items below reorder level</p>
         </CardContent>
       </Card>
@@ -376,8 +357,8 @@ const InventoryDashboard = () => (
           <CardTitle className="text-sm text-zinc-600 dark:text-zinc-400 font-medium">Pending Deliveries</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">3</div>
-          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">Expected today</p>
+          <div className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">{data.pendingPurchaseOrders}</div>
+          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">Active purchase orders</p>
         </CardContent>
       </Card>
       <Card className="border-l-4 border-l-emerald-500">
@@ -385,8 +366,8 @@ const InventoryDashboard = () => (
           <CardTitle className="text-sm text-zinc-600 dark:text-zinc-400 font-medium">Total SKUs</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">2,350</div>
-          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">In 12 Categories</p>
+          <div className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">{data.totalProducts.toLocaleString()}</div>
+          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">Products tracked</p>
         </CardContent>
       </Card>
     </div>
@@ -399,20 +380,18 @@ const InventoryDashboard = () => (
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
-            {[
-              { name: 'USB-C Cable (1m)', stock: 0, status: 'Out of Stock' },
-              { name: 'Smart Watch Gen 2', stock: 3, status: 'Critical' },
-              { name: 'Office Chair (Black)', stock: 5, status: 'Low' },
-            ].map((item, i) => (
+            {(data.lowStockItems.length > 0 ? data.lowStockItems : [
+              { name: 'All items are well-stocked', stock: 0, status: 'Out of Stock' },
+            ]).map((item, i) => (
               <div key={i} className="flex items-center justify-between p-3 border rounded-lg bg-zinc-50 dark:bg-zinc-800/50 dark:border-zinc-800">
                 <div className="flex items-center gap-3">
-                  <AlertCircle className={`h-5 w-5 ${item.stock === 0 ? 'text-red-500' : 'text-amber-500'}`} />
+                  <AlertCircle className={`h-5 w-5 ${item.status === 'Out of Stock' ? 'text-red-500' : 'text-amber-500'}`} />
                   <div>
                     <p className="text-sm font-medium text-zinc-900 dark:text-zinc-200">{item.name}</p>
                     <p className="text-xs text-zinc-500 dark:text-zinc-400">{item.stock} units remaining</p>
                   </div>
                 </div>
-                <StatusDot variant={item.stock === 0 ? 'error' : 'warning'}>
+                <StatusDot variant={item.status === 'Out of Stock' ? 'error' : item.status === 'Critical' ? 'error' : 'warning'}>
                   {item.status}
                 </StatusDot>
               </div>
@@ -428,10 +407,9 @@ const InventoryDashboard = () => (
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {[
-              { id: 'PO-2023-001', supplier: 'TechGizmos Inc.', status: 'Shipped', eta: 'Today' },
-              { id: 'PO-2023-003', supplier: 'Global Apparel', status: 'Processing', eta: 'Oct 30' },
-            ].map((po, i) => (
+            {(data.pendingPOs.length > 0 ? data.pendingPOs : [
+              { id: '—', supplier: 'No pending purchase orders', status: 'Pending', eta: '—' },
+            ]).map((po, i) => (
               <div key={i} className="flex items-center justify-between">
                 <div>
                   <p className="font-medium text-sm text-zinc-900 dark:text-zinc-200">{po.supplier}</p>
@@ -455,13 +433,23 @@ const InventoryDashboard = () => (
 
 export const Dashboard: React.FC<DashboardProps> = ({ currentRole }) => {
   const [isLoading, setIsLoading] = useState(true);
+  const [data, setData] = useState<DashboardSummary>(emptyDashboard);
 
   useEffect(() => {
-    // Simulate data fetching
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 800);
-    return () => clearTimeout(timer);
+    let cancelled = false;
+    const fetchData = async () => {
+      setIsLoading(true);
+      try {
+        const summary = await getDashboardSummary();
+        if (!cancelled) setData(summary);
+      } catch (err) {
+        console.error('Dashboard data fetch error:', err);
+      } finally {
+        if (!cancelled) setIsLoading(false);
+      }
+    };
+    fetchData();
+    return () => { cancelled = true; };
   }, [currentRole]);
 
   if (isLoading) {
@@ -487,14 +475,14 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentRole }) => {
   const renderDashboardContent = () => {
     switch (currentRole) {
       case UserRole.SUPER_ADMIN:
-        return <SuperAdminDashboard />;
+        return <SuperAdminDashboard data={data} />;
       case UserRole.CASHIER:
-        return <CashierDashboard />;
+        return <CashierDashboard data={data} />;
       case UserRole.INVENTORY_CLERK:
-        return <InventoryDashboard />;
+        return <InventoryDashboard data={data} />;
       case UserRole.MANAGER:
       default:
-        return <ManagerDashboard />;
+        return <ManagerDashboard data={data} />;
     }
   };
 
