@@ -124,6 +124,32 @@ namespace TradeMatrix.Server.Controllers
                         : "TBD"
                 }).ToList();
 
+                // ── Cashier today stats ───────────────────────────────────────
+                var todayTxQuery = _context.Transactions
+                    .Where(t => t.TransactionDate >= today && t.Status == "Completed");
+
+                var todayRevenue = await todayTxQuery.SumAsync(t => (decimal?)t.TotalAmount) ?? 0m;
+                var todayTxCount = await todayTxQuery.CountAsync();
+                var todayItemsSold = await _context.TransactionItems
+                    .Where(ti => ti.Transaction!.TransactionDate >= today && ti.Transaction.Status == "Completed")
+                    .SumAsync(ti => (int?)ti.Quantity) ?? 0;
+
+                var recentTxModels = await _context.Transactions
+                    .Include(t => t.Items)
+                    .Where(t => t.TransactionDate >= today)
+                    .OrderByDescending(t => t.TransactionDate)
+                    .Take(5)
+                    .ToListAsync();
+
+                var recentTransactions = recentTxModels.Select(t => new RecentTransactionDto
+                {
+                    TransactionNumber = t.TransactionNumber,
+                    Time = t.TransactionDate.ToLocalTime().ToString("hh:mm tt"),
+                    TotalAmount = t.TotalAmount,
+                    ItemCount = t.Items.Sum(i => i.Quantity),
+                    PaymentMethod = t.PaymentMethod
+                }).ToList();
+
                 var summary = new DashboardSummaryDto
                 {
                     TotalUsers = totalUsers,
@@ -138,7 +164,11 @@ namespace TradeMatrix.Server.Controllers
                     WeeklyExpenses = weeklyExpenses,
                     ExpensesByCategory = expensesByCategory,
                     LowStockItems = lowStockItems,
-                    PendingPOs = pendingPOList
+                    PendingPOs = pendingPOList,
+                    TodayRevenue = todayRevenue,
+                    TodayTransactionCount = todayTxCount,
+                    TodayItemsSold = todayItemsSold,
+                    RecentTransactions = recentTransactions
                 };
 
                 return Ok(ApiResponse<DashboardSummaryDto>.SuccessResponse(summary, "Dashboard summary retrieved successfully"));

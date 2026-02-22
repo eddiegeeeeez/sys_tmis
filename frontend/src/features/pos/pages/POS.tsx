@@ -1,30 +1,39 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../../../components/ui/Dialog';
 import { Label } from '../../../components/ui/Label';
 import { Select } from '../../../components/ui/Select';
-import { Search, Plus, Minus, CreditCard, Receipt, Barcode, ShoppingBag, X, Banknote } from 'lucide-react';
+import { Search, Plus, Minus, CreditCard, Receipt, Barcode, ShoppingBag, X, Banknote, Loader2 } from 'lucide-react';
 import { Product, CartItem } from '../../../types';
-
-const MOCK_PRODUCTS: Product[] = [
-  { id: '1', name: 'Wireless Headphones', category: 'Electronics', price: 129.99, stock: 45, sku: 'WH-001' },
-  { id: '2', name: 'Cotton T-Shirt', category: 'Apparel', price: 24.50, stock: 120, sku: 'TS-002' },
-  { id: '3', name: 'Smart Watch', category: 'Electronics', price: 199.00, stock: 30, sku: 'SW-003' },
-  { id: '4', name: 'Running Shoes', category: 'Apparel', price: 89.95, stock: 60, sku: 'RS-004' },
-  { id: '5', name: 'Bluetooth Speaker', category: 'Electronics', price: 59.99, stock: 85, sku: 'BS-005' },
-  { id: '6', name: 'Denim Jeans', category: 'Apparel', price: 49.99, stock: 90, sku: 'DJ-006' },
-  { id: '7', name: 'Leather Wallet', category: 'Accessories', price: 45.00, stock: 15, sku: 'LW-007' },
-  { id: '8', name: 'Sunglasses', category: 'Accessories', price: 150.00, stock: 22, sku: 'SG-008' },
-];
+import { fetchProducts, createTransaction } from '../services/posService';
 
 export const POS: React.FC = () => {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [productsLoading, setProductsLoading] = useState(true);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [amountTendered, setAmountTendered] = useState<string>('');
   const [paymentMethod, setPaymentMethod] = useState('Cash');
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [lastTxNumber, setLastTxNumber] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchProducts()
+      .then(setProducts)
+      .catch(() => setProducts([]))
+      .finally(() => setProductsLoading(false));
+  }, []);
+
+  const refreshProducts = () => {
+    setProductsLoading(true);
+    fetchProducts()
+      .then(setProducts)
+      .catch(() => {})
+      .finally(() => setProductsLoading(false));
+  };
 
   const addToCart = (product: Product) => {
     setCart(prev => {
@@ -54,23 +63,33 @@ export const POS: React.FC = () => {
   const tax = subtotal * 0.1;
   const total = subtotal + tax;
 
-  const filteredProducts = MOCK_PRODUCTS.filter(p =>
+  const filteredProducts = products.filter(p =>
     p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     p.sku.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handlePayment = () => {
-    console.log("Processing Payment:", {
-      method: paymentMethod,
-      total: total,
-      tendered: amountTendered,
-      items: cart
-    });
-    // Reset state
-    setCart([]);
-    setAmountTendered('');
-    setIsPaymentModalOpen(false);
-    alert("Transaction Completed Successfully!");
+  const handlePayment = async () => {
+    setIsProcessing(true);
+    try {
+      const result = await createTransaction({
+        paymentMethod,
+        amountTendered: parseFloat(amountTendered),
+        items: cart.map(item => ({
+          productId: parseInt(item.id),
+          quantity: item.quantity,
+        })),
+      });
+      setLastTxNumber(result.transactionNumber);
+      setCart([]);
+      setAmountTendered('');
+      setIsPaymentModalOpen(false);
+      refreshProducts(); // refresh stock counts
+      alert(`Transaction ${result.transactionNumber} completed! Change: $${result.change.toFixed(2)}`);
+    } catch (err: any) {
+      alert(err?.response?.data?.message ?? 'Transaction failed. Please try again.');
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const change = amountTendered ? (parseFloat(amountTendered) - total) : 0;
@@ -125,10 +144,11 @@ export const POS: React.FC = () => {
             <Button variant="outline" onClick={() => setIsPaymentModalOpen(false)}>Cancel</Button>
             <Button
               onClick={handlePayment}
-              disabled={!amountTendered || parseFloat(amountTendered) < total}
+              disabled={!amountTendered || parseFloat(amountTendered) < total || isProcessing}
               className="w-full sm:w-auto"
             >
-              <Receipt className="mr-2 h-4 w-4" /> Complete Transaction
+              {isProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Receipt className="mr-2 h-4 w-4" />}
+              {isProcessing ? 'Processing...' : 'Complete Transaction'}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -150,7 +170,13 @@ export const POS: React.FC = () => {
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 overflow-y-auto pr-1 pb-2">
-          {filteredProducts.map(product => (
+          {productsLoading ? (
+            <div className="col-span-4 flex items-center justify-center py-16 text-zinc-400">
+              <Loader2 className="h-6 w-6 animate-spin mr-2" /> Loading products...
+            </div>
+          ) : filteredProducts.length === 0 ? (
+            <div className="col-span-4 flex items-center justify-center py-16 text-zinc-400 text-sm">No products found.</div>
+          ) : filteredProducts.map(product => (
             <Card
               key={product.id}
               onClick={() => addToCart(product)}

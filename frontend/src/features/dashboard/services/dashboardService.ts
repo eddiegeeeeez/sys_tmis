@@ -29,6 +29,14 @@ export interface PendingPO {
   eta: string;
 }
 
+export interface RecentTransaction {
+  transactionNumber: string;
+  time: string;
+  totalAmount: number;
+  itemCount: number;
+  paymentMethod: string;
+}
+
 export interface DashboardSummary {
   totalUsers: number;
   activeEmployees: number;
@@ -43,6 +51,11 @@ export interface DashboardSummary {
   expensesByCategory: CategoryExpense[];
   lowStockItems: LowStockItem[];
   pendingPOs: PendingPO[];
+  // Cashier
+  todayRevenue: number;
+  todayTransactionCount: number;
+  todayItemsSold: number;
+  recentTransactions: RecentTransaction[];
 }
 
 export const emptyDashboard: DashboardSummary = {
@@ -59,6 +72,10 @@ export const emptyDashboard: DashboardSummary = {
   expensesByCategory: [],
   lowStockItems: [],
   pendingPOs: [],
+  todayRevenue: 0,
+  todayTransactionCount: 0,
+  todayItemsSold: 0,
+  recentTransactions: [],
 };
 
 export const getDashboardSummary = async (): Promise<DashboardSummary> => {

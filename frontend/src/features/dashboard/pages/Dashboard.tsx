@@ -239,18 +239,18 @@ const ManagerDashboard = ({ data }: { data: DashboardSummary }) => (
  * Cashier View
  * Focus: Personal Sales, Quick Actions, Register Status
  */
-const CashierDashboard = ({ data: _data }: { data: DashboardSummary }) => (
+const CashierDashboard = ({ data }: { data: DashboardSummary }) => (
   <div className="space-y-6">
     <div className="flex flex-col md:flex-row gap-4">
       <div className="flex-1 space-y-6">
         <div className="grid gap-4 md:grid-cols-3">
           <Card className="bg-zinc-900 text-zinc-50 border-zinc-800 dark:bg-zinc-950 dark:border-zinc-800">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm text-zinc-400 font-medium">My Sales (Today)</CardTitle>
+              <CardTitle className="text-sm text-zinc-400 font-medium">Revenue (Today)</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-zinc-50">$1,240.50</div>
-              <p className="text-xs text-zinc-400 mt-1">24 Transactions</p>
+              <div className="text-2xl font-bold text-zinc-50">${data.todayRevenue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+              <p className="text-xs text-zinc-400 mt-1">{data.todayTransactionCount} transaction{data.todayTransactionCount !== 1 ? 's' : ''}</p>
             </CardContent>
           </Card>
           <Card>
@@ -258,8 +258,8 @@ const CashierDashboard = ({ data: _data }: { data: DashboardSummary }) => (
               <CardTitle className="text-sm text-zinc-500 dark:text-zinc-400 font-medium">Items Sold</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">86</div>
-              <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">Units</p>
+              <div className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">{data.todayItemsSold}</div>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">Units today</p>
             </CardContent>
           </Card>
           <Card>
@@ -271,37 +271,35 @@ const CashierDashboard = ({ data: _data }: { data: DashboardSummary }) => (
                 <div className="h-3 w-3 rounded-full bg-emerald-500 animate-pulse"></div>
                 Online
               </div>
-              <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">Till ID: #004</p>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">POS System Active</p>
             </CardContent>
           </Card>
         </div>
 
         <Card>
           <CardHeader>
-            <CardTitle>Recent Transactions</CardTitle>
+            <CardTitle>Recent Transactions (Today)</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {[
-                { id: 'TRX-998', time: '10:42 AM', amount: 120.50, items: 3 },
-                { id: 'TRX-997', time: '10:30 AM', amount: 45.00, items: 1 },
-                { id: 'TRX-996', time: '10:15 AM', amount: 210.99, items: 5 },
-              ].map((tx) => (
-                <div key={tx.id} className="flex items-center justify-between p-3 border border-zinc-100 rounded-lg hover:bg-zinc-50 dark:border-zinc-800 dark:hover:bg-zinc-800/50 transition-colors">
+              {(data.recentTransactions.length > 0 ? data.recentTransactions : []).map((tx, i) => (
+                <div key={i} className="flex items-center justify-between p-3 border border-zinc-100 rounded-lg hover:bg-zinc-50 dark:border-zinc-800 dark:hover:bg-zinc-800/50 transition-colors">
                   <div className="flex items-center gap-3">
                     <div className="p-2 bg-zinc-100 dark:bg-zinc-800 rounded text-zinc-500">
                       <ShoppingCart className="h-4 w-4" />
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-zinc-900 dark:text-zinc-200">{tx.id}</p>
-                      <p className="text-xs text-zinc-500 dark:text-zinc-400">{tx.time} • {tx.items} items</p>
+                      <p className="text-sm font-medium text-zinc-900 dark:text-zinc-200">{tx.transactionNumber}</p>
+                      <p className="text-xs text-zinc-500 dark:text-zinc-400">{tx.time} • {tx.itemCount} item{tx.itemCount !== 1 ? 's' : ''} • {tx.paymentMethod}</p>
                     </div>
                   </div>
-                  <span className="font-bold text-zinc-900 dark:text-zinc-50">${tx.amount.toFixed(2)}</span>
+                  <span className="font-bold text-zinc-900 dark:text-zinc-50">${tx.totalAmount.toFixed(2)}</span>
                 </div>
               ))}
+              {data.recentTransactions.length === 0 && (
+                <p className="text-sm text-zinc-400 text-center py-4">No transactions yet today.</p>
+              )}
             </div>
-            <Button variant="outline" className="w-full mt-4">View All Transactions</Button>
           </CardContent>
         </Card>
       </div>

@@ -22,6 +22,21 @@ namespace TradeMatrix.Server.DTOs
         // Inventory
         public List<LowStockItemDto> LowStockItems { get; set; } = new();
         public List<PendingPODto> PendingPOs { get; set; } = new();
+
+        // Cashier
+        public decimal TodayRevenue { get; set; }
+        public int TodayTransactionCount { get; set; }
+        public int TodayItemsSold { get; set; }
+        public List<RecentTransactionDto> RecentTransactions { get; set; } = new();
+    }
+
+    public class RecentTransactionDto
+    {
+        public string TransactionNumber { get; set; } = string.Empty;
+        public string Time { get; set; } = string.Empty;
+        public decimal TotalAmount { get; set; }
+        public int ItemCount { get; set; }
+        public string PaymentMethod { get; set; } = string.Empty;
     }
 
     public class RecentEventDto

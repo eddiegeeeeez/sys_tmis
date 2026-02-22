@@ -22,6 +22,8 @@ namespace TradeMatrix.Server.Data
         public DbSet<PayrollRecord> PayrollRecords { get; set; }
         public DbSet<Customer> Customers { get; set; }
         public DbSet<Expense> Expenses { get; set; }
+        public DbSet<Transaction> Transactions { get; set; }
+        public DbSet<TransactionItem> TransactionItems { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
