@@ -20,6 +20,10 @@ export const financeService = {
         const response = await api.post<ApiResponse<Expense>>('finance/expenses', data);
         return response.data;
     },
+    updateExpense: async (id: number, data: Partial<Expense>) => {
+        const response = await api.put<ApiResponse<Expense>>(`finance/expenses/${id}`, data);
+        return response.data;
+    },
     getSummary: async (month: number, year: number) => {
         const response = await api.get<ApiResponse<number>>(`finance/summary?month=${month}&year=${year}`);
         return response.data;

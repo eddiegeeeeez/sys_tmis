@@ -5,7 +5,7 @@ import { Input } from '../../../components/ui/Input';
 import { DataTable } from '../../../components/ui/data-table';
 import { StatusDot } from '../../../components/ui/StatusDot';
 import { ColumnDef } from '@tanstack/react-table';
-import { Plus, Wallet, TrendingUp, Receipt, MoreHorizontal, ArrowUpDown, Loader2 } from 'lucide-react';
+import { Plus, Wallet, TrendingUp, Receipt, MoreHorizontal, ArrowUpDown, Loader2, Pencil } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../../../components/ui/Dialog';
 import { Label } from '../../../components/ui/Label';
 import { financeService, Expense as ApiExpense } from '../services/financeService';
@@ -15,6 +15,8 @@ const Finance = () => {
     const [totalExpenses, setTotalExpenses] = useState(0);
     const [isLoading, setIsLoading] = useState(true);
     const [isAddOpen, setIsAddOpen] = useState(false);
+    const [isEditOpen, setIsEditOpen] = useState(false);
+    const [editingExpense, setEditingExpense] = useState<ApiExpense | null>(null);
     const [newExpense, setNewExpense] = useState<Partial<ApiExpense>>({
         expenseCategory: '',
         description: '',
@@ -69,6 +71,20 @@ const Finance = () => {
         }
     };
 
+    const handleUpdateExpense = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!editingExpense) return;
+        try {
+            const response = await financeService.updateExpense(editingExpense.id, editingExpense);
+            if (response.success) {
+                setIsEditOpen(false);
+                loadData();
+            }
+        } catch (error) {
+            alert("Failed to update expense");
+        }
+    };
+
     const columns: ColumnDef<ApiExpense>[] = [
         {
             accessorKey: "expenseDate",
@@ -104,10 +120,10 @@ const Finance = () => {
         },
         {
             id: "actions",
-            cell: () => (
+            cell: ({ row }) => (
                 <div className="flex justify-end">
-                    <Button variant="ghost" size="icon" className="h-8 w-8">
-                        <MoreHorizontal className="h-4 w-4" />
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setEditingExpense(row.original); setIsEditOpen(true); }}>
+                        <Pencil className="h-4 w-4" />
                     </Button>
                 </div>
             )
@@ -180,6 +196,59 @@ const Finance = () => {
                             <Button type="submit">Complete Record</Button>
                         </DialogFooter>
                     </form>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Edit Expense</DialogTitle>
+                        <DialogDescription>Update the expense record.</DialogDescription>
+                    </DialogHeader>
+                    {editingExpense && (
+                        <form onSubmit={handleUpdateExpense} className="space-y-4 py-4">
+                            <div className="grid gap-2">
+                                <Label>Category</Label>
+                                <select className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                                    value={editingExpense.expenseCategory} onChange={e => setEditingExpense({ ...editingExpense, expenseCategory: e.target.value })}>
+                                    <option value="Utilities">Utilities</option>
+                                    <option value="Rent">Rent</option>
+                                    <option value="Payroll">Payroll</option>
+                                    <option value="Inventory">Inventory</option>
+                                    <option value="Office Supplies">Office Supplies</option>
+                                    <option value="Maintenance">Maintenance</option>
+                                    <option value="Marketing">Marketing</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                            <div className="grid gap-2">
+                                <Label>Description</Label>
+                                <Input required value={editingExpense.description} onChange={e => setEditingExpense({ ...editingExpense, description: e.target.value })} />
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="grid gap-2">
+                                    <Label>Amount</Label>
+                                    <Input type="number" step="0.01" required value={editingExpense.amount} onChange={e => setEditingExpense({ ...editingExpense, amount: parseFloat(e.target.value) })} />
+                                </div>
+                                <div className="grid gap-2">
+                                    <Label>Date</Label>
+                                    <Input type="date" required value={editingExpense.expenseDate?.split('T')[0]} onChange={e => setEditingExpense({ ...editingExpense, expenseDate: e.target.value })} />
+                                </div>
+                            </div>
+                            <div className="grid gap-2">
+                                <Label>Status</Label>
+                                <select className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                                    value={editingExpense.status} onChange={e => setEditingExpense({ ...editingExpense, status: e.target.value })}>
+                                    <option value="Paid">Paid</option>
+                                    <option value="Pending">Pending</option>
+                                </select>
+                            </div>
+                            <DialogFooter>
+                                <Button type="button" variant="outline" onClick={() => setIsEditOpen(false)}>Cancel</Button>
+                                <Button type="submit">Save Changes</Button>
+                            </DialogFooter>
+                        </form>
+                    )}
                 </DialogContent>
             </Dialog>
 

@@ -23,6 +23,8 @@ export const Procurement: React.FC = () => {
     const [isSaving, setIsSaving] = useState(false);
     const [isSupplierModalOpen, setIsSupplierModalOpen] = useState(false);
     const [isPOModalOpen, setIsPOModalOpen] = useState(false);
+    const [isEditSupplierOpen, setIsEditSupplierOpen] = useState(false);
+    const [editingSupplier, setEditingSupplier] = useState<ApiSupplier | null>(null);
 
     // Form States
     const [newSupplier, setNewSupplier] = useState({
@@ -70,6 +72,22 @@ export const Procurement: React.FC = () => {
             }
         } catch (error) {
             console.error("Error saving supplier", error);
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const handleUpdateSupplier = async () => {
+        if (!editingSupplier) return;
+        setIsSaving(true);
+        try {
+            const res = await procurementService.updateSupplier(editingSupplier.id, editingSupplier);
+            if (res.data.success) {
+                setIsEditSupplierOpen(false);
+                fetchData();
+            }
+        } catch (error) {
+            console.error("Error updating supplier", error);
         } finally {
             setIsSaving(false);
         }
@@ -158,6 +176,49 @@ export const Procurement: React.FC = () => {
 
     return (
         <div className="space-y-6">
+            {/* Edit Supplier Modal */}
+            <Dialog open={isEditSupplierOpen} onOpenChange={setIsEditSupplierOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Edit Supplier</DialogTitle>
+                        <DialogDescription>Update supplier details.</DialogDescription>
+                    </DialogHeader>
+                    {editingSupplier && (
+                        <div className="grid gap-4 py-4">
+                            <div className="grid gap-2">
+                                <Label>Company Name</Label>
+                                <Input value={editingSupplier.companyName} onChange={e => setEditingSupplier({ ...editingSupplier, companyName: e.target.value })} />
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="grid gap-2">
+                                    <Label>Contact Person</Label>
+                                    <Input value={editingSupplier.contactPerson} onChange={e => setEditingSupplier({ ...editingSupplier, contactPerson: e.target.value })} />
+                                </div>
+                                <div className="grid gap-2">
+                                    <Label>Phone Number</Label>
+                                    <Input value={editingSupplier.contactNumber} onChange={e => setEditingSupplier({ ...editingSupplier, contactNumber: e.target.value })} />
+                                </div>
+                            </div>
+                            <div className="grid gap-2">
+                                <Label>Email</Label>
+                                <Input type="email" value={editingSupplier.email} onChange={e => setEditingSupplier({ ...editingSupplier, email: e.target.value })} />
+                            </div>
+                            <div className="grid gap-2">
+                                <Label>Address</Label>
+                                <Input value={editingSupplier.address} onChange={e => setEditingSupplier({ ...editingSupplier, address: e.target.value })} />
+                            </div>
+                        </div>
+                    )}
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsEditSupplierOpen(false)}>Cancel</Button>
+                        <Button onClick={handleUpdateSupplier} disabled={isSaving}>
+                            {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                            Save Changes
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
             {/* Create Supplier Modal */}
             <Dialog open={isSupplierModalOpen} onOpenChange={setIsSupplierModalOpen}>
                 <DialogContent>
@@ -211,6 +272,49 @@ export const Procurement: React.FC = () => {
                         <Button onClick={handleSaveSupplier} disabled={isSaving}>
                             {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                             Save Supplier
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Edit Supplier Modal */}
+            <Dialog open={isEditSupplierOpen} onOpenChange={setIsEditSupplierOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Edit Supplier</DialogTitle>
+                        <DialogDescription>Update supplier details.</DialogDescription>
+                    </DialogHeader>
+                    {editingSupplier && (
+                        <div className="grid gap-4 py-4">
+                            <div className="grid gap-2">
+                                <Label>Company Name</Label>
+                                <Input value={editingSupplier.companyName} onChange={e => setEditingSupplier({ ...editingSupplier, companyName: e.target.value })} />
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="grid gap-2">
+                                    <Label>Contact Person</Label>
+                                    <Input value={editingSupplier.contactPerson} onChange={e => setEditingSupplier({ ...editingSupplier, contactPerson: e.target.value })} />
+                                </div>
+                                <div className="grid gap-2">
+                                    <Label>Phone Number</Label>
+                                    <Input value={editingSupplier.contactNumber} onChange={e => setEditingSupplier({ ...editingSupplier, contactNumber: e.target.value })} />
+                                </div>
+                            </div>
+                            <div className="grid gap-2">
+                                <Label>Email</Label>
+                                <Input type="email" value={editingSupplier.email} onChange={e => setEditingSupplier({ ...editingSupplier, email: e.target.value })} />
+                            </div>
+                            <div className="grid gap-2">
+                                <Label>Address</Label>
+                                <Input value={editingSupplier.address} onChange={e => setEditingSupplier({ ...editingSupplier, address: e.target.value })} />
+                            </div>
+                        </div>
+                    )}
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsEditSupplierOpen(false)}>Cancel</Button>
+                        <Button onClick={handleUpdateSupplier} disabled={isSaving}>
+                            {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                            Save Changes
                         </Button>
                     </DialogFooter>
                 </DialogContent>
@@ -343,7 +447,7 @@ export const Procurement: React.FC = () => {
                                         </div>
                                     </div>
                                     <div className="pt-2">
-                                        <Button variant="outline" size="sm" className="w-full border-zinc-200 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-800">View Details</Button>
+                                        <Button variant="outline" size="sm" className="w-full border-zinc-200 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-800" onClick={() => { setEditingSupplier(sup); setIsEditSupplierOpen(true); }}>Edit Supplier</Button>
                                     </div>
                                 </CardContent>
                             </Card>

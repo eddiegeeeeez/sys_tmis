@@ -76,6 +76,25 @@ namespace TradeMatrix.Server.Services
             return await GetEmployeeByIdAsync(employee.Id) ?? new EmployeeDto();
         }
 
+        public async Task<EmployeeDto?> UpdateEmployeeAsync(int id, CreateEmployeeDto dto)
+        {
+            var employee = await _context.Employees.FindAsync(id);
+            if (employee == null) return null;
+
+            employee.FirstName = dto.FirstName;
+            employee.LastName = dto.LastName;
+            employee.Email = dto.Email;
+            employee.ContactNumber = dto.ContactNumber;
+            employee.Department = dto.Department;
+            employee.Position = dto.Position;
+            employee.EmploymentStatus = dto.EmploymentStatus;
+            employee.BasicSalary = dto.BasicSalary;
+            employee.HireDate = dto.HireDate;
+
+            await _context.SaveChangesAsync();
+            return await GetEmployeeByIdAsync(id);
+        }
+
         public async Task<List<AttendanceDto>> GetAttendanceAsync(DateTime? date)
         {
             var query = _context.Attendances.Include(a => a.Employee).AsQueryable();

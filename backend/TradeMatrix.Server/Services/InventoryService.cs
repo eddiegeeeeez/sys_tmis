@@ -80,6 +80,24 @@ namespace TradeMatrix.Server.Services
             return await GetProductByIdAsync(product.Id) ?? new ProductDto();
         }
 
+        public async Task<ProductDto?> UpdateProductAsync(int id, CreateProductDto dto)
+        {
+            var product = await _context.Products.FindAsync(id);
+            if (product == null) return null;
+
+            product.Name = dto.Name;
+            product.SKU = dto.SKU;
+            product.Category = dto.Category;
+            product.CostPrice = dto.CostPrice;
+            product.SellingPrice = dto.SellingPrice;
+            product.ReorderLevel = dto.ReorderLevel;
+            product.UnitOfMeasure = dto.UnitOfMeasure;
+            product.SupplierId = dto.SupplierId;
+
+            await _context.SaveChangesAsync();
+            return await GetProductByIdAsync(id);
+        }
+
         public async Task<bool> UpdateStockAsync(int productId, int quantityChange)
         {
             var product = await _context.Products.FindAsync(productId);

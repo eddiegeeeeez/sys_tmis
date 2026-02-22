@@ -6,6 +6,7 @@ namespace TradeMatrix.Server.Services
     {
         Task<List<ExpenseDto>> GetExpensesAsync();
         Task<ExpenseDto> CreateExpenseAsync(CreateExpenseDto dto);
+        Task<ExpenseDto?> UpdateExpenseAsync(int id, CreateExpenseDto dto);
         Task<decimal> GetTotalExpensesForMonthAsync(int month, int year);
     }
 }

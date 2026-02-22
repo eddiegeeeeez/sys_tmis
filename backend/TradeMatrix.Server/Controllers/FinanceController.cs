@@ -63,5 +63,22 @@ namespace TradeMatrix.Server.Controllers
                 return StatusCode(500, ApiResponse<decimal>.ErrorResponse("An error occurred while retrieving financial summary"));
             }
         }
+
+        [HttpPut("expenses/{id}")]
+        [Authorize(Roles = "SuperAdmin,Manager")]
+        public async Task<ActionResult<ApiResponse<ExpenseDto>>> UpdateExpense(int id, [FromBody] CreateExpenseDto dto)
+        {
+            try
+            {
+                var result = await _financeService.UpdateExpenseAsync(id, dto);
+                if (result == null) return NotFound(ApiResponse<ExpenseDto>.ErrorResponse("Expense not found"));
+                return Ok(ApiResponse<ExpenseDto>.SuccessResponse(result, "Expense updated successfully"));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating expense");
+                return StatusCode(500, ApiResponse<ExpenseDto>.ErrorResponse("An error occurred while updating expense"));
+            }
+        }
     }
 }

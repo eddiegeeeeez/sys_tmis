@@ -13,7 +13,7 @@ import { Select } from '../../../components/ui/Select';
 import { Avatar, AvatarFallback } from '../../../components/ui/Avatar';
 import { MOCK_PAYROLL, MOCK_ATTENDANCE, MOCK_EMPLOYEES } from '../../../lib/mockData';
 import { hrService, Employee as ApiEmployee, Attendance as ApiAttendance, PayrollRecord as ApiPayroll } from '../services/hrService';
-import { Loader2, Users, Banknote, Clock, Plus, MoreHorizontal, FileText, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+import { Loader2, Users, Banknote, Clock, Plus, MoreHorizontal, FileText, ArrowUpDown, ArrowUp, ArrowDown, Pencil } from 'lucide-react';
 import { Employee, PayrollRecord, Attendance } from '../../../types';
 
 const ITEMS_PER_PAGE = 10;
@@ -22,6 +22,8 @@ const EmployeesTab = () => {
     const [employees, setEmployees] = useState<ApiEmployee[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isAddEmployeeOpen, setIsAddEmployeeOpen] = useState(false);
+    const [isEditEmployeeOpen, setIsEditEmployeeOpen] = useState(false);
+    const [editingEmployee, setEditingEmployee] = useState<ApiEmployee | null>(null);
     const [newEmployee, setNewEmployee] = useState<Partial<ApiEmployee>>({
         firstName: '',
         lastName: '',
@@ -113,10 +115,10 @@ const EmployeesTab = () => {
         {
             id: "actions",
             header: () => <div className="text-right text-xs font-semibold pr-2">Actions</div>,
-            cell: () => (
+            cell: ({ row }) => (
                 <div className="flex justify-end">
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200">
-                        <MoreHorizontal className="h-4 w-4" />
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200" onClick={() => { setEditingEmployee(row.original); setIsEditEmployeeOpen(true); }}>
+                        <Pencil className="h-4 w-4" />
                     </Button>
                 </div>
             )
@@ -137,6 +139,21 @@ const EmployeesTab = () => {
             alert("Failed to add employee");
         }
     }
+
+    const handleUpdateEmployee = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!editingEmployee) return;
+        try {
+            const response = await hrService.updateEmployee(editingEmployee.id, editingEmployee);
+            if (response.success) {
+                setIsEditEmployeeOpen(false);
+                loadEmployees();
+            }
+        } catch (error) {
+            console.error("Failed to update employee", error);
+            alert("Failed to update employee");
+        }
+    };
 
     return (
         <div className="space-y-4">
@@ -210,6 +227,77 @@ const EmployeesTab = () => {
                             <Button type="submit">Create Record</Button>
                         </DialogFooter>
                     </form>
+                </DialogContent>
+            </Dialog>
+
+            {/* Edit Employee Modal */}
+            <Dialog open={isEditEmployeeOpen} onOpenChange={setIsEditEmployeeOpen}>
+                <DialogContent className="max-w-xl">
+                    <DialogHeader>
+                        <DialogTitle>Edit Employee</DialogTitle>
+                        <DialogDescription>Update employee information.</DialogDescription>
+                    </DialogHeader>
+                    {editingEmployee && (
+                        <form onSubmit={handleUpdateEmployee} className="grid gap-4 py-4">
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="grid gap-2">
+                                    <Label>First Name</Label>
+                                    <Input required value={editingEmployee.firstName} onChange={e => setEditingEmployee({ ...editingEmployee, firstName: e.target.value })} />
+                                </div>
+                                <div className="grid gap-2">
+                                    <Label>Last Name</Label>
+                                    <Input required value={editingEmployee.lastName} onChange={e => setEditingEmployee({ ...editingEmployee, lastName: e.target.value })} />
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="grid gap-2">
+                                    <Label>Email</Label>
+                                    <Input type="email" required value={editingEmployee.email} onChange={e => setEditingEmployee({ ...editingEmployee, email: e.target.value })} />
+                                </div>
+                                <div className="grid gap-2">
+                                    <Label>Phone Number</Label>
+                                    <Input value={editingEmployee.contactNumber || ''} onChange={e => setEditingEmployee({ ...editingEmployee, contactNumber: e.target.value })} />
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="grid gap-2">
+                                    <Label>Department</Label>
+                                    <Select value={editingEmployee.department} onChange={e => setEditingEmployee({ ...editingEmployee, department: e.target.value })}>
+                                        <option value="Operations">Operations</option>
+                                        <option value="Sales">Sales</option>
+                                        <option value="Warehouse">Warehouse</option>
+                                        <option value="HR">HR</option>
+                                    </Select>
+                                </div>
+                                <div className="grid gap-2">
+                                    <Label>Position</Label>
+                                    <Input value={editingEmployee.position} onChange={e => setEditingEmployee({ ...editingEmployee, position: e.target.value })} />
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-3 gap-4">
+                                <div className="grid gap-2">
+                                    <Label>Employment</Label>
+                                    <Select value={editingEmployee.employmentStatus} onChange={e => setEditingEmployee({ ...editingEmployee, employmentStatus: e.target.value })}>
+                                        <option value="Full-time">Full-time</option>
+                                        <option value="Part-time">Part-time</option>
+                                        <option value="Contract">Contract</option>
+                                    </Select>
+                                </div>
+                                <div className="grid gap-2">
+                                    <Label>Basic Salary</Label>
+                                    <Input type="number" value={editingEmployee.basicSalary} onChange={e => setEditingEmployee({ ...editingEmployee, basicSalary: parseFloat(e.target.value) })} />
+                                </div>
+                                <div className="grid gap-2">
+                                    <Label>Hire Date</Label>
+                                    <Input type="date" value={editingEmployee.hireDate?.split('T')[0]} onChange={e => setEditingEmployee({ ...editingEmployee, hireDate: e.target.value })} />
+                                </div>
+                            </div>
+                            <DialogFooter>
+                                <Button type="button" variant="outline" onClick={() => setIsEditEmployeeOpen(false)}>Cancel</Button>
+                                <Button type="submit">Save Changes</Button>
+                            </DialogFooter>
+                        </form>
+                    )}
                 </DialogContent>
             </Dialog>
 

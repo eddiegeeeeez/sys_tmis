@@ -49,6 +49,10 @@ export const hrService = {
         const response = await api.post<ApiResponse<Employee>>('hr/employees', data);
         return response.data;
     },
+    updateEmployee: async (id: number, data: Partial<Employee>) => {
+        const response = await api.put<ApiResponse<Employee>>(`hr/employees/${id}`, data);
+        return response.data;
+    },
     getAttendance: async (date?: string) => {
         const response = await api.get<ApiResponse<Attendance[]>>(`hr/attendance${date ? `?date=${date}` : ''}`);
         return response.data;

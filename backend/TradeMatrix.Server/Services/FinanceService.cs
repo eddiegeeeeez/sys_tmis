@@ -58,6 +58,32 @@ namespace TradeMatrix.Server.Services
                 }).FirstAsync(e => e.Id == expense.Id);
         }
 
+        public async Task<ExpenseDto?> UpdateExpenseAsync(int id, CreateExpenseDto dto)
+        {
+            var expense = await _context.Expenses.FindAsync(id);
+            if (expense == null) return null;
+
+            expense.ExpenseCategory = dto.ExpenseCategory;
+            expense.Description = dto.Description;
+            expense.Amount = dto.Amount;
+            expense.ExpenseDate = dto.ExpenseDate;
+            expense.Status = dto.Status;
+            expense.ReferenceNumber = dto.ReferenceNumber;
+
+            await _context.SaveChangesAsync();
+            return await _context.Expenses
+                .Select(e => new ExpenseDto
+                {
+                    Id = e.Id,
+                    ExpenseCategory = e.ExpenseCategory,
+                    Description = e.Description,
+                    Amount = e.Amount,
+                    ExpenseDate = e.ExpenseDate,
+                    Status = e.Status,
+                    ReferenceNumber = e.ReferenceNumber
+                }).FirstAsync(e => e.Id == id);
+        }
+
         public async Task<decimal> GetTotalExpensesForMonthAsync(int month, int year)
         {
             return await _context.Expenses

@@ -11,7 +11,7 @@ import { Label } from '../../../components/ui/Label';
 import { Select } from '../../../components/ui/Select';
 import { inventoryService, Product as ApiProduct } from '../services/inventoryService';
 import { procurementService, Supplier } from '../../procurement/services/procurementService';
-import { Loader2, Search, ArrowUpCircle, Filter, MoreHorizontal, Download, ArrowUpDown, ArrowUp, ArrowDown, X } from 'lucide-react';
+import { Loader2, Search, ArrowUpCircle, Filter, MoreHorizontal, Download, ArrowUpDown, ArrowUp, ArrowDown, X, Pencil } from 'lucide-react';
 import { Product } from '../../../types';
 
 export const Inventory: React.FC = () => {
@@ -23,6 +23,8 @@ export const Inventory: React.FC = () => {
     const [categoryFilter, setCategoryFilter] = useState('All');
     const [stockStatusFilter, setStockStatusFilter] = useState('All');
     const [isAddProductOpen, setIsAddProductOpen] = useState(false);
+    const [isEditProductOpen, setIsEditProductOpen] = useState(false);
+    const [editingProduct, setEditingProduct] = useState<ApiProduct | null>(null);
 
     // Form State
     const [newProduct, setNewProduct] = useState({
@@ -130,6 +132,33 @@ export const Inventory: React.FC = () => {
         }
     };
 
+    const handleUpdateProduct = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!editingProduct) return;
+        setIsSaving(true);
+        try {
+            const res = await inventoryService.updateProduct(editingProduct.id, {
+                name: editingProduct.name,
+                sku: editingProduct.sku,
+                category: editingProduct.category,
+                unitOfMeasure: editingProduct.unitOfMeasure,
+                costPrice: editingProduct.costPrice,
+                sellingPrice: editingProduct.sellingPrice,
+                initialStock: editingProduct.stock,
+                reorderLevel: editingProduct.reorderLevel,
+                supplierId: editingProduct.supplierId ?? null
+            });
+            if (res.data.success) {
+                setIsEditProductOpen(false);
+                fetchData();
+            }
+        } catch (error) {
+            console.error("Error updating product", error);
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
     const clearFilters = () => {
         setFilterTerm('');
         setCategoryFilter('All');
@@ -223,8 +252,8 @@ export const Inventory: React.FC = () => {
             cell: ({ row }) => {
                 return (
                     <div className="flex justify-end pr-4">
-                        <Button size="sm" variant="ghost" className="h-8 w-8 p-0">
-                            <MoreHorizontal className="h-4 w-4" />
+                        <Button size="sm" variant="ghost" className="h-8 w-8 p-0" onClick={() => { setEditingProduct(row.original); setIsEditProductOpen(true); }}>
+                            <Pencil className="h-4 w-4" />
                         </Button>
                     </div>
                 );
@@ -357,6 +386,82 @@ export const Inventory: React.FC = () => {
                             </Button>
                         </DialogFooter>
                     </form>
+                </DialogContent>
+            </Dialog>
+
+            {/* Edit Product Modal */}
+            <Dialog open={isEditProductOpen} onOpenChange={setIsEditProductOpen}>
+                <DialogContent className="max-w-xl">
+                    <DialogHeader>
+                        <DialogTitle>Edit Product</DialogTitle>
+                        <DialogDescription>Update product details.</DialogDescription>
+                    </DialogHeader>
+                    {editingProduct && (
+                        <form onSubmit={handleUpdateProduct} className="grid gap-4 py-4">
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="grid gap-2">
+                                    <Label>Product Name</Label>
+                                    <Input required value={editingProduct.name} onChange={e => setEditingProduct({ ...editingProduct, name: e.target.value })} />
+                                </div>
+                                <div className="grid gap-2">
+                                    <Label>SKU / Barcode</Label>
+                                    <Input value={editingProduct.sku} onChange={e => setEditingProduct({ ...editingProduct, sku: e.target.value })} />
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="grid gap-2">
+                                    <Label>Category</Label>
+                                    <select className="flex h-10 w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm ring-offset-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950 dark:border-zinc-800 dark:bg-zinc-950 dark:ring-offset-zinc-950 dark:focus-visible:ring-zinc-300"
+                                        value={editingProduct.category} onChange={e => setEditingProduct({ ...editingProduct, category: e.target.value })}>
+                                        <option>Electronics</option>
+                                        <option>Apparel</option>
+                                        <option>Home &amp; Living</option>
+                                        <option>Accessories</option>
+                                    </select>
+                                </div>
+                                <div className="grid gap-2">
+                                    <Label>Unit of Measure</Label>
+                                    <select className="flex h-10 w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm ring-offset-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950 dark:border-zinc-800 dark:bg-zinc-950 dark:ring-offset-zinc-950 dark:focus-visible:ring-zinc-300"
+                                        value={editingProduct.unitOfMeasure} onChange={e => setEditingProduct({ ...editingProduct, unitOfMeasure: e.target.value })}>
+                                        <option value="pcs">Pieces (pcs)</option>
+                                        <option value="box">Box</option>
+                                        <option value="kg">Kilogram (kg)</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-3 gap-4">
+                                <div className="grid gap-2">
+                                    <Label>Cost Price</Label>
+                                    <Input type="number" placeholder="0.00" value={editingProduct.costPrice} onChange={e => setEditingProduct({ ...editingProduct, costPrice: parseFloat(e.target.value) || 0 })} />
+                                </div>
+                                <div className="grid gap-2">
+                                    <Label>Selling Price</Label>
+                                    <Input type="number" placeholder="0.00" required value={editingProduct.sellingPrice} onChange={e => setEditingProduct({ ...editingProduct, sellingPrice: parseFloat(e.target.value) || 0 })} />
+                                </div>
+                                <div className="grid gap-2">
+                                    <Label>Reorder Level</Label>
+                                    <Input type="number" placeholder="10" value={editingProduct.reorderLevel} onChange={e => setEditingProduct({ ...editingProduct, reorderLevel: parseInt(e.target.value) || 10 })} />
+                                </div>
+                            </div>
+                            <div className="grid gap-2">
+                                <Label>Supplier</Label>
+                                <select className="flex h-10 w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm ring-offset-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950 dark:border-zinc-800 dark:bg-zinc-950 dark:ring-offset-zinc-950 dark:focus-visible:ring-zinc-300"
+                                    value={editingProduct.supplierId ?? ''} onChange={e => setEditingProduct({ ...editingProduct, supplierId: e.target.value ? parseInt(e.target.value) : undefined })}>
+                                    <option value="">No Supplier</option>
+                                    {suppliers.map(s => (
+                                        <option key={s.id} value={s.id}>{s.companyName}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <DialogFooter>
+                                <Button type="button" variant="outline" onClick={() => setIsEditProductOpen(false)}>Cancel</Button>
+                                <Button type="submit" disabled={isSaving}>
+                                    {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                                    Save Changes
+                                </Button>
+                            </DialogFooter>
+                        </form>
+                    )}
                 </DialogContent>
             </Dialog>
 

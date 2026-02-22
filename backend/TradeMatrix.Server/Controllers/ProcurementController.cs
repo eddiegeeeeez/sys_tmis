@@ -81,5 +81,22 @@ namespace TradeMatrix.Server.Controllers
                 return StatusCode(500, ApiResponse<string>.ErrorResponse("Error creating purchase order"));
             }
         }
+
+        [HttpPut("suppliers/{id}")]
+        [Authorize(Roles = "SuperAdmin,Manager,InventoryClerk")]
+        public async Task<ActionResult<ApiResponse<SupplierDto>>> UpdateSupplier(int id, [FromBody] CreateSupplierDto dto)
+        {
+            try
+            {
+                var result = await _procurementService.UpdateSupplierAsync(id, dto);
+                if (result == null) return NotFound(ApiResponse<SupplierDto>.ErrorResponse("Supplier not found"));
+                return Ok(ApiResponse<SupplierDto>.SuccessResponse(result));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating supplier");
+                return StatusCode(500, ApiResponse<string>.ErrorResponse("Error updating supplier"));
+            }
+        }
     }
 }

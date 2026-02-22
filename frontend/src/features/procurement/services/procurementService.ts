@@ -28,6 +28,9 @@ export const procurementService = {
     createSupplier: (supplierData: any) =>
         api.post<ApiResponse<Supplier>>('/procurement/suppliers', supplierData),
 
+    updateSupplier: (id: number, supplierData: any) =>
+        api.put<ApiResponse<Supplier>>(`/procurement/suppliers/${id}`, supplierData),
+
     getPurchaseOrders: () =>
         api.get<ApiResponse<PurchaseOrder[]>>('/procurement/purchase-orders'),
 

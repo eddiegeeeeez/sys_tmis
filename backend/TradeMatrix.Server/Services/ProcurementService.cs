@@ -55,6 +55,29 @@ namespace TradeMatrix.Server.Services
             };
         }
 
+        public async Task<SupplierDto?> UpdateSupplierAsync(int id, CreateSupplierDto dto)
+        {
+            var supplier = await _context.Suppliers.FindAsync(id);
+            if (supplier == null) return null;
+
+            supplier.CompanyName = dto.CompanyName;
+            supplier.ContactPerson = dto.ContactPerson;
+            supplier.ContactNumber = dto.ContactNumber;
+            supplier.Email = dto.Email;
+            supplier.Address = dto.Address;
+
+            await _context.SaveChangesAsync();
+            return new SupplierDto
+            {
+                Id = supplier.Id,
+                CompanyName = supplier.CompanyName,
+                ContactPerson = supplier.ContactPerson,
+                ContactNumber = supplier.ContactNumber,
+                Email = supplier.Email,
+                Address = supplier.Address
+            };
+        }
+
         public async Task<List<PurchaseOrder>> GetPurchaseOrdersAsync()
         {
             return await _context.PurchaseOrders

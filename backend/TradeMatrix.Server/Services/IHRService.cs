@@ -9,6 +9,7 @@ namespace TradeMatrix.Server.Services
         Task<List<EmployeeDto>> GetEmployeesAsync();
         Task<EmployeeDto?> GetEmployeeByIdAsync(int id);
         Task<EmployeeDto> CreateEmployeeAsync(CreateEmployeeDto dto);
+        Task<EmployeeDto?> UpdateEmployeeAsync(int id, CreateEmployeeDto dto);
         
         // Attendance
         Task<List<AttendanceDto>> GetAttendanceAsync(DateTime? date);

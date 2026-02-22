@@ -66,5 +66,22 @@ namespace TradeMatrix.Server.Controllers
                 return StatusCode(500, ApiResponse<string>.ErrorResponse("Error adjusting stock"));
             }
         }
+
+        [HttpPut("products/{id}")]
+        [Authorize(Roles = "SuperAdmin,Manager,InventoryClerk")]
+        public async Task<ActionResult<ApiResponse<ProductDto>>> UpdateProduct(int id, [FromBody] CreateProductDto dto)
+        {
+            try
+            {
+                var result = await _inventoryService.UpdateProductAsync(id, dto);
+                if (result == null) return NotFound(ApiResponse<ProductDto>.ErrorResponse("Product not found"));
+                return Ok(ApiResponse<ProductDto>.SuccessResponse(result));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating product");
+                return StatusCode(500, ApiResponse<string>.ErrorResponse("Error updating product"));
+            }
+        }
     }
 }

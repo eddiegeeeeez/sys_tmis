@@ -5,7 +5,7 @@ import { Input } from '../../../components/ui/Input';
 import { DataTable } from '../../../components/ui/data-table';
 import { StatusDot } from '../../../components/ui/StatusDot';
 import { ColumnDef } from '@tanstack/react-table';
-import { Plus, Search, MoreHorizontal, UserPlus, Mail, Phone, MapPin, ArrowUpDown, Loader2 } from 'lucide-react';
+import { Plus, Search, MoreHorizontal, UserPlus, Mail, Phone, MapPin, ArrowUpDown, Loader2, Pencil } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../../../components/ui/Dialog';
 import { Label } from '../../../components/ui/Label';
 import { customerService, Customer as ApiCustomer } from '../services/customerService';
@@ -14,6 +14,8 @@ const CRM = () => {
     const [customers, setCustomers] = useState<ApiCustomer[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isAddOpen, setIsAddOpen] = useState(false);
+    const [isEditOpen, setIsEditOpen] = useState(false);
+    const [editingCustomer, setEditingCustomer] = useState<ApiCustomer | null>(null);
     const [newCustomer, setNewCustomer] = useState<Partial<ApiCustomer>>({
         customerName: '',
         customerType: 'Retail',
@@ -58,6 +60,20 @@ const CRM = () => {
             }
         } catch (error) {
             alert("Failed to create customer");
+        }
+    };
+
+    const handleUpdateCustomer = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!editingCustomer) return;
+        try {
+            const response = await customerService.updateCustomer(editingCustomer.id, editingCustomer);
+            if (response.success) {
+                setIsEditOpen(false);
+                loadCustomers();
+            }
+        } catch (error) {
+            alert("Failed to update customer");
         }
     };
 
@@ -106,10 +122,10 @@ const CRM = () => {
         },
         {
             id: "actions",
-            cell: () => (
+            cell: ({ row }) => (
                 <div className="flex justify-end">
-                    <Button variant="ghost" size="icon" className="h-8 w-8">
-                        <MoreHorizontal className="h-4 w-4" />
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setEditingCustomer(row.original); setIsEditOpen(true); }}>
+                        <Pencil className="h-4 w-4" />
                     </Button>
                 </div>
             )
@@ -167,6 +183,50 @@ const CRM = () => {
                             <Button type="submit">Save Customer</Button>
                         </DialogFooter>
                     </form>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Edit Customer</DialogTitle>
+                        <DialogDescription>Update customer information.</DialogDescription>
+                    </DialogHeader>
+                    {editingCustomer && (
+                        <form onSubmit={handleUpdateCustomer} className="space-y-4 py-4">
+                            <div className="grid gap-2">
+                                <Label>Full Name / Company Name</Label>
+                                <Input required value={editingCustomer.customerName} onChange={e => setEditingCustomer({ ...editingCustomer, customerName: e.target.value })} />
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="grid gap-2">
+                                    <Label>Customer Type</Label>
+                                    <select className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                                        value={editingCustomer.customerType} onChange={e => setEditingCustomer({ ...editingCustomer, customerType: e.target.value })}>
+                                        <option value="Retail">Retail</option>
+                                        <option value="Wholesale">Wholesale</option>
+                                        <option value="Corporate">Corporate</option>
+                                    </select>
+                                </div>
+                                <div className="grid gap-2">
+                                    <Label>Email</Label>
+                                    <Input type="email" value={editingCustomer.email || ''} onChange={e => setEditingCustomer({ ...editingCustomer, email: e.target.value })} />
+                                </div>
+                            </div>
+                            <div className="grid gap-2">
+                                <Label>Contact Number</Label>
+                                <Input value={editingCustomer.contactNumber || ''} onChange={e => setEditingCustomer({ ...editingCustomer, contactNumber: e.target.value })} />
+                            </div>
+                            <div className="grid gap-2">
+                                <Label>Address</Label>
+                                <Input value={editingCustomer.address || ''} onChange={e => setEditingCustomer({ ...editingCustomer, address: e.target.value })} />
+                            </div>
+                            <DialogFooter>
+                                <Button type="button" variant="outline" onClick={() => setIsEditOpen(false)}>Cancel</Button>
+                                <Button type="submit">Save Changes</Button>
+                            </DialogFooter>
+                        </form>
+                    )}
                 </DialogContent>
             </Dialog>
 

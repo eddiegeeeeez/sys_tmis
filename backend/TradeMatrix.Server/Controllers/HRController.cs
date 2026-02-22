@@ -78,5 +78,22 @@ namespace TradeMatrix.Server.Controllers
                 return StatusCode(500, ApiResponse<AttendanceDto>.ErrorResponse("An error occurred while logging attendance"));
             }
         }
+
+        [HttpPut("employees/{id}")]
+        [Authorize(Roles = "SuperAdmin,Manager")]
+        public async Task<ActionResult<ApiResponse<EmployeeDto>>> UpdateEmployee(int id, [FromBody] CreateEmployeeDto dto)
+        {
+            try
+            {
+                var result = await _hrService.UpdateEmployeeAsync(id, dto);
+                if (result == null) return NotFound(ApiResponse<EmployeeDto>.ErrorResponse("Employee not found"));
+                return Ok(ApiResponse<EmployeeDto>.SuccessResponse(result, "Employee updated successfully"));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating employee");
+                return StatusCode(500, ApiResponse<EmployeeDto>.ErrorResponse("An error occurred while updating employee"));
+            }
+        }
     }
 }
