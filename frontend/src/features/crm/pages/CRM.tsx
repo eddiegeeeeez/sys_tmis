@@ -5,7 +5,7 @@ import { Input } from '../../../components/ui/Input';
 import { DataTable } from '../../../components/ui/data-table';
 import { StatusDot } from '../../../components/ui/StatusDot';
 import { ColumnDef } from '@tanstack/react-table';
-import { Plus, Search, MoreHorizontal, UserPlus, Mail, Phone, MapPin, ArrowUpDown, Loader2, Pencil } from 'lucide-react';
+import { MoreHorizontal, UserPlus, ArrowUpDown, Loader2, Pencil } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../../../components/ui/DropdownMenu';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../../../components/ui/Dialog';
 import { Label } from '../../../components/ui/Label';
@@ -163,9 +163,11 @@ const CRM = ({ currentRole }: CRMProps) => {
                     <h2 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">Customer Relations</h2>
                     <p className="text-sm text-zinc-500 dark:text-zinc-400">Manage your customer records and loyalty programs.</p>
                 </div>
+                {canEdit && (
                 <Button onClick={() => setIsAddOpen(true)}>
                     <UserPlus className="h-4 w-4 mr-2" /> Add Customer
                 </Button>
+                )}
             </div>
 
             <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>

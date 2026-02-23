@@ -5,7 +5,7 @@ import { Input } from '../../../components/ui/Input';
 import { DataTable } from '../../../components/ui/data-table';
 import { StatusDot } from '../../../components/ui/StatusDot';
 import { ColumnDef } from '@tanstack/react-table';
-import { Plus, Wallet, TrendingUp, Receipt, MoreHorizontal, ArrowUpDown, Loader2, Pencil, Eye } from 'lucide-react';
+import { Plus, Wallet, Receipt, MoreHorizontal, ArrowUpDown, Loader2, Pencil } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../../../components/ui/DropdownMenu';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../../../components/ui/Dialog';
 import { Label } from '../../../components/ui/Label';
