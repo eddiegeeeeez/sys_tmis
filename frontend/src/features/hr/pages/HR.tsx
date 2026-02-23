@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
@@ -13,7 +13,8 @@ import { Select } from '../../../components/ui/Select';
 import { Avatar, AvatarFallback } from '../../../components/ui/Avatar';
 import { MOCK_PAYROLL, MOCK_ATTENDANCE, MOCK_EMPLOYEES } from '../../../lib/mockData';
 import { hrService, Employee as ApiEmployee, Attendance as ApiAttendance, PayrollRecord as ApiPayroll } from '../services/hrService';
-import { Loader2, Users, Banknote, Clock, Plus, MoreHorizontal, FileText, ArrowUpDown, ArrowUp, ArrowDown, Pencil } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../../../components/ui/DropdownMenu';
+import { Loader2, Users, Banknote, Clock, Plus, MoreHorizontal, FileText, ArrowUpDown, Pencil } from 'lucide-react';
 import { Employee, PayrollRecord, Attendance } from '../../../types';
 
 const ITEMS_PER_PAGE = 10;
@@ -52,7 +53,7 @@ const EmployeesTab = () => {
         }
     };
 
-    const columns: ColumnDef<ApiEmployee>[] = [
+    const columns = useMemo<ColumnDef<ApiEmployee>[]>(() => [
         {
             accessorKey: "id",
             header: ({ column }) => (
@@ -117,13 +118,23 @@ const EmployeesTab = () => {
             header: () => <div className="text-right text-xs font-semibold pr-2">Actions</div>,
             cell: ({ row }) => (
                 <div className="flex justify-end">
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200" onClick={() => { setEditingEmployee(row.original); setIsEditEmployeeOpen(true); }}>
-                        <Pencil className="h-4 w-4" />
-                    </Button>
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200">
+                                <MoreHorizontal className="h-4 w-4" />
+                                <span className="sr-only">Actions</span>
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-[160px] bg-white dark:bg-zinc-900 dark:border-zinc-800">
+                            <DropdownMenuItem onClick={() => { setEditingEmployee(row.original); setIsEditEmployeeOpen(true); }}>
+                                <Pencil className="mr-2 h-4 w-4" /> Edit Employee
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
                 </div>
             )
         }
-    ];
+    ], []);
 
     const handleSaveEmployee = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -321,8 +332,10 @@ const EmployeesTab = () => {
 
 const PayrollTab = () => {
     const [isPayrollModalOpen, setIsPayrollModalOpen] = useState(false);
+    const [isViewPayslipOpen, setIsViewPayslipOpen] = useState(false);
+    const [viewingPayroll, setViewingPayroll] = useState<PayrollRecord | null>(null);
 
-    const columns: ColumnDef<PayrollRecord>[] = [
+    const columns = useMemo<ColumnDef<PayrollRecord>[]>(() => [
         {
             accessorKey: "PayrollID",
             header: ({ column }) => (
@@ -383,13 +396,15 @@ const PayrollTab = () => {
         {
             id: "actions",
             header: () => <div className="text-right text-xs font-semibold pr-2">Payslip</div>,
-            cell: () => (
+            cell: ({ row }) => (
                 <div className="flex justify-end">
-                    <Button variant="outline" size="icon" className="h-8 w-8"><FileText className="h-4 w-4" /></Button>
+                    <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => { setViewingPayroll(row.original); setIsViewPayslipOpen(true); }}>
+                        <FileText className="h-4 w-4" />
+                    </Button>
                 </div>
             )
         }
-    ];
+    ], []);
 
     const handleRunPayroll = () => {
         console.log("Running Payroll");
@@ -398,6 +413,29 @@ const PayrollTab = () => {
 
     return (
         <div className="space-y-4">
+            {/* View Payslip Modal */}
+            <Dialog open={isViewPayslipOpen} onOpenChange={setIsViewPayslipOpen}>
+                <DialogContent className="max-w-md">
+                    <DialogHeader>
+                        <DialogTitle>Payslip</DialogTitle>
+                        <DialogDescription>Payroll record details for the selected employee.</DialogDescription>
+                    </DialogHeader>
+                    {viewingPayroll && (
+                        <div className="space-y-3 py-4 text-sm">
+                            <div className="flex justify-between"><span className="text-zinc-500">Payroll ID</span><span className="font-mono">{viewingPayroll.PayrollID}</span></div>
+                            <div className="flex justify-between"><span className="text-zinc-500">Employee</span><span className="font-medium">{viewingPayroll.EmployeeName}</span></div>
+                            <div className="border-t pt-3 flex justify-between"><span className="text-zinc-500">Basic Salary</span><span>₱{(viewingPayroll.BasicSalary as number).toFixed(2)}</span></div>
+                            <div className="flex justify-between"><span className="text-zinc-500">Total Deductions</span><span className="text-red-600">-₱{(viewingPayroll.TotalDeductions as number).toFixed(2)}</span></div>
+                            <div className="border-t pt-3 flex justify-between font-bold"><span>Net Pay</span><span className="text-emerald-600">₱{(viewingPayroll.NetPay as number).toFixed(2)}</span></div>
+                            <div className="flex justify-between"><span className="text-zinc-500">Status</span><span>{viewingPayroll.Status}</span></div>
+                        </div>
+                    )}
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsViewPayslipOpen(false)}>Close</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
             {/* Run Payroll Modal */}
             <Dialog open={isPayrollModalOpen} onOpenChange={setIsPayrollModalOpen}>
                 <DialogContent>

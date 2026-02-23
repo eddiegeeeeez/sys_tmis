@@ -9,9 +9,10 @@ import { DataTable } from '../../../components/ui/data-table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../../../components/ui/Dialog';
 import { Label } from '../../../components/ui/Label';
 import { Select } from '../../../components/ui/Select';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../../../components/ui/DropdownMenu';
 import { inventoryService, Product as ApiProduct } from '../services/inventoryService';
 import { procurementService, Supplier } from '../../procurement/services/procurementService';
-import { Loader2, Search, ArrowUpCircle, Filter, MoreHorizontal, Download, ArrowUpDown, ArrowUp, ArrowDown, X, Pencil } from 'lucide-react';
+import { Loader2, Search, ArrowUpCircle, MoreHorizontal, Download, ArrowUpDown, X, Pencil } from 'lucide-react';
 import { Product } from '../../../types';
 
 export const Inventory: React.FC = () => {
@@ -175,7 +176,7 @@ export const Inventory: React.FC = () => {
         setStockStatusFilter('All');
     };
 
-    const columns: ColumnDef<ApiProduct>[] = [
+    const columns = useMemo<ColumnDef<ApiProduct>[]>(() => [
         {
             accessorKey: "name",
             header: ({ column }) => {
@@ -259,17 +260,25 @@ export const Inventory: React.FC = () => {
         {
             id: "actions",
             header: () => <div className="text-right text-xs font-semibold pr-2">Actions</div>,
-            cell: ({ row }) => {
-                return (
-                    <div className="flex justify-end pr-4">
-                        <Button size="sm" variant="ghost" className="h-8 w-8 p-0" onClick={() => { setEditingProduct(row.original); setIsEditProductOpen(true); }}>
-                            <Pencil className="h-4 w-4" />
-                        </Button>
-                    </div>
-                );
-            }
+            cell: ({ row }) => (
+                <div className="flex justify-end">
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200">
+                                <MoreHorizontal className="h-4 w-4" />
+                                <span className="sr-only">Actions</span>
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-[160px] bg-white dark:bg-zinc-900 dark:border-zinc-800">
+                            <DropdownMenuItem onClick={() => { setEditingProduct(row.original); setIsEditProductOpen(true); }}>
+                                <Pencil className="mr-2 h-4 w-4" /> Edit Product
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                </div>
+            )
         }
-    ];
+    ], []);
 
     const hasActiveFilters = filterTerm !== '' || categoryFilter !== 'All' || stockStatusFilter !== 'All';
 

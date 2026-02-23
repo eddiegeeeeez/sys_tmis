@@ -5,7 +5,7 @@ import { Input } from '../../../components/ui/Input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../../../components/ui/Dialog';
 import { Label } from '../../../components/ui/Label';
 import { Select } from '../../../components/ui/Select';
-import { Search, Plus, Minus, CreditCard, Receipt, Barcode, ShoppingBag, X, Banknote, Loader2, CheckCircle2 } from 'lucide-react';
+import { Search, Plus, Minus, Receipt, Barcode, ShoppingBag, X, Banknote, Loader2, CheckCircle2 } from 'lucide-react';
 import { Product, CartItem } from '../../../types';
 import { fetchProducts, createTransaction, getMyTodayTransactions, TransactionResult } from '../services/posService';
 
@@ -134,8 +134,7 @@ export const POS: React.FC = () => {
               <Label>Payment Method</Label>
               <Select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)}>
                 <option value="Cash">Cash</option>
-                <option value="Card">Credit/Debit Card</option>
-                <option value="E-Wallet">E-Wallet (GCash/Maya)</option>
+                <option value="GCash/PayMaya">GCash / PayMaya</option>
               </Select>
             </div>
 
@@ -295,7 +294,7 @@ export const POS: React.FC = () => {
               disabled={cart.length === 0}
               onClick={() => setIsPaymentModalOpen(true)}
             >
-              <CreditCard className="mr-2 h-4 w-4" /> Pay Now
+              <Banknote className="mr-2 h-4 w-4" /> Pay Now
             </Button>
           </div>
         </Card>

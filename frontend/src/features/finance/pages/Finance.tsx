@@ -1,11 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
 import { DataTable } from '../../../components/ui/data-table';
 import { StatusDot } from '../../../components/ui/StatusDot';
 import { ColumnDef } from '@tanstack/react-table';
-import { Plus, Wallet, TrendingUp, Receipt, MoreHorizontal, ArrowUpDown, Loader2, Pencil } from 'lucide-react';
+import { Plus, Wallet, TrendingUp, Receipt, MoreHorizontal, ArrowUpDown, Loader2, Pencil, Eye } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../../../components/ui/DropdownMenu';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../../../components/ui/Dialog';
 import { Label } from '../../../components/ui/Label';
 import { financeService, Expense as ApiExpense } from '../services/financeService';
@@ -18,6 +19,8 @@ const Finance = () => {
     const [isEditOpen, setIsEditOpen] = useState(false);
     const [editingExpense, setEditingExpense] = useState<ApiExpense | null>(null);
     const [editSuccess, setEditSuccess] = useState(false);
+    const [isViewReceiptOpen, setIsViewReceiptOpen] = useState(false);
+    const [viewingExpense, setViewingExpense] = useState<ApiExpense | null>(null);
     const [newExpense, setNewExpense] = useState<Partial<ApiExpense>>({
         expenseCategory: '',
         description: '',
@@ -92,7 +95,7 @@ const Finance = () => {
         }
     };
 
-    const columns: ColumnDef<ApiExpense>[] = [
+    const columns = useMemo<ColumnDef<ApiExpense>[]>(() => [
         {
             accessorKey: "expenseDate",
             header: ({ column }) => (
@@ -129,13 +132,26 @@ const Finance = () => {
             id: "actions",
             cell: ({ row }) => (
                 <div className="flex justify-end">
-                    <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => { setEditingExpense(row.original); setIsEditOpen(true); }}>
-                        <Pencil className="h-4 w-4" />
-                    </Button>
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200">
+                                <MoreHorizontal className="h-4 w-4" />
+                                <span className="sr-only">Actions</span>
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-[160px] bg-white dark:bg-zinc-900 dark:border-zinc-800">
+                            <DropdownMenuItem onClick={() => { setEditingExpense(row.original); setIsEditOpen(true); }}>
+                                <Pencil className="mr-2 h-4 w-4" /> Edit Expense
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => { setViewingExpense(row.original); setIsViewReceiptOpen(true); }}>
+                                <Receipt className="mr-2 h-4 w-4" /> View Receipt
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
                 </div>
             )
         }
-    ];
+    ], []);
 
     return (
         <div className="space-y-6">
@@ -161,6 +177,28 @@ const Finance = () => {
                     </CardContent>
                 </Card>
             </div>
+
+            {/* View Receipt Modal */}
+            <Dialog open={isViewReceiptOpen} onOpenChange={setIsViewReceiptOpen}>
+                <DialogContent className="max-w-sm">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2"><Receipt className="h-4 w-4" /> Expense Receipt</DialogTitle>
+                        <DialogDescription>Record of the selected expense entry.</DialogDescription>
+                    </DialogHeader>
+                    {viewingExpense && (
+                        <div className="space-y-3 py-4 text-sm">
+                            <div className="flex justify-between"><span className="text-zinc-500">Date</span><span>{new Date(viewingExpense.expenseDate).toLocaleDateString()}</span></div>
+                            <div className="flex justify-between"><span className="text-zinc-500">Category</span><span className="font-medium">{viewingExpense.expenseCategory}</span></div>
+                            <div className="flex justify-between"><span className="text-zinc-500">Description</span><span className="text-right max-w-[180px]">{viewingExpense.description}</span></div>
+                            <div className="border-t pt-3 flex justify-between font-bold"><span>Amount</span><span className="text-emerald-600">₱{parseFloat(String(viewingExpense.amount)).toFixed(2)}</span></div>
+                            <div className="flex justify-between"><span className="text-zinc-500">Status</span><span>{viewingExpense.status}</span></div>
+                        </div>
+                    )}
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsViewReceiptOpen(false)}>Close</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
 
             <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
                 <DialogContent>

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
@@ -6,6 +6,7 @@ import { DataTable } from '../../../components/ui/data-table';
 import { StatusDot } from '../../../components/ui/StatusDot';
 import { ColumnDef } from '@tanstack/react-table';
 import { Plus, Search, MoreHorizontal, UserPlus, Mail, Phone, MapPin, ArrowUpDown, Loader2, Pencil } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../../../components/ui/DropdownMenu';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../../../components/ui/Dialog';
 import { Label } from '../../../components/ui/Label';
 import { customerService, Customer as ApiCustomer } from '../services/customerService';
@@ -22,7 +23,7 @@ const CRM = ({ currentRole }: CRMProps) => {
     const [isEditOpen, setIsEditOpen] = useState(false);
     const [editingCustomer, setEditingCustomer] = useState<ApiCustomer | null>(null);
     const [editSuccess, setEditSuccess] = useState(false);
-    const canEdit = currentRole === UserRole.SUPER_ADMIN || currentRole === UserRole.MANAGER;
+    const canEdit = currentRole === UserRole.SUPER_ADMIN || currentRole === UserRole.MANAGER || currentRole === UserRole.CASHIER;
     const [newCustomer, setNewCustomer] = useState<Partial<ApiCustomer>>({
         customerName: '',
         customerType: 'Retail',
@@ -90,7 +91,7 @@ const CRM = ({ currentRole }: CRMProps) => {
         }
     };
 
-    const columns: ColumnDef<ApiCustomer>[] = [
+    const columns = useMemo<ColumnDef<ApiCustomer>[]>(() => [
         {
             accessorKey: "id",
             header: ({ column }) => (
@@ -137,13 +138,23 @@ const CRM = ({ currentRole }: CRMProps) => {
             id: "actions",
             cell: ({ row }) => canEdit ? (
                 <div className="flex justify-end">
-                    <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => { setEditingCustomer(row.original); setIsEditOpen(true); }}>
-                        <Pencil className="h-4 w-4" />
-                    </Button>
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200">
+                                <MoreHorizontal className="h-4 w-4" />
+                                <span className="sr-only">Actions</span>
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-[160px] bg-white dark:bg-zinc-900 dark:border-zinc-800">
+                            <DropdownMenuItem onClick={() => { setEditingCustomer(row.original); setIsEditOpen(true); }}>
+                                <Pencil className="mr-2 h-4 w-4" /> Edit Customer
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
                 </div>
             ) : null
         }
-    ];
+    ], [canEdit]);
 
     return (
         <div className="space-y-6">

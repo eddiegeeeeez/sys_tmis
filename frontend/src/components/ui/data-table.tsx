@@ -128,7 +128,7 @@ export function DataTable<TData, TValue>({
                 <div className="flex-1 flex items-center gap-1 text-xs text-zinc-500 dark:text-zinc-400">
                     <span>Showing</span>
                     <select
-                        value={pageSize}
+                        value={table.getState().pagination.pageSize}
                         onChange={(e) => {
                             table.setPageSize(Number(e.target.value))
                         }}
