@@ -209,21 +209,13 @@ export const Archive: React.FC = () => {
 
                 <TabsContent value="users" className="space-y-4">
                     {isLoading ? renderSkeletons() : (
-                        <Card className="border-zinc-200 dark:border-zinc-800">
-                            <CardContent className="p-0">
-                                <DataTable columns={userColumns} data={archivedUsers} />
-                            </CardContent>
-                        </Card>
+                        <DataTable columns={userColumns} data={archivedUsers} />
                     )}
                 </TabsContent>
 
                 <TabsContent value="roles" className="space-y-4">
                     {isLoading ? renderSkeletons() : (
-                        <Card className="border-zinc-200 dark:border-zinc-800">
-                            <CardContent className="p-0">
-                                <DataTable columns={roleColumns} data={archivedRoles} />
-                            </CardContent>
-                        </Card>
+                        <DataTable columns={roleColumns} data={archivedRoles} />
                     )}
                 </TabsContent>
             </Tabs>
