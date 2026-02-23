@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '../../../components/ui/Button';
+import { Select } from '../../../components/ui/Select';
 import { Badge } from '../../../components/ui/Badge';
 import { Input } from '../../../components/ui/Input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../../../components/ui/Dialog';
@@ -339,29 +340,27 @@ export const UserManagement: React.FC = () => {
                 onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
               />
             </div>
-            <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
                 <Label>Role</Label>
-                <select
-                  className="flex h-10 w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm ring-offset-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-800 dark:bg-zinc-950 dark:ring-offset-zinc-950 dark:focus-visible:ring-zinc-300"
+                <Select
                   value={newUser.role}
                   onChange={(e) => setNewUser({ ...newUser, role: e.target.value })}
                 >
                   {roles.map(role => (
                     <option key={role.id} value={role.name}>{role.name}</option>
                   ))}
-                </select>
+                </Select>
               </div>
               <div className="grid gap-2">
                 <Label>Status</Label>
-                <select
-                  className="flex h-10 w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm ring-offset-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-800 dark:bg-zinc-950 dark:ring-offset-zinc-950 dark:focus-visible:ring-zinc-300"
+                <Select
                   value={newUser.status}
                   onChange={(e) => setNewUser({ ...newUser, status: e.target.value })}
                 >
                   <option value="Active">Active</option>
                   <option value="Inactive">Inactive</option>
-                </select>
+                </Select>
               </div>
             </div>
             <div className="grid gap-2">
@@ -412,26 +411,24 @@ export const UserManagement: React.FC = () => {
               <div className="grid grid-cols-2 gap-4">
                 <div className="grid gap-2">
                   <Label>Role</Label>
-                  <select
-                    className="flex h-10 w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm ring-offset-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-800 dark:bg-zinc-950 dark:ring-offset-zinc-950 dark:focus-visible:ring-zinc-300"
+                  <Select
                     value={editingUser.role}
                     onChange={(e) => setEditingUser({ ...editingUser, role: e.target.value })}
                   >
                     {roles.map(role => (
                       <option key={role.id} value={role.name}>{role.name}</option>
                     ))}
-                  </select>
+                  </Select>
                 </div>
                 <div className="grid gap-2">
                   <Label>Status</Label>
-                  <select
-                    className="flex h-10 w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm ring-offset-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-800 dark:bg-zinc-950 dark:ring-offset-zinc-950 dark:focus-visible:ring-zinc-300"
+                  <Select
                     value={editingUser.status || (editingUser.isActive ? 'Active' : 'Inactive')}
                     onChange={(e) => setEditingUser({ ...editingUser, status: e.target.value as any, isActive: e.target.value === 'Active' })}
                   >
                     <option value="Active">Active</option>
                     <option value="Inactive">Inactive</option>
-                  </select>
+                  </Select>
                 </div>
               </div>
             </div>
