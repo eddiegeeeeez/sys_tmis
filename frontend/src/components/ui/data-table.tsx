@@ -31,24 +31,27 @@ export function DataTable<TData, TValue>({
     data,
 }: DataTableProps<TData, TValue>) {
     const [sorting, setSorting] = React.useState<SortingState>([])
-    const [pageSize, setPageSize] = React.useState(10)
-    const [pageIndex, setPageIndex] = React.useState(0)
+    // tableRef lets the row-number cell read live pagination state without
+    // needing controlled state (avoids breaking internal TanStack pagination)
+    const tableRef = React.useRef<ReturnType<typeof useReactTable<TData>> | null>(null)
 
-    // Prepend a row-number column — uses pageIndex/pageSize from component state
     const columnsWithIndex: ColumnDef<TData, TValue>[] = React.useMemo(() => [
         {
             id: "__row_number__",
             header: "#",
-            cell: ({ row }) => (
-                <span className="text-xs text-zinc-400 dark:text-zinc-500 font-mono select-none">
-                    {pageIndex * pageSize + row.index + 1}
-                </span>
-            ),
+            cell: ({ row }) => {
+                const { pageIndex, pageSize } = tableRef.current?.getState().pagination ?? { pageIndex: 0, pageSize: 10 }
+                return (
+                    <span className="text-xs text-zinc-400 dark:text-zinc-500 font-mono select-none">
+                        {pageIndex * pageSize + row.index + 1}
+                    </span>
+                )
+            },
             enableSorting: false,
             size: 40,
         } as ColumnDef<TData, TValue>,
         ...columns,
-    ], [columns, pageIndex, pageSize])
+    ], [columns])
 
     const table = useReactTable({
         data,
@@ -57,19 +60,12 @@ export function DataTable<TData, TValue>({
         getPaginationRowModel: getPaginationRowModel(),
         onSortingChange: setSorting,
         getSortedRowModel: getSortedRowModel(),
-        state: {
-            sorting,
-            pagination: { pageIndex, pageSize },
-        },
-        onPaginationChange: (updater) => {
-            const next = typeof updater === "function"
-                ? updater({ pageIndex, pageSize })
-                : updater
-            setPageIndex(next.pageIndex)
-            setPageSize(next.pageSize)
-        },
-        manualPagination: false,
+        state: { sorting },
+        initialState: { pagination: { pageSize: 10 } },
     })
+
+    // Keep ref in sync after every render
+    tableRef.current = table
 
     return (
         <div className="flex flex-col flex-1 min-h-0">
@@ -127,7 +123,7 @@ export function DataTable<TData, TValue>({
             </div>
 
             {/* Pagination Controls */}
-            <div className="flex items-center justify-between px-2 shrink-0 border-t border-zinc-200 dark:border-zinc-800 pt-2 mt-2">
+            <div className="flex items-center justify-between px-2 shrink-0 pt-2 mt-1">
                 {/* Left: editable rows-per-page */}
                 <div className="flex-1 flex items-center gap-1 text-xs text-zinc-500 dark:text-zinc-400">
                     <span>Showing</span>
