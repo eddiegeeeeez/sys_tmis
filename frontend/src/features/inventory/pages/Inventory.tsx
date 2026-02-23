@@ -539,15 +539,13 @@ export const Inventory: React.FC = () => {
             </div>
 
             {/* Unified Data Table View */}
-            <div className="overflow-hidden border border-zinc-200 shadow-sm dark:border-zinc-800 rounded-md">
-                {isLoading ? (
-                    <div className="h-[400px] flex items-center justify-center bg-white dark:bg-zinc-900">
-                        <Loader2 className="h-8 w-8 animate-spin text-brand-600" />
-                    </div>
-                ) : (
-                    <DataTable columns={columns} data={processedData} />
-                )}
-            </div>
+            {isLoading ? (
+                <div className="h-[400px] flex items-center justify-center rounded-md border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900">
+                    <Loader2 className="h-8 w-8 animate-spin text-brand-600" />
+                </div>
+            ) : (
+                <DataTable columns={columns} data={processedData} />
+            )}
         </div>
     );
 };

@@ -366,9 +366,7 @@ export const Security: React.FC = () => {
                         <Skeleton className="h-8 w-full" />
                     </div>
                 ) : (
-                    <div className="flex-1 overflow-hidden flex flex-col min-h-0">
-                        <DataTable columns={columns} data={filteredLogs} />
-                    </div>
+                    <DataTable columns={columns} data={filteredLogs} />
                 )}
             </div>
         </div>

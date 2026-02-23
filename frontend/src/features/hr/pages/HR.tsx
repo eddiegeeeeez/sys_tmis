@@ -307,9 +307,9 @@ const EmployeesTab = () => {
                     <Plus className="h-4 w-4 mr-2" /> Add Employee
                 </Button>
             </div>
-            <div className="rounded-md border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 overflow-hidden relative min-h-[200px]">
+            <div className="relative">
                 {isLoading ? (
-                    <div className="absolute inset-0 flex items-center justify-center bg-white/50 dark:bg-zinc-950/50 z-10">
+                    <div className="absolute inset-0 flex items-center justify-center bg-white/50 dark:bg-zinc-950/50 z-10 rounded-md">
                         <Loader2 className="h-8 w-8 animate-spin text-primary" />
                     </div>
                 ) : null}
@@ -454,9 +454,7 @@ const PayrollTab = () => {
                     </CardContent>
                 </Card>
             </div>
-            <div className="rounded-md border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 overflow-hidden">
-                <DataTable columns={columns} data={MOCK_PAYROLL} />
-            </div>
+            <DataTable columns={columns} data={MOCK_PAYROLL} />
         </div>
     );
 };
@@ -519,9 +517,7 @@ const AttendanceTab = () => {
                 <h3 className="text-lg font-medium tracking-tight text-zinc-900 dark:text-zinc-50">Daily Attendance Log</h3>
                 <div className="text-sm text-zinc-500 bg-white dark:bg-zinc-900 border dark:border-zinc-800 px-3 py-1 rounded">Date: Today</div>
             </div>
-            <div className="rounded-md border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 overflow-hidden">
-                <DataTable columns={columns} data={MOCK_ATTENDANCE} />
-            </div>
+            <DataTable columns={columns} data={MOCK_ATTENDANCE} />
         </div>
     );
 };

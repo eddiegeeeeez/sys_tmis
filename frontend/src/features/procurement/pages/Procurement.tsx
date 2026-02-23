@@ -390,15 +390,13 @@ export const Procurement: React.FC = () => {
                 </div>
 
                 <TabsContent value="po" className="space-y-4">
-                    <div className="rounded-md border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 overflow-hidden">
-                        {isLoading ? (
-                            <div className="h-[300px] flex items-center justify-center">
-                                <Loader2 className="h-8 w-8 animate-spin text-brand-600" />
-                            </div>
-                        ) : (
-                            <DataTable columns={columns} data={purchaseOrders} />
-                        )}
-                    </div>
+                    {isLoading ? (
+                        <div className="h-[300px] flex items-center justify-center rounded-md border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900">
+                            <Loader2 className="h-8 w-8 animate-spin text-brand-600" />
+                        </div>
+                    ) : (
+                        <DataTable columns={columns} data={purchaseOrders} />
+                    )}
                 </TabsContent>
 
                 <TabsContent value="suppliers">

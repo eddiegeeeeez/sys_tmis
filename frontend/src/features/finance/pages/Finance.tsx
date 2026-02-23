@@ -262,9 +262,9 @@ const Finance = () => {
                 </DialogContent>
             </Dialog>
 
-            <div className="rounded-md border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 relative min-h-[400px]">
+            <div className="relative">
                 {isLoading && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-white/50 dark:bg-zinc-950/50 z-10">
+                    <div className="absolute inset-0 flex items-center justify-center bg-white/50 dark:bg-zinc-950/50 z-10 rounded-md">
                         <Loader2 className="h-8 w-8 animate-spin text-primary" />
                     </div>
                 )}

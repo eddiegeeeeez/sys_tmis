@@ -607,9 +607,7 @@ export const RoleManagement: React.FC = () => {
                     })}
                 </div>
             ) : (
-                <div className="overflow-hidden">
-                    <DataTable columns={columns} data={sortedRoles} />
-                </div>
+                <DataTable columns={columns} data={sortedRoles} />
             )}
 
             <AuthConfirmationModal
