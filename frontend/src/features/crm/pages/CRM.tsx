@@ -9,13 +9,20 @@ import { Plus, Search, MoreHorizontal, UserPlus, Mail, Phone, MapPin, ArrowUpDow
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../../../components/ui/Dialog';
 import { Label } from '../../../components/ui/Label';
 import { customerService, Customer as ApiCustomer } from '../services/customerService';
+import { UserRole } from '../../../types';
 
-const CRM = () => {
+interface CRMProps {
+    currentRole?: string;
+}
+
+const CRM = ({ currentRole }: CRMProps) => {
     const [customers, setCustomers] = useState<ApiCustomer[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isAddOpen, setIsAddOpen] = useState(false);
     const [isEditOpen, setIsEditOpen] = useState(false);
     const [editingCustomer, setEditingCustomer] = useState<ApiCustomer | null>(null);
+    const [editSuccess, setEditSuccess] = useState(false);
+    const canEdit = currentRole === UserRole.SUPER_ADMIN || currentRole === UserRole.MANAGER;
     const [newCustomer, setNewCustomer] = useState<Partial<ApiCustomer>>({
         customerName: '',
         customerType: 'Retail',
@@ -69,8 +76,14 @@ const CRM = () => {
         try {
             const response = await customerService.updateCustomer(editingCustomer.id, editingCustomer);
             if (response.success) {
-                setIsEditOpen(false);
-                loadCustomers();
+                setEditSuccess(true);
+                setTimeout(() => {
+                    setIsEditOpen(false);
+                    setEditSuccess(false);
+                    loadCustomers();
+                }, 800);
+            } else {
+                alert(response.message || 'Failed to update customer');
             }
         } catch (error) {
             alert("Failed to update customer");
@@ -122,13 +135,13 @@ const CRM = () => {
         },
         {
             id: "actions",
-            cell: ({ row }) => (
+            cell: ({ row }) => canEdit ? (
                 <div className="flex justify-end">
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setEditingCustomer(row.original); setIsEditOpen(true); }}>
+                    <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => { setEditingCustomer(row.original); setIsEditOpen(true); }}>
                         <Pencil className="h-4 w-4" />
                     </Button>
                 </div>
-            )
+            ) : null
         }
     ];
 
@@ -221,8 +234,9 @@ const CRM = () => {
                                 <Label>Address</Label>
                                 <Input value={editingCustomer.address || ''} onChange={e => setEditingCustomer({ ...editingCustomer, address: e.target.value })} />
                             </div>
-                            <DialogFooter>
-                                <Button type="button" variant="outline" onClick={() => setIsEditOpen(false)}>Cancel</Button>
+                            <DialogFooter>                        {editSuccess ? (
+                            <p className="text-sm text-green-600 font-medium mr-auto">✓ Customer updated successfully</p>
+                        ) : null}                                <Button type="button" variant="outline" onClick={() => setIsEditOpen(false)}>Cancel</Button>
                                 <Button type="submit">Save Changes</Button>
                             </DialogFooter>
                         </form>

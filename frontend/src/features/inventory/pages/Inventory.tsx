@@ -25,6 +25,8 @@ export const Inventory: React.FC = () => {
     const [isAddProductOpen, setIsAddProductOpen] = useState(false);
     const [isEditProductOpen, setIsEditProductOpen] = useState(false);
     const [editingProduct, setEditingProduct] = useState<ApiProduct | null>(null);
+    const [saveError, setSaveError] = useState<string | null>(null);
+    const [editError, setEditError] = useState<string | null>(null);
 
     // Form State
     const [newProduct, setNewProduct] = useState({
@@ -111,6 +113,7 @@ export const Inventory: React.FC = () => {
 
     const handleSaveProduct = async (e: React.FormEvent) => {
         e.preventDefault();
+        setSaveError(null);
         setIsSaving(true);
         try {
             const res = await inventoryService.createProduct({
@@ -124,9 +127,12 @@ export const Inventory: React.FC = () => {
                     name: '', sku: '', category: 'Electronics', unitOfMeasure: 'pcs',
                     costPrice: 0, sellingPrice: 0, initialStock: 0, reorderLevel: 10, supplierId: ''
                 });
+            } else {
+                setSaveError(res.data.message || 'Failed to save product. Please check the form and try again.');
             }
-        } catch (error) {
-            console.error("Error creating product", error);
+        } catch (error: any) {
+            const msg = error?.response?.data?.message || error?.message || 'An error occurred. Please try again.';
+            setSaveError(msg);
         } finally {
             setIsSaving(false);
         }
@@ -135,6 +141,7 @@ export const Inventory: React.FC = () => {
     const handleUpdateProduct = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!editingProduct) return;
+        setEditError(null);
         setIsSaving(true);
         try {
             const res = await inventoryService.updateProduct(editingProduct.id, {
@@ -151,9 +158,12 @@ export const Inventory: React.FC = () => {
             if (res.data.success) {
                 setIsEditProductOpen(false);
                 fetchData();
+            } else {
+                setEditError(res.data.message || 'Failed to update product.');
             }
-        } catch (error) {
-            console.error("Error updating product", error);
+        } catch (error: any) {
+            const msg = error?.response?.data?.message || error?.message || 'An error occurred. Please try again.';
+            setEditError(msg);
         } finally {
             setIsSaving(false);
         }
@@ -267,7 +277,7 @@ export const Inventory: React.FC = () => {
         <div className="space-y-6 pb-10">
 
             {/* Add Product Modal */}
-            <Dialog open={isAddProductOpen} onOpenChange={setIsAddProductOpen}>
+            <Dialog open={isAddProductOpen} onOpenChange={open => { setIsAddProductOpen(open); if (!open) setSaveError(null); }}>
                 <DialogContent className="max-w-xl">
                     <DialogHeader>
                         <DialogTitle>Add New Product</DialogTitle>
@@ -328,7 +338,9 @@ export const Inventory: React.FC = () => {
                                 <Input
                                     type="number"
                                     placeholder="0.00"
-                                    value={newProduct.costPrice}
+                                    min="0"
+                                    step="0.01"
+                                    value={newProduct.costPrice || ''}
                                     onChange={e => setNewProduct({ ...newProduct, costPrice: parseFloat(e.target.value) || 0 })}
                                 />
                             </div>
@@ -337,8 +349,10 @@ export const Inventory: React.FC = () => {
                                 <Input
                                     type="number"
                                     placeholder="0.00"
+                                    min="0"
+                                    step="0.01"
                                     required
-                                    value={newProduct.sellingPrice}
+                                    value={newProduct.sellingPrice || ''}
                                     onChange={e => setNewProduct({ ...newProduct, sellingPrice: parseFloat(e.target.value) || 0 })}
                                 />
                             </div>
@@ -347,6 +361,7 @@ export const Inventory: React.FC = () => {
                                 <Input
                                     type="number"
                                     placeholder="0"
+                                    min="0"
                                     required
                                     value={newProduct.initialStock}
                                     onChange={e => setNewProduct({ ...newProduct, initialStock: parseInt(e.target.value) || 0 })}
@@ -360,8 +375,9 @@ export const Inventory: React.FC = () => {
                                 <Input
                                     type="number"
                                     placeholder="10"
+                                    min="0"
                                     value={newProduct.reorderLevel}
-                                    onChange={e => setNewProduct({ ...newProduct, reorderLevel: parseInt(e.target.value) || 10 })}
+                                    onChange={e => setNewProduct({ ...newProduct, reorderLevel: parseInt(e.target.value) || 0 })}
                                 />
                             </div>
                             <div className="grid gap-2">
@@ -379,6 +395,9 @@ export const Inventory: React.FC = () => {
                             </div>
                         </div>
                         <DialogFooter>
+                            {saveError && (
+                                <p className="text-sm text-red-500 mr-auto">{saveError}</p>
+                            )}
                             <Button type="button" variant="outline" onClick={() => setIsAddProductOpen(false)}>Cancel</Button>
                             <Button type="submit" disabled={isSaving}>
                                 {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
@@ -432,15 +451,15 @@ export const Inventory: React.FC = () => {
                             <div className="grid grid-cols-3 gap-4">
                                 <div className="grid gap-2">
                                     <Label>Cost Price</Label>
-                                    <Input type="number" placeholder="0.00" value={editingProduct.costPrice} onChange={e => setEditingProduct({ ...editingProduct, costPrice: parseFloat(e.target.value) || 0 })} />
+                                    <Input type="number" placeholder="0.00" min="0" step="0.01" value={editingProduct.costPrice || ''} onChange={e => setEditingProduct({ ...editingProduct, costPrice: parseFloat(e.target.value) || 0 })} />
                                 </div>
                                 <div className="grid gap-2">
                                     <Label>Selling Price</Label>
-                                    <Input type="number" placeholder="0.00" required value={editingProduct.sellingPrice} onChange={e => setEditingProduct({ ...editingProduct, sellingPrice: parseFloat(e.target.value) || 0 })} />
+                                    <Input type="number" placeholder="0.00" min="0" step="0.01" required value={editingProduct.sellingPrice || ''} onChange={e => setEditingProduct({ ...editingProduct, sellingPrice: parseFloat(e.target.value) || 0 })} />
                                 </div>
                                 <div className="grid gap-2">
                                     <Label>Reorder Level</Label>
-                                    <Input type="number" placeholder="10" value={editingProduct.reorderLevel} onChange={e => setEditingProduct({ ...editingProduct, reorderLevel: parseInt(e.target.value) || 10 })} />
+                                    <Input type="number" placeholder="10" min="0" value={editingProduct.reorderLevel} onChange={e => setEditingProduct({ ...editingProduct, reorderLevel: parseInt(e.target.value) || 0 })} />
                                 </div>
                             </div>
                             <div className="grid gap-2">
@@ -454,6 +473,9 @@ export const Inventory: React.FC = () => {
                                 </select>
                             </div>
                             <DialogFooter>
+                                {editError && (
+                                    <p className="text-sm text-red-500 mr-auto">{editError}</p>
+                                )}
                                 <Button type="button" variant="outline" onClick={() => setIsEditProductOpen(false)}>Cancel</Button>
                                 <Button type="submit" disabled={isSaving}>
                                     {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}

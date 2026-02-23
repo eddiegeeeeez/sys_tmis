@@ -78,12 +78,22 @@ namespace TradeMatrix.Server.Services
             };
         }
 
-        public async Task<List<PurchaseOrder>> GetPurchaseOrdersAsync()
+        public async Task<List<PurchaseOrderDto>> GetPurchaseOrdersAsync()
         {
             return await _context.PurchaseOrders
                 .Include(po => po.Supplier)
-                .Include(po => po.Items)
-                .ThenInclude(i => i.Product)
+                .OrderByDescending(po => po.OrderDate)
+                .Select(po => new PurchaseOrderDto
+                {
+                    Id = po.Id,
+                    PONumber = po.PONumber,
+                    SupplierId = po.SupplierId,
+                    SupplierName = po.Supplier != null ? po.Supplier.CompanyName : "Unknown",
+                    OrderDate = po.OrderDate,
+                    ExpectedDeliveryDate = po.ExpectedDeliveryDate,
+                    TotalAmount = po.TotalAmount,
+                    Status = po.Status
+                })
                 .ToListAsync();
         }
 

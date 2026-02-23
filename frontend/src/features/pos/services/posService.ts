@@ -51,3 +51,8 @@ export const createTransaction = async (payload: CreateTransactionPayload): Prom
   const { data } = await api.post<{ data: TransactionResult }>('transaction', payload);
   return data.data;
 };
+
+export const getMyTodayTransactions = async (): Promise<TransactionResult[]> => {
+  const { data } = await api.get<{ data: TransactionResult[] }>('transaction/my-today');
+  return data.data ?? [];
+};

@@ -52,12 +52,12 @@ namespace TradeMatrix.Server.Controllers
         }
 
         [HttpGet("purchase-orders")]
-        public async Task<ActionResult<ApiResponse<List<PurchaseOrder>>>> GetPurchaseOrders()
+        public async Task<ActionResult<ApiResponse<List<PurchaseOrderDto>>>> GetPurchaseOrders()
         {
             try
             {
                 var result = await _procurementService.GetPurchaseOrdersAsync();
-                return Ok(ApiResponse<List<PurchaseOrder>>.SuccessResponse(result));
+                return Ok(ApiResponse<List<PurchaseOrderDto>>.SuccessResponse(result));
             }
             catch (Exception ex)
             {

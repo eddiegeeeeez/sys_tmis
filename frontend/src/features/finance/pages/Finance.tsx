@@ -17,6 +17,7 @@ const Finance = () => {
     const [isAddOpen, setIsAddOpen] = useState(false);
     const [isEditOpen, setIsEditOpen] = useState(false);
     const [editingExpense, setEditingExpense] = useState<ApiExpense | null>(null);
+    const [editSuccess, setEditSuccess] = useState(false);
     const [newExpense, setNewExpense] = useState<Partial<ApiExpense>>({
         expenseCategory: '',
         description: '',
@@ -77,8 +78,14 @@ const Finance = () => {
         try {
             const response = await financeService.updateExpense(editingExpense.id, editingExpense);
             if (response.success) {
-                setIsEditOpen(false);
-                loadData();
+                setEditSuccess(true);
+                setTimeout(() => {
+                    setIsEditOpen(false);
+                    setEditSuccess(false);
+                    loadData();
+                }, 800);
+            } else {
+                alert(response.message || 'Failed to update expense');
             }
         } catch (error) {
             alert("Failed to update expense");
@@ -122,7 +129,7 @@ const Finance = () => {
             id: "actions",
             cell: ({ row }) => (
                 <div className="flex justify-end">
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setEditingExpense(row.original); setIsEditOpen(true); }}>
+                    <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => { setEditingExpense(row.original); setIsEditOpen(true); }}>
                         <Pencil className="h-4 w-4" />
                     </Button>
                 </div>
@@ -244,6 +251,9 @@ const Finance = () => {
                                 </select>
                             </div>
                             <DialogFooter>
+                                {editSuccess ? (
+                                    <p className="text-sm text-green-600 font-medium mr-auto">✓ Expense updated successfully</p>
+                                ) : null}
                                 <Button type="button" variant="outline" onClick={() => setIsEditOpen(false)}>Cancel</Button>
                                 <Button type="submit">Save Changes</Button>
                             </DialogFooter>

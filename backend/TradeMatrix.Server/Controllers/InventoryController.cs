@@ -35,7 +35,7 @@ namespace TradeMatrix.Server.Controllers
         }
 
         [HttpPost("products")]
-        [Authorize(Roles = "SuperAdmin,Manager,InventoryClerk")]
+        [Authorize(Roles = "SuperAdmin,Manager,InventoryClerk,Cashier")]
         public async Task<ActionResult<ApiResponse<ProductDto>>> CreateProduct([FromBody] CreateProductDto dto)
         {
             try

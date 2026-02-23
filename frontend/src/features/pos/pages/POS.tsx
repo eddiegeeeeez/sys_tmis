@@ -5,9 +5,9 @@ import { Input } from '../../../components/ui/Input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../../../components/ui/Dialog';
 import { Label } from '../../../components/ui/Label';
 import { Select } from '../../../components/ui/Select';
-import { Search, Plus, Minus, CreditCard, Receipt, Barcode, ShoppingBag, X, Banknote, Loader2 } from 'lucide-react';
+import { Search, Plus, Minus, CreditCard, Receipt, Barcode, ShoppingBag, X, Banknote, Loader2, CheckCircle2 } from 'lucide-react';
 import { Product, CartItem } from '../../../types';
-import { fetchProducts, createTransaction } from '../services/posService';
+import { fetchProducts, createTransaction, getMyTodayTransactions, TransactionResult } from '../services/posService';
 
 export const POS: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
@@ -19,13 +19,24 @@ export const POS: React.FC = () => {
   const [paymentMethod, setPaymentMethod] = useState('Cash');
   const [isProcessing, setIsProcessing] = useState(false);
   const [lastTxNumber, setLastTxNumber] = useState<string | null>(null);
+  const [recentTransactions, setRecentTransactions] = useState<TransactionResult[]>([]);
+  const [txLoading, setTxLoading] = useState(false);
 
   useEffect(() => {
     fetchProducts()
       .then(setProducts)
       .catch(() => setProducts([]))
       .finally(() => setProductsLoading(false));
+    loadRecentTransactions();
   }, []);
+
+  const loadRecentTransactions = () => {
+    setTxLoading(true);
+    getMyTodayTransactions()
+      .then(setRecentTransactions)
+      .catch(() => setRecentTransactions([]))
+      .finally(() => setTxLoading(false));
+  };
 
   const refreshProducts = () => {
     setProductsLoading(true);
@@ -84,6 +95,7 @@ export const POS: React.FC = () => {
       setAmountTendered('');
       setIsPaymentModalOpen(false);
       refreshProducts(); // refresh stock counts
+      loadRecentTransactions(); // refresh recent transactions
       alert(`Transaction ${result.transactionNumber} completed! Change: $${result.change.toFixed(2)}`);
     } catch (err: any) {
       alert(err?.response?.data?.message ?? 'Transaction failed. Please try again.');
@@ -95,7 +107,9 @@ export const POS: React.FC = () => {
   const change = amountTendered ? (parseFloat(amountTendered) - total) : 0;
 
   return (
-    <div className="h-[calc(100vh-140px)] flex flex-col lg:flex-row gap-6">
+    <div className="flex flex-col gap-6 pb-10">
+      {/* Main POS Interface */}
+      <div className="h-[calc(100vh-200px)] flex flex-col lg:flex-row gap-6">
 
       {/* Payment Modal */}
       <Dialog open={isPaymentModalOpen} onOpenChange={setIsPaymentModalOpen}>
@@ -286,6 +300,51 @@ export const POS: React.FC = () => {
           </div>
         </Card>
       </div>
+    </div>
+
+      {/* Recent Transactions Panel */}
+      <Card className="border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900">
+        <CardHeader className="flex flex-row items-center justify-between py-4 border-b border-zinc-100 dark:border-zinc-800">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Receipt className="h-4 w-4" /> Today's Transactions
+          </CardTitle>
+          <Button variant="ghost" size="sm" onClick={loadRecentTransactions} disabled={txLoading}>
+            {txLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : 'Refresh'}
+          </Button>
+        </CardHeader>
+        <CardContent className="p-0">
+          {txLoading ? (
+            <div className="flex items-center justify-center py-8 text-zinc-400">
+              <Loader2 className="h-5 w-5 animate-spin mr-2" /> Loading transactions...
+            </div>
+          ) : recentTransactions.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-10 text-zinc-400">
+              <Receipt className="h-8 w-8 mb-2 opacity-20" />
+              <p className="text-sm">No transactions yet today</p>
+            </div>
+          ) : (
+            <div className="divide-y divide-zinc-100 dark:divide-zinc-800">
+              {recentTransactions.map(tx => (
+                <div key={tx.id} className="flex items-center justify-between px-6 py-3 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors">
+                  <div className="flex items-center gap-3">
+                    <div className="h-8 w-8 rounded-full bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center">
+                      <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold font-mono text-zinc-900 dark:text-zinc-100">{tx.transactionNumber}</p>
+                      <p className="text-xs text-zinc-500">{new Date(tx.transactionDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} · {tx.paymentMethod}</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-bold text-zinc-900 dark:text-zinc-100">${tx.totalAmount.toFixed(2)}</p>
+                    <p className="text-xs text-emerald-600 dark:text-emerald-400">{tx.status}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 };

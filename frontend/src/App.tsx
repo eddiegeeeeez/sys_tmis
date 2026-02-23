@@ -207,7 +207,7 @@ const App: React.FC = () => {
                   currentRole={currentRole}
                   allowedRoles={[UserRole.MANAGER, UserRole.CASHIER]}
                 >
-                  <CRM />
+                  <CRM currentRole={currentRole} />
                 </ProtectedRoute>
               } />
 
