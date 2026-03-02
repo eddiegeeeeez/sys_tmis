@@ -142,7 +142,24 @@ app.Use(async (context, next) =>
 });
 
 // 4. Static Files & Routing
-app.UseStaticFiles();
+// In Development: disable browser caching so rebuilt frontend is always served fresh.
+// In Production: Vite content-hashes all JS/CSS, so long-term caching is safe.
+if (app.Environment.IsDevelopment())
+{
+    app.UseStaticFiles(new StaticFileOptions
+    {
+        OnPrepareResponse = ctx =>
+        {
+            ctx.Context.Response.Headers["Cache-Control"] = "no-cache, no-store, must-revalidate";
+            ctx.Context.Response.Headers["Pragma"] = "no-cache";
+            ctx.Context.Response.Headers["Expires"] = "0";
+        }
+    });
+}
+else
+{
+    app.UseStaticFiles();
+}
 app.UseRouting();
 app.UseCors("AllowFrontend");
 

@@ -13,7 +13,6 @@ const routeToTitleMap: Record<string, string> = {
     '/finance': 'Finance & Accounting - TradeMatrix',
     '/admin/users': 'User Management - TradeMatrix Admin',
     '/admin/roles': 'Role Management - TradeMatrix Admin',
-    '/admin/config': 'System Configuration - TradeMatrix Admin',
     '/admin/db': 'Database Administration - TradeMatrix Admin',
     '/admin/security': 'Audit Logs - TradeMatrix Admin',
     '/unauthorized': 'Unauthorized Access - TradeMatrix'

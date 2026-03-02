@@ -69,7 +69,7 @@ export function DataTable<TData, TValue>({
 
     return (
         <div className="flex flex-col flex-1 min-h-0">
-            <div className="rounded-md border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 overflow-hidden flex flex-col flex-1">
+            <div className="rounded-md border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 overflow-hidden flex flex-col flex-1">
                 <div className="overflow-auto flex-1">
                     <Table>
                         <TableHeader className="bg-zinc-50 dark:bg-zinc-800/50 sticky top-0 z-10">

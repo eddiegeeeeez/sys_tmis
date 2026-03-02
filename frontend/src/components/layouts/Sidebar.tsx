@@ -3,8 +3,8 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { UserRole } from '../../types';
 import {
   LayoutDashboard, ShoppingCart, Package, Users, LogOut,
-  CircuitBoard, Shield, Settings, Database, Lock,
-  Briefcase, Truck, Wallet, UserSquare2, ArchiveRestore
+  CircuitBoard, Shield, Database, Lock,
+  Briefcase, Truck, Wallet, UserSquare2, ArchiveRestore, ReceiptText
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '../ui/Avatar';
 import { cn } from '../../lib/utils';
@@ -25,7 +25,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentRole }) => {
           {
             section: 'System Core', items: [
               { id: 'dashboard', label: 'System Overview', icon: LayoutDashboard },
-              { id: 'admin/config', label: 'System Config', icon: Settings },
               { id: 'admin/db', label: 'Database Admin', icon: Database },
             ]
           },
@@ -50,6 +49,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentRole }) => {
           {
             section: 'Operations', items: [
               { id: 'pos', label: 'Point of Sale', icon: ShoppingCart },
+              { id: 'sales', label: 'Sales History', icon: ReceiptText },
               { id: 'inventory', label: 'Inventory', icon: Package },
               { id: 'procurement', label: 'Procurement', icon: Truck },
             ]

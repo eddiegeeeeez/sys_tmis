@@ -21,6 +21,8 @@ export interface Product {
   price: number;
   stock: number;
   sku: string;
+  reorderLevel: number;
+  unitOfMeasure: string;
   image?: string;
 }
 

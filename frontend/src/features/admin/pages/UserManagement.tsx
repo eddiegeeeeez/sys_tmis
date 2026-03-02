@@ -463,7 +463,7 @@ export const UserManagement: React.FC = () => {
 
       {loading ? (
         <div className="space-y-4 flex flex-col flex-1 min-h-0">
-          <div className="rounded-md border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 overflow-hidden flex flex-col flex-1">
+          <div className="rounded-md border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 overflow-hidden flex flex-col flex-1">
             <div className="p-4 space-y-4">
               <Skeleton className="h-8 w-full" />
               <Skeleton className="h-8 w-full" />

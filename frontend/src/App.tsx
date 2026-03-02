@@ -13,6 +13,7 @@ import api from './lib/axios';
 // Pages
 import { Dashboard } from './features/dashboard/pages/Dashboard';
 import { POS } from './features/pos/pages/POS';
+import { SalesHistory } from './features/pos/pages/SalesHistory';
 import { Inventory } from './features/inventory/pages/Inventory';
 import { HR } from './features/hr/pages/HR';
 import { Procurement } from './features/procurement/pages/Procurement';
@@ -23,7 +24,6 @@ import Finance from './features/finance/pages/Finance';
 import { UserManagement } from './features/admin/pages/UserManagement';
 import { RoleManagement } from './features/admin/pages/RoleManagement';
 import { RolePermissionsEditor } from './features/admin/pages/RolePermissionsEditor';
-import { SystemConfig } from './features/admin/pages/SystemConfig';
 import { DatabaseAdmin } from './features/admin/pages/DatabaseAdmin';
 import { Security } from './features/admin/pages/Security';
 import { Archive } from './features/admin/pages/Archive';
@@ -171,6 +171,16 @@ const App: React.FC = () => {
                 </ProtectedRoute>
               } />
 
+              <Route path="sales" element={
+                <ProtectedRoute
+                  isLoggedIn={isLoggedIn}
+                  currentRole={currentRole}
+                  allowedRoles={[UserRole.SUPER_ADMIN, UserRole.MANAGER]}
+                >
+                  <SalesHistory currentRole={currentRole} />
+                </ProtectedRoute>
+              } />
+
               <Route path="inventory" element={
                 <ProtectedRoute
                   isLoggedIn={isLoggedIn}
@@ -222,16 +232,6 @@ const App: React.FC = () => {
               } />
 
               {/* Super Admin Specific Routes */}
-              <Route path="admin/config" element={
-                <ProtectedRoute
-                  isLoggedIn={isLoggedIn}
-                  currentRole={currentRole}
-                  allowedRoles={[UserRole.SUPER_ADMIN]}
-                >
-                  <SystemConfig />
-                </ProtectedRoute>
-              } />
-
               <Route path="admin/db" element={
                 <ProtectedRoute
                   isLoggedIn={isLoggedIn}

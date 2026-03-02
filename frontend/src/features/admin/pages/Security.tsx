@@ -76,6 +76,41 @@ export const Security: React.FC = () => {
         setIsDetailsOpen(true);
     };
 
+    const handleExportCSV = () => {
+        if (filteredLogs.length === 0) return;
+
+        const headers = ['ID', 'Timestamp', 'Actor Name', 'Actor Email', 'IP Address', 'Event', 'Resource', 'Status', 'Severity'];
+
+        const escape = (val: unknown) => {
+            const str = val == null ? '' : String(val);
+            return str.includes(',') || str.includes('"') || str.includes('\n')
+                ? `"${str.replace(/"/g, '""')}"`
+                : str;
+        };
+
+        const rows = filteredLogs.map(log => [
+            escape(log.id),
+            escape(new Date(log.timestamp).toLocaleString()),
+            escape(log.actor.name),
+            escape(log.actor.email),
+            escape(log.actor.ip),
+            escape(log.event),
+            escape(log.resource),
+            escape(log.status),
+            escape(log.severity),
+        ].join(','));
+
+        const csv = [headers.join(','), ...rows].join('\n');
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        const date = new Date().toISOString().split('T')[0];
+        link.download = `audit-logs-${date}.csv`;
+        link.click();
+        URL.revokeObjectURL(url);
+    };
+
     // --- Helpers for UI visuals ---
     const getStatusBadge = (status: string) => {
         switch (status) {
@@ -309,8 +344,8 @@ export const Security: React.FC = () => {
                     <p className="text-sm text-zinc-500 dark:text-zinc-400">Comprehensive trail of system activities and security events.</p>
                 </div>
                 <div className="flex gap-2">
-                    <Button variant="outline" size="sm"><RefreshCw className="h-4 w-4 mr-2" /> Refresh</Button>
-                    <Button variant="outline" size="sm"><Download className="h-4 w-4 mr-2" /> Export CSV</Button>
+                    <Button variant="outline" size="sm" onClick={fetchLogs}><RefreshCw className="h-4 w-4 mr-2" /> Refresh</Button>
+                    <Button variant="outline" size="sm" onClick={handleExportCSV} disabled={filteredLogs.length === 0}><Download className="h-4 w-4 mr-2" /> Export CSV</Button>
                 </div>
             </div>
 
@@ -358,7 +393,7 @@ export const Security: React.FC = () => {
 
                 {/* Data Table */}
                 {isLoading ? (
-                    <div className="flex-1 rounded-md border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 overflow-hidden flex flex-col p-4 space-y-4">
+                    <div className="flex-1 rounded-md border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 overflow-hidden flex flex-col p-4 space-y-4">
                         <Skeleton className="h-8 w-full" />
                         <Skeleton className="h-8 w-full" />
                         <Skeleton className="h-8 w-full" />

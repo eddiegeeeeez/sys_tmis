@@ -188,6 +188,93 @@ namespace TradeMatrix.Server.Controllers
             }
         }
 
+        /// <summary>
+        /// Get a single transaction by ID. Cashiers can only view their own.
+        /// </summary>
+        [HttpGet("{id:int}")]
+        [Authorize(Roles = "SuperAdmin,Manager,Cashier")]
+        public async Task<ActionResult<ApiResponse<TransactionDto>>> GetById(int id)
+        {
+            try
+            {
+                var cashierIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                int.TryParse(cashierIdStr, out var requesterId);
+                var role = User.FindFirst(ClaimTypes.Role)?.Value;
+
+                var query = _context.Transactions
+                    .Include(t => t.Items)
+                    .Include(t => t.Cashier)
+                    .Where(t => t.Id == id);
+
+                // Cashiers can only see their own transactions
+                if (role == "Cashier")
+                    query = query.Where(t => t.CashierId == requesterId);
+
+                var transaction = await query.FirstOrDefaultAsync();
+                if (transaction == null)
+                    return NotFound(ApiResponse<TransactionDto>.ErrorResponse("Transaction not found."));
+
+                return Ok(ApiResponse<TransactionDto>.SuccessResponse(MapToDto(transaction, transaction.Cashier?.Name)));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving transaction {Id}", id);
+                return StatusCode(500, ApiResponse<TransactionDto>.ErrorResponse("An error occurred."));
+            }
+        }
+
+        /// <summary>
+        /// Void a transaction and restore product stock. Manager/SuperAdmin only.
+        /// </summary>
+        [HttpPatch("{id:int}/void")]
+        [Authorize(Roles = "SuperAdmin,Manager")]
+        public async Task<ActionResult<ApiResponse<TransactionDto>>> VoidTransaction(int id)
+        {
+            await using var dbTransaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                var transaction = await _context.Transactions
+                    .Include(t => t.Items)
+                    .Include(t => t.Cashier)
+                    .FirstOrDefaultAsync(t => t.Id == id);
+
+                if (transaction == null)
+                    return NotFound(ApiResponse<TransactionDto>.ErrorResponse("Transaction not found."));
+                if (transaction.Status == "Voided")
+                    return BadRequest(ApiResponse<TransactionDto>.ErrorResponse("Transaction is already voided."));
+
+                // Restore product stock
+                var productIds = transaction.Items.Select(i => i.ProductId).ToList();
+                var products = await _context.Products
+                    .Where(p => productIds.Contains(p.Id))
+                    .ToListAsync();
+
+                foreach (var item in transaction.Items)
+                {
+                    var product = products.FirstOrDefault(p => p.Id == item.ProductId);
+                    if (product != null)
+                        product.Stock += item.Quantity;
+                }
+
+                transaction.Status = "Voided";
+                await _context.SaveChangesAsync();
+                await dbTransaction.CommitAsync();
+
+                _logger.LogInformation("Transaction {TxNumber} voided by user {UserId}", transaction.TransactionNumber,
+                    User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
+
+                return Ok(ApiResponse<TransactionDto>.SuccessResponse(
+                    MapToDto(transaction, transaction.Cashier?.Name),
+                    "Transaction voided and stock restored successfully."));
+            }
+            catch (Exception ex)
+            {
+                await dbTransaction.RollbackAsync();
+                _logger.LogError(ex, "Error voiding transaction {Id}", id);
+                return StatusCode(500, ApiResponse<TransactionDto>.ErrorResponse("An error occurred while voiding the transaction."));
+            }
+        }
+
         private static TransactionDto MapToDto(Transaction t, string? cashierName) => new()
         {
             Id = t.Id,
