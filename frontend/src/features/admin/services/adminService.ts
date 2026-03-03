@@ -69,7 +69,7 @@ export const adminService = {
 
     // Audit Logs / Security
     getAuditLogs: (params?: any) =>
-        api.get<ApiResponse<any[]>>('/Audit/logs', { params }),
+        api.get<ApiResponse<any[]>>('/audit/logs', { params }),
 
     // System Configuration
     getSystemSettings: () =>

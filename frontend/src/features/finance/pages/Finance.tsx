@@ -117,8 +117,8 @@ const Finance = () => {
         },
         {
             accessorKey: "amount",
-            header: "Amount",
-            cell: ({ row }) => <span className="font-mono font-bold">${parseFloat(row.getValue("amount")).toFixed(2)}</span>
+            header: () => <div className="text-right text-xs font-semibold text-zinc-500 dark:text-zinc-400">Amount</div>,
+            cell: ({ row }) => <div className="text-right font-mono font-bold">₱{parseFloat(row.getValue("amount")).toFixed(2)}</div>
         },
         {
             accessorKey: "status",
@@ -172,7 +172,7 @@ const Finance = () => {
                         <Wallet className="h-4 w-4 text-zinc-500" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">${totalExpenses.toFixed(2)}</div>
+                        <div className="text-2xl font-bold">₱{totalExpenses.toFixed(2)}</div>
                         <p className="text-xs text-zinc-500 mt-1">Total for {new Date().toLocaleString('default', { month: 'long' })}</p>
                     </CardContent>
                 </Card>

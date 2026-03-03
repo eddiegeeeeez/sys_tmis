@@ -227,19 +227,19 @@ export const Inventory: React.FC = () => {
         },
         {
             accessorKey: "sellingPrice",
-            header: ({ column }) => {
-                return (
+            header: ({ column }) => (
+                <div className="text-right">
                     <Button
                         variant="ghost"
                         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-                        className="-ml-3 hover:bg-transparent text-xs font-semibold"
+                        className="hover:bg-transparent text-xs font-semibold"
                     >
                         Selling Price
                         <ArrowUpDown className="ml-2 h-4 w-4" />
                     </Button>
-                )
-            },
-            cell: ({ row }) => <span className="text-zinc-900 dark:text-zinc-50 font-medium font-mono">${(row.getValue("sellingPrice") as number).toFixed(2)}</span>
+                </div>
+            ),
+            cell: ({ row }) => <div className="text-right text-zinc-900 dark:text-zinc-50 font-medium font-mono">₱{(row.getValue("sellingPrice") as number).toFixed(2)}</div>
         },
         {
             accessorKey: "stock",

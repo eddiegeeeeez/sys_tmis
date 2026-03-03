@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   backend:
     build:
@@ -25,8 +23,8 @@ services:
     restart: unless-stopped
     ports:
       # Map host port 80 to container port 80 (Nginx)
-      # For a local dev test, we can use 3000 to avoid conflicts, or standard 80. Let's use 3000.
-      - "3000:80"
+      # Map host port 4000 to container port 80 (Nginx)
+      - "4000:80"
     depends_on:
       - backend
     networks:

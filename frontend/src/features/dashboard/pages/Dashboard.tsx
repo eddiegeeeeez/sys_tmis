@@ -95,7 +95,11 @@ const SuperAdminDashboard = ({ data }: { data: DashboardSummary }) => (
               </defs>
               <XAxis dataKey="time" stroke="#71717a" fontSize={12} tickLine={false} axisLine={false} />
               <YAxis stroke="#71717a" fontSize={12} tickLine={false} axisLine={false} />
-              <Tooltip contentStyle={{ borderRadius: '8px', backgroundColor: '#18181b', color: '#fff', border: 'none' }} />
+              <Tooltip
+                contentStyle={{ borderRadius: '8px', backgroundColor: '#18181b', border: 'none' }}
+                labelStyle={{ color: '#e4e4e7' }}
+                itemStyle={{ color: '#e4e4e7' }}
+              />
               <Area type="monotone" dataKey="load" stroke="#2563eb" strokeWidth={2} fillOpacity={1} fill="url(#colorLoad)" />
             </AreaChart>
           </ResponsiveContainer>
@@ -142,7 +146,7 @@ const ManagerDashboard = ({ data }: { data: DashboardSummary }) => (
           <DollarSign className="h-4 w-4 text-zinc-500" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">${data.monthlyExpenses.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+          <div className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">₱{data.monthlyExpenses.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
           <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">Total expenses this month</p>
         </CardContent>
       </Card>
@@ -188,10 +192,12 @@ const ManagerDashboard = ({ data }: { data: DashboardSummary }) => (
             <BarChart data={data.weeklyExpenses}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#52525b" opacity={0.2} />
               <XAxis dataKey="name" stroke="#71717a" fontSize={12} tickLine={false} axisLine={false} />
-              <YAxis stroke="#71717a" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `$${value}`} />
+              <YAxis stroke="#71717a" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `₱${value}`} />
               <Tooltip
                 cursor={{ fill: '#27272a', opacity: 0.4 }}
-                contentStyle={{ backgroundColor: '#18181b', borderRadius: '8px', border: 'none', color: '#fff' }}
+                contentStyle={{ backgroundColor: '#18181b', borderRadius: '8px', border: 'none' }}
+                labelStyle={{ color: '#e4e4e7' }}
+                itemStyle={{ color: '#e4e4e7' }}
               />
               <Bar dataKey="sales" fill="#3b82f6" radius={[4, 4, 0, 0]} maxBarSize={50} />
             </BarChart>
@@ -218,7 +224,11 @@ const ManagerDashboard = ({ data }: { data: DashboardSummary }) => (
                   <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} strokeWidth={0} />
                 ))}
               </Pie>
-              <Tooltip contentStyle={{ backgroundColor: '#18181b', borderRadius: '8px', border: 'none', color: '#fff' }} />
+              <Tooltip
+                contentStyle={{ backgroundColor: '#18181b', borderRadius: '8px', border: 'none' }}
+                labelStyle={{ color: '#e4e4e7' }}
+                itemStyle={{ color: '#e4e4e7' }}
+              />
             </PieChart>
           </ResponsiveContainer>
           <div className="grid grid-cols-2 gap-4 mt-4 px-4">
@@ -249,7 +259,7 @@ const CashierDashboard = ({ data }: { data: DashboardSummary }) => (
               <CardTitle className="text-sm text-zinc-400 font-medium">Revenue (Today)</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-zinc-50">${data.todayRevenue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+              <div className="text-2xl font-bold text-zinc-50">₱{data.todayRevenue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
               <p className="text-xs text-zinc-400 mt-1">{data.todayTransactionCount} transaction{data.todayTransactionCount !== 1 ? 's' : ''}</p>
             </CardContent>
           </Card>
@@ -293,7 +303,7 @@ const CashierDashboard = ({ data }: { data: DashboardSummary }) => (
                       <p className="text-xs text-zinc-500 dark:text-zinc-400">{tx.time} • {tx.itemCount} item{tx.itemCount !== 1 ? 's' : ''} • {tx.paymentMethod}</p>
                     </div>
                   </div>
-                  <span className="font-bold text-zinc-900 dark:text-zinc-50">${tx.totalAmount.toFixed(2)}</span>
+                  <span className="font-bold text-zinc-900 dark:text-zinc-50">₱{tx.totalAmount.toFixed(2)}</span>
                 </div>
               ))}
               {data.recentTransactions.length === 0 && (

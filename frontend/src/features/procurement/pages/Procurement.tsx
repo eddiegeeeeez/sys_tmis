@@ -154,11 +154,13 @@ export const Procurement: React.FC = () => {
         {
             accessorKey: "totalAmount",
             header: ({ column }) => (
-                <Button variant="ghost" className="hover:bg-transparent -ml-3 text-xs font-semibold" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
-                    Total Amount <ArrowUpDown className="ml-2 h-4 w-4" />
-                </Button>
+                <div className="text-right">
+                    <Button variant="ghost" className="hover:bg-transparent text-xs font-semibold" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
+                        Total Amount <ArrowUpDown className="ml-2 h-4 w-4" />
+                    </Button>
+                </div>
             ),
-            cell: ({ row }) => <span className="font-medium text-zinc-900 dark:text-zinc-100">${(row.getValue("totalAmount") as number).toFixed(2)}</span>
+            cell: ({ row }) => <div className="text-right font-mono font-medium text-zinc-900 dark:text-zinc-100">₱{(row.getValue("totalAmount") as number).toFixed(2)}</div>
         },
         {
             accessorKey: "status",

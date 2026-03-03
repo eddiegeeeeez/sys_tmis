@@ -127,33 +127,35 @@ export const SalesHistory: React.FC<SalesHistoryProps> = ({ currentRole }) => {
         },
         {
             accessorKey: 'subtotal',
-            header: 'Subtotal',
+            header: () => <div className="text-right text-xs font-semibold text-zinc-500 dark:text-zinc-400">Subtotal</div>,
             cell: ({ row }) => (
-                <span className="font-mono text-sm text-zinc-600 dark:text-zinc-400">
+                <div className="text-right font-mono text-sm text-zinc-600 dark:text-zinc-400">
                     ₱{(row.getValue('subtotal') as number).toFixed(2)}
-                </span>
+                </div>
             ),
         },
         {
             accessorKey: 'taxAmount',
-            header: 'Tax',
+            header: () => <div className="text-right text-xs font-semibold text-zinc-500 dark:text-zinc-400">Tax</div>,
             cell: ({ row }) => (
-                <span className="font-mono text-sm text-zinc-500">
+                <div className="text-right font-mono text-sm text-zinc-500">
                     ₱{(row.getValue('taxAmount') as number).toFixed(2)}
-                </span>
+                </div>
             ),
         },
         {
             accessorKey: 'totalAmount',
             header: ({ column }) => (
-                <Button variant="ghost" className="hover:bg-transparent -ml-3 text-xs font-semibold" onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}>
-                    Total <ArrowUpDown className="ml-2 h-4 w-4" />
-                </Button>
+                <div className="text-right">
+                    <Button variant="ghost" className="hover:bg-transparent text-xs font-semibold" onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}>
+                        Total <ArrowUpDown className="ml-2 h-4 w-4" />
+                    </Button>
+                </div>
             ),
             cell: ({ row }) => (
-                <span className="font-mono font-bold text-zinc-900 dark:text-zinc-100">
+                <div className="text-right font-mono font-bold text-zinc-900 dark:text-zinc-100">
                     ₱{(row.getValue('totalAmount') as number).toFixed(2)}
-                </span>
+                </div>
             ),
         },
         {

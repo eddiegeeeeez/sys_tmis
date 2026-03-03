@@ -354,29 +354,35 @@ const PayrollTab = () => {
         {
             accessorKey: "BasicSalary",
             header: ({ column }) => (
-                <Button variant="ghost" className="hover:bg-transparent -ml-3 text-xs font-semibold" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
-                    Basic Salary <ArrowUpDown className="ml-2 h-4 w-4" />
-                </Button>
+                <div className="text-right">
+                    <Button variant="ghost" className="hover:bg-transparent text-xs font-semibold" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
+                        Basic Salary <ArrowUpDown className="ml-2 h-4 w-4" />
+                    </Button>
+                </div>
             ),
-            cell: ({ row }) => <span className="text-zinc-900 dark:text-zinc-100">${(row.getValue("BasicSalary") as number).toFixed(2)}</span>
+            cell: ({ row }) => <div className="text-right font-mono text-zinc-900 dark:text-zinc-100">₱{(row.getValue("BasicSalary") as number).toFixed(2)}</div>
         },
         {
             accessorKey: "TotalDeductions",
             header: ({ column }) => (
-                <Button variant="ghost" className="hover:bg-transparent -ml-3 text-xs font-semibold" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
-                    Deductions <ArrowUpDown className="ml-2 h-4 w-4" />
-                </Button>
+                <div className="text-right">
+                    <Button variant="ghost" className="hover:bg-transparent text-xs font-semibold" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
+                        Deductions <ArrowUpDown className="ml-2 h-4 w-4" />
+                    </Button>
+                </div>
             ),
-            cell: ({ row }) => <span className="text-red-600 dark:text-red-400">-${(row.getValue("TotalDeductions") as number).toFixed(2)}</span>
+            cell: ({ row }) => <div className="text-right font-mono text-red-600 dark:text-red-400">-₱{(row.getValue("TotalDeductions") as number).toFixed(2)}</div>
         },
         {
             accessorKey: "NetPay",
             header: ({ column }) => (
-                <Button variant="ghost" className="hover:bg-transparent -ml-3 text-xs font-semibold" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
-                    Net Pay <ArrowUpDown className="ml-2 h-4 w-4" />
-                </Button>
+                <div className="text-right">
+                    <Button variant="ghost" className="hover:bg-transparent text-xs font-semibold" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
+                        Net Pay <ArrowUpDown className="ml-2 h-4 w-4" />
+                    </Button>
+                </div>
             ),
-            cell: ({ row }) => <span className="font-bold text-emerald-700 dark:text-emerald-400">${(row.getValue("NetPay") as number).toFixed(2)}</span>
+            cell: ({ row }) => <div className="text-right font-mono font-bold text-emerald-700 dark:text-emerald-400">₱{(row.getValue("NetPay") as number).toFixed(2)}</div>
         },
         {
             accessorKey: "Status",
