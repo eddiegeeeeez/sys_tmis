@@ -118,32 +118,6 @@ export const SalesHistory: React.FC<SalesHistoryProps> = ({ currentRole }) => {
             ),
         },
         {
-            id: 'itemCount',
-            header: 'Items',
-            cell: ({ row }) => {
-                const count = row.original.items.reduce((s, i) => s + i.quantity, 0);
-                return <span className="font-mono text-xs text-zinc-500">{count} item{count !== 1 ? 's' : ''}</span>;
-            },
-        },
-        {
-            accessorKey: 'subtotal',
-            header: () => <div className="text-right text-xs font-semibold text-zinc-500 dark:text-zinc-400">Subtotal</div>,
-            cell: ({ row }) => (
-                <div className="text-right font-mono text-sm text-zinc-600 dark:text-zinc-400">
-                    ₱{(row.getValue('subtotal') as number).toFixed(2)}
-                </div>
-            ),
-        },
-        {
-            accessorKey: 'taxAmount',
-            header: () => <div className="text-right text-xs font-semibold text-zinc-500 dark:text-zinc-400">Tax</div>,
-            cell: ({ row }) => (
-                <div className="text-right font-mono text-sm text-zinc-500">
-                    ₱{(row.getValue('taxAmount') as number).toFixed(2)}
-                </div>
-            ),
-        },
-        {
             accessorKey: 'totalAmount',
             header: ({ column }) => (
                 <div className="text-right">
@@ -280,11 +254,11 @@ export const SalesHistory: React.FC<SalesHistoryProps> = ({ currentRole }) => {
                             {/* Totals */}
                             <div className="space-y-1.5 text-xs">
                                 <div className="flex justify-between text-zinc-500">
-                                    <span>Subtotal</span>
+                                    <span>VATable Sales</span>
                                     <span className="font-mono">₱{viewingTx.subtotal.toFixed(2)}</span>
                                 </div>
                                 <div className="flex justify-between text-zinc-500">
-                                    <span>Tax (10%)</span>
+                                    <span>VAT (12%)</span>
                                     <span className="font-mono">₱{viewingTx.taxAmount.toFixed(2)}</span>
                                 </div>
                                 <div className="flex justify-between font-bold text-sm pt-2 border-t">

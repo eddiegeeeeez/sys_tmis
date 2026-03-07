@@ -130,6 +130,7 @@ const Finance = () => {
         },
         {
             id: "actions",
+            header: () => <div className="text-right text-xs font-semibold pr-2">Actions</div>,
             cell: ({ row }) => (
                 <div className="flex justify-end">
                     <DropdownMenu>

@@ -66,6 +66,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentRole }) => {
       case UserRole.CASHIER:
         return [
           {
+            section: 'Overview', items: [
+              { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+            ]
+          },
+          {
             section: 'Front Desk', items: [
               { id: 'pos', label: 'Point of Sale', icon: ShoppingCart },
               { id: 'crm', label: 'Customers', icon: UserSquare2 },
@@ -73,7 +78,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentRole }) => {
           },
           {
             section: 'Lookup', items: [
-              { id: 'inventory', label: 'Stock Lookup', icon: Package }, // mapped to inventory route but maybe restricted view
+              { id: 'inventory', label: 'Stock Lookup', icon: Package },
             ]
           }
         ];

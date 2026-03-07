@@ -434,6 +434,7 @@ const PayrollTab = () => {
                         </div>
                     )}
                     <DialogFooter>
+                        <Button variant="outline" onClick={() => { if (viewingPayroll) { window.print(); } }}>Print Payslip</Button>
                         <Button variant="outline" onClick={() => setIsViewPayslipOpen(false)}>Close</Button>
                     </DialogFooter>
                 </DialogContent>
@@ -469,7 +470,7 @@ const PayrollTab = () => {
             <div className="flex justify-between items-center">
                 <div>
                     <h3 className="text-lg font-medium tracking-tight text-zinc-900 dark:text-zinc-50">Payroll Processing</h3>
-                    <p className="text-sm text-zinc-500 dark:text-zinc-400">Period: Oct 1 - Oct 15, 2023</p>
+                    <p className="text-sm text-zinc-500 dark:text-zinc-400">Current pay period</p>
                 </div>
                 <Button size="sm" onClick={() => setIsPayrollModalOpen(true)}>
                     <Banknote className="h-4 w-4 mr-2" /> Run Payroll
@@ -482,7 +483,7 @@ const PayrollTab = () => {
                         <Banknote className="h-4 w-4 text-zinc-500" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">$3,200.00</div>
+                        <div className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">₱3,200.00</div>
                     </CardContent>
                 </Card>
                 <Card>

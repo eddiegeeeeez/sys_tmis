@@ -15,6 +15,7 @@ namespace TradeMatrix.Server.DTOs
         public string UnitOfMeasure { get; set; } = string.Empty;
         public int? SupplierId { get; set; }
         public string? SupplierName { get; set; }
+        public string? ImageUrl { get; set; }
     }
 
     public class CreateProductDto

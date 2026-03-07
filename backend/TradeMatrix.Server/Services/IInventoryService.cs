@@ -9,5 +9,6 @@ namespace TradeMatrix.Server.Services
         Task<ProductDto> CreateProductAsync(CreateProductDto dto);
         Task<ProductDto?> UpdateProductAsync(int id, CreateProductDto dto);
         Task<bool> UpdateStockAsync(int productId, int quantityChange);
+        Task<ProductDto?> UpdateProductImageAsync(int id, string? imageUrl);
     }
 }

@@ -6,6 +6,7 @@ import { Button } from '../ui/Button';
 import { Separator } from '../ui/Separator';
 import { useTheme } from '../providers/ThemeProvider';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { cn } from '../../lib/utils';
 
 import { LogoutConfirmation } from '../common/LogoutConfirmation';
 
@@ -27,6 +28,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   const navigate = useNavigate();
 
   const activeView = location.pathname.substring(1); // remove leading slash
+  const isPOS = location.pathname === '/pos';
 
   const handleRoleChange = (role: UserRole) => {
     onRoleChange(role);
@@ -49,13 +51,16 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
       />
 
       {/* Sidebar Navigation */}
-      <Sidebar
-        currentRole={currentRole}
-      />
+      {!isPOS && (
+        <Sidebar
+          currentRole={currentRole}
+        />
+      )}
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col h-full overflow-hidden">
         {/* Top Header */}
+        {!isPOS && (
         <header className="h-16 bg-background/80 backdrop-blur-md border-b border-border flex items-center justify-between px-6 z-10 shrink-0 sticky top-0">
           <div className="flex items-center gap-4">
             <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
@@ -87,10 +92,11 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
             </Button>
           </div>
         </header>
+        )}
 
         {/* Scrollable Content */}
-        <main className="flex-1 overflow-y-auto p-4 md:p-8">
-          <div className="max-w-7xl mx-auto">
+        <main className={cn("flex-1", isPOS ? "p-0 overflow-hidden" : "p-4 md:p-8 overflow-y-auto")}>
+          <div className={cn(isPOS ? "h-full" : "max-w-7xl mx-auto")}>
             <Outlet />
           </div>
         </main>

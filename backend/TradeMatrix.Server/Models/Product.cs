@@ -39,5 +39,8 @@ namespace TradeMatrix.Server.Models
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public bool IsActive { get; set; } = true;
+
+        [MaxLength(500)]
+        public string? ImageUrl { get; set; }
     }
 }

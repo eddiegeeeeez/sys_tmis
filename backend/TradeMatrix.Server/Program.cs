@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using TradeMatrix.Server.Filters;
+using Amazon.S3;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -79,6 +80,23 @@ builder.Services.AddScoped<IHRService, HRService>();
 builder.Services.AddScoped<ICustomerService, CustomerService>();
 builder.Services.AddScoped<IFinanceService, FinanceService>();
 
+// AWS S3
+builder.Services.AddSingleton<IAmazonS3>(sp =>
+{
+    var config = builder.Configuration.GetSection("AWS:S3");
+    var s3Config = new AmazonS3Config
+    {
+        RegionEndpoint = Amazon.RegionEndpoint.GetBySystemName(config["Region"] ?? "ap-southeast-1")
+    };
+    var accessKey = config["AccessKey"];
+    var secretKey = config["SecretKey"];
+    if (!string.IsNullOrEmpty(accessKey) && !string.IsNullOrEmpty(secretKey))
+        return new AmazonS3Client(accessKey, secretKey, s3Config);
+    // Fall back to environment credentials / IAM role
+    return new AmazonS3Client(s3Config);
+});
+builder.Services.AddScoped<IS3StorageService, S3StorageService>();
+
 // Authentication
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -125,7 +143,7 @@ app.Use(async (context, next) =>
                 "script-src 'self' 'unsafe-inline' 'unsafe-eval'; " +
                 "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
                 "font-src 'self' https://fonts.gstatic.com; " +
-                "img-src 'self' data: blob:; " +
+                "img-src 'self' data: blob: https://*.s3.us-east-1.amazonaws.com https://*.s3.ap-southeast-1.amazonaws.com; " +
                 "connect-src 'self'; " +
                 "frame-ancestors 'self'");
         }

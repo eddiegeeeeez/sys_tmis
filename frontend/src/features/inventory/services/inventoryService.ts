@@ -13,6 +13,7 @@ export interface Product {
     unitOfMeasure: string;
     supplierId?: number;
     supplierName?: string;
+    imageUrl?: string;
 }
 
 export const inventoryService = {
@@ -27,4 +28,13 @@ export const inventoryService = {
 
     adjustStock: (id: number, quantityChange: number) =>
         api.post<ApiResponse<boolean>>(`/inventory/products/${id}/adjust-stock`, quantityChange),
+
+    uploadProductImage: (id: number, file: File) => {
+        const formData = new FormData();
+        formData.append('file', file);
+        return api.post<ApiResponse<Product>>(`/inventory/products/${id}/upload-image`, formData);
+    },
+
+    deleteProductImage: (id: number) =>
+        api.delete<ApiResponse<Product>>(`/inventory/products/${id}/image`),
 };

@@ -12,7 +12,7 @@ import { Select } from '../../../components/ui/Select';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../../../components/ui/DropdownMenu';
 import { inventoryService, Product as ApiProduct } from '../services/inventoryService';
 import { procurementService, Supplier } from '../../procurement/services/procurementService';
-import { Loader2, Search, ArrowUpCircle, MoreHorizontal, Download, ArrowUpDown, X, Pencil } from 'lucide-react';
+import { Loader2, Search, ArrowUpCircle, MoreHorizontal, Download, ArrowUpDown, X, Pencil, Upload, Trash2 } from 'lucide-react';
 import { Product } from '../../../types';
 
 export const Inventory: React.FC = () => {
@@ -174,6 +174,38 @@ export const Inventory: React.FC = () => {
         setFilterTerm('');
         setCategoryFilter('All');
         setStockStatusFilter('All');
+    };
+
+    const [isUploadingImage, setIsUploadingImage] = useState(false);
+
+    const handleImageUpload = async (productId: number, file: File) => {
+        setIsUploadingImage(true);
+        try {
+            const res = await inventoryService.uploadProductImage(productId, file);
+            if (res.data.success) {
+                setEditingProduct(prev => prev ? { ...prev, imageUrl: res.data.data.imageUrl } : prev);
+                fetchData();
+            }
+        } catch (error: any) {
+            setEditError(error?.response?.data?.message || 'Failed to upload image');
+        } finally {
+            setIsUploadingImage(false);
+        }
+    };
+
+    const handleImageDelete = async (productId: number) => {
+        setIsUploadingImage(true);
+        try {
+            const res = await inventoryService.deleteProductImage(productId);
+            if (res.data.success) {
+                setEditingProduct(prev => prev ? { ...prev, imageUrl: undefined } : prev);
+                fetchData();
+            }
+        } catch (error: any) {
+            setEditError(error?.response?.data?.message || 'Failed to remove image');
+        } finally {
+            setIsUploadingImage(false);
+        }
     };
 
     const columns = useMemo<ColumnDef<ApiProduct>[]>(() => [
@@ -480,6 +512,38 @@ export const Inventory: React.FC = () => {
                                         <option key={s.id} value={s.id}>{s.companyName}</option>
                                     ))}
                                 </select>
+                            </div>
+                            {/* Product Image */}
+                            <div className="grid gap-2">
+                                <Label>Product Image</Label>
+                                {editingProduct.imageUrl ? (
+                                    <div className="flex items-center gap-4">
+                                        <img src={editingProduct.imageUrl} alt={editingProduct.name} className="h-20 w-20 object-cover rounded-md border border-zinc-200 dark:border-zinc-700" />
+                                        <div className="flex gap-2">
+                                            <Button type="button" variant="outline" size="sm" disabled={isUploadingImage}
+                                                onClick={() => document.getElementById('edit-product-image')?.click()}>
+                                                <Upload className="mr-1 h-3 w-3" /> Replace
+                                            </Button>
+                                            <Button type="button" variant="outline" size="sm" disabled={isUploadingImage}
+                                                onClick={() => handleImageDelete(editingProduct.id)}>
+                                                <Trash2 className="mr-1 h-3 w-3" /> Remove
+                                            </Button>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <Button type="button" variant="outline" size="sm" disabled={isUploadingImage}
+                                        onClick={() => document.getElementById('edit-product-image')?.click()}>
+                                        {isUploadingImage ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
+                                        Upload Image
+                                    </Button>
+                                )}
+                                <input id="edit-product-image" type="file" accept="image/jpeg,image/png,image/webp,image/gif" className="hidden"
+                                    onChange={(e) => {
+                                        const file = e.target.files?.[0];
+                                        if (file) handleImageUpload(editingProduct.id, file);
+                                        e.target.value = '';
+                                    }}
+                                />
                             </div>
                             <DialogFooter>
                                 {editError && (

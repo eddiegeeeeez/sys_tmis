@@ -9,6 +9,7 @@ import { ProtectedRoute } from './components/common/ProtectedRoute';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { PageTitle } from './components/common/PageTitle';
 import api from './lib/axios';
+import { LoadingScreen } from './components/common/LoadingScreen';
 
 // Pages
 import { Dashboard } from './features/dashboard/pages/Dashboard';
@@ -47,6 +48,7 @@ const AppContent: React.FC = () => {
     return UserRole.MANAGER;
   });
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [isLoginTransition, setIsLoginTransition] = useState(false);
 
   React.useEffect(() => {
     const checkAuth = async () => {
@@ -102,10 +104,12 @@ const AppContent: React.FC = () => {
   }, []);
 
   const handleLogin = (role?: UserRole) => {
+    setIsLoginTransition(true);
     setIsLoggedIn(true);
     if (role) {
       setCurrentRole(role);
     }
+    setTimeout(() => setIsLoginTransition(false), 700);
   };
 
   const handleLogout = () => {
@@ -125,13 +129,11 @@ const AppContent: React.FC = () => {
     <ErrorBoundary>
       <Router>
         <PageTitle />
+        {isLoginTransition && (
+          <LoadingScreen message="Welcome back!" subMessage="Preparing your workspace..." />
+        )}
         {isLoggingOut && (
-          <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-white/80 dark:bg-zinc-950/80 backdrop-blur-sm transition-all duration-300">
-            <div className="flex flex-col items-center space-y-4">
-              <div className="h-10 w-10 border-4 border-zinc-200 border-t-brand-600 rounded-full animate-spin dark:border-zinc-800 dark:border-t-brand-500" />
-              <p className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Signing out safely...</p>
-            </div>
-          </div>
+          <LoadingScreen message="Signing out safely..." />
         )}
         <Routes>
             {/* Public Routes */}

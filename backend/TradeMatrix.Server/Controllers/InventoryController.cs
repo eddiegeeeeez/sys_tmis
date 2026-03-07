@@ -11,11 +11,13 @@ namespace TradeMatrix.Server.Controllers
     public class InventoryController : ControllerBase
     {
         private readonly IInventoryService _inventoryService;
+        private readonly IS3StorageService _s3StorageService;
         private readonly ILogger<InventoryController> _logger;
 
-        public InventoryController(IInventoryService inventoryService, ILogger<InventoryController> logger)
+        public InventoryController(IInventoryService inventoryService, IS3StorageService s3StorageService, ILogger<InventoryController> logger)
         {
             _inventoryService = inventoryService;
+            _s3StorageService = s3StorageService;
             _logger = logger;
         }
 
@@ -81,6 +83,76 @@ namespace TradeMatrix.Server.Controllers
             {
                 _logger.LogError(ex, "Error updating product");
                 return StatusCode(500, ApiResponse<string>.ErrorResponse("Error updating product"));
+            }
+        }
+
+        [HttpPost("products/{id}/upload-image")]
+        [Authorize(Roles = "SuperAdmin,Manager,InventoryClerk")]
+        public async Task<ActionResult<ApiResponse<ProductDto>>> UploadProductImage(int id, IFormFile file)
+        {
+            try
+            {
+                if (file == null || file.Length == 0)
+                    return BadRequest(ApiResponse<string>.ErrorResponse("No file uploaded"));
+
+                // Validate file type
+                var allowedTypes = new[] { "image/jpeg", "image/png", "image/webp", "image/gif" };
+                if (!allowedTypes.Contains(file.ContentType.ToLower()))
+                    return BadRequest(ApiResponse<string>.ErrorResponse("Only JPEG, PNG, WebP, and GIF images are allowed"));
+
+                // Validate file size (max 5MB)
+                if (file.Length > 5 * 1024 * 1024)
+                    return BadRequest(ApiResponse<string>.ErrorResponse("Image must be less than 5MB"));
+
+                var product = await _inventoryService.GetProductByIdAsync(id);
+                if (product == null)
+                    return NotFound(ApiResponse<string>.ErrorResponse("Product not found"));
+
+                // Delete old image if exists
+                if (!string.IsNullOrEmpty(product.ImageUrl))
+                    await _s3StorageService.DeleteFileAsync(product.ImageUrl);
+
+                // Upload new image
+                using var stream = file.OpenReadStream();
+                var imageUrl = await _s3StorageService.UploadFileAsync(stream, file.FileName, file.ContentType, "products");
+
+                // Update product with new image URL
+                var result = await _inventoryService.UpdateProductImageAsync(id, imageUrl);
+                if (result == null)
+                    return NotFound(ApiResponse<ProductDto>.ErrorResponse("Product not found"));
+
+                return Ok(ApiResponse<ProductDto>.SuccessResponse(result, "Image uploaded successfully"));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error uploading product image for product {Id}", id);
+                return StatusCode(500, ApiResponse<string>.ErrorResponse("Error uploading product image"));
+            }
+        }
+
+        [HttpDelete("products/{id}/image")]
+        [Authorize(Roles = "SuperAdmin,Manager,InventoryClerk")]
+        public async Task<ActionResult<ApiResponse<ProductDto>>> DeleteProductImage(int id)
+        {
+            try
+            {
+                var product = await _inventoryService.GetProductByIdAsync(id);
+                if (product == null)
+                    return NotFound(ApiResponse<string>.ErrorResponse("Product not found"));
+
+                if (!string.IsNullOrEmpty(product.ImageUrl))
+                    await _s3StorageService.DeleteFileAsync(product.ImageUrl);
+
+                var result = await _inventoryService.UpdateProductImageAsync(id, null);
+                if (result == null)
+                    return NotFound(ApiResponse<ProductDto>.ErrorResponse("Product not found"));
+
+                return Ok(ApiResponse<ProductDto>.SuccessResponse(result, "Image removed"));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting product image for product {Id}", id);
+                return StatusCode(500, ApiResponse<string>.ErrorResponse("Error deleting product image"));
             }
         }
     }

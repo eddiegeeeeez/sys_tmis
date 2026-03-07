@@ -81,8 +81,11 @@ namespace TradeMatrix.Server.Controllers
                     product.Stock -= item.Quantity;
                 }
 
-                var taxAmount = Math.Round(subtotal * 0.10m, 2);
-                var total = subtotal + taxAmount;
+                // Philippine standard VAT rate is 12%
+                var vatableSales = Math.Round(subtotal / 1.12m, 2);
+                var taxAmount = subtotal - vatableSales;
+                taxAmount = Math.Round(taxAmount, 2);
+                var total = subtotal;
                 var change = Math.Round(dto.AmountTendered - total, 2);
 
                 var transaction = new Transaction

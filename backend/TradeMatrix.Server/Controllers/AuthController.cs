@@ -178,13 +178,14 @@ namespace TradeMatrix.Server.Controllers
 
             var claims = new[]
             {
-                new Claim(JwtRegisteredClaimNames.Sub, user.Email),
+                new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
                 new Claim(JwtRegisteredClaimNames.NameId, user.Id.ToString()),
                 new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
                 new Claim("id", user.Id.ToString()),
                 new Claim(ClaimTypes.Role, user.Role.Name),
-                new Claim("Name", user.Name)
+                new Claim(ClaimTypes.Email, user.Email),
+                new Claim(ClaimTypes.Name, user.Name)
             };
 
             var token = new JwtSecurityToken(

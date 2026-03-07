@@ -21,11 +21,18 @@ api.interceptors.request.use(
     }
 );
 
+// Endpoints that legitimately return 401 for wrong credentials (not expired sessions).
+// These must NOT trigger a global logout — the calling component handles the error itself.
+const AUTH_VERIFY_URLS = ['/auth/verify-password', '/auth/login'];
+
 // Add a response interceptor to handle errors (e.g., 401 Unauthorized)
 api.interceptors.response.use(
     (response) => response,
     (error) => {
-        if (error.response?.status === 401) {
+        const requestUrl: string = error.config?.url ?? '';
+        const isCredentialCheck = AUTH_VERIFY_URLS.some(u => requestUrl.includes(u));
+
+        if (error.response?.status === 401 && !isCredentialCheck) {
             // Token expired or invalid — clear session and redirect to login
             localStorage.removeItem('token');
             localStorage.removeItem('user');

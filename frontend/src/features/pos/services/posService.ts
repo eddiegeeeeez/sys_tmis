@@ -49,6 +49,7 @@ export const fetchProducts = async (): Promise<Product[]> => {
       sku: p.sku,
       reorderLevel: p.reorderLevel ?? 0,
       unitOfMeasure: p.unitOfMeasure ?? 'pcs',
+      image: p.imageUrl ?? undefined,
     }));
 };
 

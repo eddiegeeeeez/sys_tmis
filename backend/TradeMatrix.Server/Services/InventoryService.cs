@@ -18,6 +18,7 @@ namespace TradeMatrix.Server.Services
         {
             return await _context.Products
                 .Include(p => p.Supplier)
+                .Where(p => p.IsActive)
                 .Select(p => new ProductDto
                 {
                     Id = p.Id,
@@ -30,7 +31,8 @@ namespace TradeMatrix.Server.Services
                     ReorderLevel = p.ReorderLevel,
                     UnitOfMeasure = p.UnitOfMeasure,
                     SupplierId = p.SupplierId,
-                    SupplierName = p.Supplier != null ? p.Supplier.CompanyName : null
+                    SupplierName = p.Supplier != null ? p.Supplier.CompanyName : null,
+                    ImageUrl = p.ImageUrl
                 })
                 .ToListAsync();
         }
@@ -55,7 +57,8 @@ namespace TradeMatrix.Server.Services
                 ReorderLevel = p.ReorderLevel,
                 UnitOfMeasure = p.UnitOfMeasure,
                 SupplierId = p.SupplierId,
-                SupplierName = p.Supplier != null ? p.Supplier.CompanyName : null
+                SupplierName = p.Supplier != null ? p.Supplier.CompanyName : null,
+                ImageUrl = p.ImageUrl
             };
         }
 
@@ -106,6 +109,16 @@ namespace TradeMatrix.Server.Services
             product.Stock += quantityChange;
             await _context.SaveChangesAsync();
             return true;
+        }
+
+        public async Task<ProductDto?> UpdateProductImageAsync(int id, string? imageUrl)
+        {
+            var product = await _context.Products.FindAsync(id);
+            if (product == null) return null;
+
+            product.ImageUrl = imageUrl;
+            await _context.SaveChangesAsync();
+            return await GetProductByIdAsync(id);
         }
     }
 }
