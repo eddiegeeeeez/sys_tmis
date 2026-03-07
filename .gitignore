@@ -21,3 +21,7 @@ Thumbs.db
 .env
 .env.local
 .env.*.local
+
+# Dev launch settings contain local secrets — never commit real credentials
+# Copy launchSettings.json and fill in your own credentials locally
+**/Properties/launchSettings.json
