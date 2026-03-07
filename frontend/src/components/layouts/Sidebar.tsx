@@ -13,114 +13,119 @@ interface SidebarProps {
   currentRole: UserRole;
 }
 
+export function getNavItems(currentRole: UserRole) {
+  switch (currentRole) {
+    case UserRole.SUPER_ADMIN:
+      return [
+        {
+          section: 'System Core', items: [
+            { id: 'dashboard', label: 'System Overview', icon: LayoutDashboard },
+            { id: 'admin/db', label: 'Database Admin', icon: Database },
+          ]
+        },
+        {
+          section: 'Access Control', items: [
+            { id: 'admin/users', label: 'User Management', icon: Users },
+            { id: 'admin/roles', label: 'Role Management', icon: Shield },
+            { id: 'admin/security', label: 'Audit Logs', icon: Lock },
+            { id: 'admin/archive', label: 'Archive', icon: ArchiveRestore },
+          ]
+        }
+      ];
+
+
+    case UserRole.MANAGER:
+      return [
+        {
+          section: 'Overview', items: [
+            { id: 'dashboard', label: 'Business Dashboard', icon: LayoutDashboard },
+          ]
+        },
+        {
+          section: 'Operations', items: [
+            { id: 'pos', label: 'Point of Sale', icon: ShoppingCart },
+            { id: 'sales', label: 'Sales History', icon: ReceiptText },
+            { id: 'inventory', label: 'Inventory', icon: Package },
+            { id: 'procurement', label: 'Procurement', icon: Truck },
+          ]
+        },
+        {
+          section: 'Management', items: [
+            { id: 'hr', label: 'HR & Payroll', icon: Briefcase },
+            { id: 'crm', label: 'Customers', icon: UserSquare2 },
+            { id: 'finance', label: 'Finance', icon: Wallet },
+          ]
+        },
+      ];
+
+    case UserRole.CASHIER:
+      return [
+        {
+          section: 'Overview', items: [
+            { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+          ]
+        },
+        {
+          section: 'Front Desk', items: [
+            { id: 'pos', label: 'Point of Sale', icon: ShoppingCart },
+            { id: 'crm', label: 'Customers', icon: UserSquare2 },
+          ]
+        },
+        {
+          section: 'Lookup', items: [
+            { id: 'inventory', label: 'Stock Lookup', icon: Package },
+          ]
+        }
+      ];
+
+    case UserRole.INVENTORY_CLERK:
+      return [
+        {
+          section: 'Overview', items: [
+            { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+          ]
+        },
+        {
+          section: 'Warehouse', items: [
+            { id: 'inventory', label: 'Stock Management', icon: Package },
+            { id: 'procurement', label: 'Suppliers & PO', icon: Truck },
+          ]
+        }
+      ];
+
+    default:
+      // Dynamic/custom roles: fall back to Manager nav so the sidebar is never empty.
+      return [
+        {
+          section: 'Overview', items: [
+            { id: 'dashboard', label: 'Business Dashboard', icon: LayoutDashboard },
+          ]
+        },
+        {
+          section: 'Operations', items: [
+            { id: 'pos', label: 'Point of Sale', icon: ShoppingCart },
+            { id: 'sales', label: 'Sales History', icon: ReceiptText },
+            { id: 'inventory', label: 'Inventory', icon: Package },
+            { id: 'procurement', label: 'Procurement', icon: Truck },
+          ]
+        },
+        {
+          section: 'Management', items: [
+            { id: 'hr', label: 'HR & Payroll', icon: Briefcase },
+            { id: 'crm', label: 'Customers', icon: UserSquare2 },
+            { id: 'finance', label: 'Finance', icon: Wallet },
+          ]
+        },
+      ];
+  }
+}
+
 export const Sidebar: React.FC<SidebarProps> = ({ currentRole }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const activeView = location.pathname.substring(1); // remove leading slash
 
-  const getNavItems = () => {
-    switch (currentRole) {
-      case UserRole.SUPER_ADMIN:
-        return [
-          {
-            section: 'System Core', items: [
-              { id: 'dashboard', label: 'System Overview', icon: LayoutDashboard },
-              { id: 'admin/db', label: 'Database Admin', icon: Database },
-            ]
-          },
-          {
-            section: 'Access Control', items: [
-              { id: 'admin/users', label: 'User Management', icon: Users },
-              { id: 'admin/roles', label: 'Role Management', icon: Shield },
-              { id: 'admin/security', label: 'Audit Logs', icon: Lock },
-              { id: 'admin/archive', label: 'Archive', icon: ArchiveRestore },
-            ]
-          }
-        ];
-
-
-      case UserRole.MANAGER:
-        return [
-          {
-            section: 'Overview', items: [
-              { id: 'dashboard', label: 'Business Dashboard', icon: LayoutDashboard },
-            ]
-          },
-          {
-            section: 'Operations', items: [
-              { id: 'pos', label: 'Point of Sale', icon: ShoppingCart },
-              { id: 'sales', label: 'Sales History', icon: ReceiptText },
-              { id: 'inventory', label: 'Inventory', icon: Package },
-              { id: 'procurement', label: 'Procurement', icon: Truck },
-            ]
-          },
-          {
-            section: 'Management', items: [
-              { id: 'hr', label: 'HR & Payroll', icon: Briefcase },
-              { id: 'crm', label: 'Customers', icon: UserSquare2 },
-              { id: 'finance', label: 'Finance', icon: Wallet },
-            ]
-          },
-        ];
-
-      case UserRole.CASHIER:
-        return [
-          {
-            section: 'Overview', items: [
-              { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-            ]
-          },
-          {
-            section: 'Front Desk', items: [
-              { id: 'pos', label: 'Point of Sale', icon: ShoppingCart },
-              { id: 'crm', label: 'Customers', icon: UserSquare2 },
-            ]
-          },
-          {
-            section: 'Lookup', items: [
-              { id: 'inventory', label: 'Stock Lookup', icon: Package },
-            ]
-          }
-        ];
-
-      case UserRole.INVENTORY_CLERK:
-        return [
-          {
-            section: 'Warehouse', items: [
-              { id: 'inventory', label: 'Stock Management', icon: Package },
-              { id: 'procurement', label: 'Suppliers & PO', icon: Truck },
-            ]
-          }
-        ];
-
-      default:
-        // Dynamic/custom roles: fall back to Manager nav so the sidebar is never empty.
-        return [
-          {
-            section: 'Overview', items: [
-              { id: 'dashboard', label: 'Business Dashboard', icon: LayoutDashboard },
-            ]
-          },
-          {
-            section: 'Operations', items: [
-              { id: 'pos', label: 'Point of Sale', icon: ShoppingCart },
-              { id: 'sales', label: 'Sales History', icon: ReceiptText },
-              { id: 'inventory', label: 'Inventory', icon: Package },
-              { id: 'procurement', label: 'Procurement', icon: Truck },
-            ]
-          },
-          {
-            section: 'Management', items: [
-              { id: 'hr', label: 'HR & Payroll', icon: Briefcase },
-              { id: 'crm', label: 'Customers', icon: UserSquare2 },
-              { id: 'finance', label: 'Finance', icon: Wallet },
-            ]
-          },
-        ];
-    }
-  };
-
-  const navGroups = getNavItems();
+  const navGroups = getNavItems(currentRole);
 
   return (
     <div className="w-64 bg-card text-card-foreground flex flex-col h-full hidden md:flex border-r shrink-0">

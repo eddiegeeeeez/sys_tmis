@@ -10,11 +10,9 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Label } from '../../../components/ui/Label';
 import { Select } from '../../../components/ui/Select';
 import { Avatar, AvatarFallback } from '../../../components/ui/Avatar';
-import { MOCK_PAYROLL, MOCK_ATTENDANCE } from '../../../lib/mockData';
 import { hrService, Employee as ApiEmployee, Attendance as ApiAttendance, PayrollRecord as ApiPayroll } from '../services/hrService';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../../../components/ui/DropdownMenu';
 import { Loader2, Users, Banknote, Clock, Plus, MoreHorizontal, FileText, ArrowUpDown, Pencil } from 'lucide-react';
-import { Employee, PayrollRecord, Attendance } from '../../../types';
 
 const EmployeesTab = () => {
     const [employees, setEmployees] = useState<ApiEmployee[]>([]);
@@ -328,31 +326,54 @@ const EmployeesTab = () => {
 };
 
 const PayrollTab = () => {
+    const [payrollRecords, setPayrollRecords] = useState<ApiPayroll[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
     const [isPayrollModalOpen, setIsPayrollModalOpen] = useState(false);
     const [isViewPayslipOpen, setIsViewPayslipOpen] = useState(false);
-    const [viewingPayroll, setViewingPayroll] = useState<PayrollRecord | null>(null);
+    const [viewingPayroll, setViewingPayroll] = useState<ApiPayroll | null>(null);
+    const [payPeriodStart, setPayPeriodStart] = useState('');
+    const [payPeriodEnd, setPayPeriodEnd] = useState('');
+    const [isRunning, setIsRunning] = useState(false);
 
-    const columns = useMemo<ColumnDef<PayrollRecord>[]>(() => [
+    useEffect(() => {
+        loadPayroll();
+    }, []);
+
+    const loadPayroll = async () => {
+        setIsLoading(true);
+        try {
+            const response = await hrService.getPayrollRecords();
+            if (response.success && response.data) {
+                setPayrollRecords(response.data);
+            }
+        } catch (error) {
+            console.error("Failed to load payroll records", error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const columns = useMemo<ColumnDef<ApiPayroll>[]>(() => [
         {
-            accessorKey: "PayrollID",
+            accessorKey: "id",
             header: ({ column }) => (
                 <Button variant="ghost" className="hover:bg-transparent -ml-3 text-xs font-semibold" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
                     Payroll ID <ArrowUpDown className="ml-2 h-4 w-4" />
                 </Button>
             ),
-            cell: ({ row }) => <span className="font-mono text-xs text-zinc-500 dark:text-zinc-400">{row.getValue("PayrollID")}</span>
+            cell: ({ row }) => <span className="font-mono text-xs text-zinc-500 dark:text-zinc-400">{row.getValue("id")}</span>
         },
         {
-            accessorKey: "EmployeeName",
+            accessorKey: "employeeName",
             header: ({ column }) => (
                 <Button variant="ghost" className="hover:bg-transparent -ml-3 text-xs font-semibold" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
                     Employee <ArrowUpDown className="ml-2 h-4 w-4" />
                 </Button>
             ),
-            cell: ({ row }) => <span className="font-medium text-zinc-900 dark:text-zinc-100">{row.getValue("EmployeeName")}</span>
+            cell: ({ row }) => <span className="font-medium text-zinc-900 dark:text-zinc-100">{row.getValue("employeeName")}</span>
         },
         {
-            accessorKey: "BasicSalary",
+            accessorKey: "basicSalary",
             header: ({ column }) => (
                 <div className="text-right">
                     <Button variant="ghost" className="hover:bg-transparent text-xs font-semibold" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
@@ -360,10 +381,10 @@ const PayrollTab = () => {
                     </Button>
                 </div>
             ),
-            cell: ({ row }) => <div className="text-right font-mono text-zinc-900 dark:text-zinc-100">₱{(row.getValue("BasicSalary") as number).toFixed(2)}</div>
+            cell: ({ row }) => <div className="text-right font-mono text-zinc-900 dark:text-zinc-100">₱{(row.getValue("basicSalary") as number).toFixed(2)}</div>
         },
         {
-            accessorKey: "TotalDeductions",
+            accessorKey: "totalDeductions",
             header: ({ column }) => (
                 <div className="text-right">
                     <Button variant="ghost" className="hover:bg-transparent text-xs font-semibold" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
@@ -371,10 +392,10 @@ const PayrollTab = () => {
                     </Button>
                 </div>
             ),
-            cell: ({ row }) => <div className="text-right font-mono text-red-600 dark:text-red-400">-₱{(row.getValue("TotalDeductions") as number).toFixed(2)}</div>
+            cell: ({ row }) => <div className="text-right font-mono text-red-600 dark:text-red-400">-₱{(row.getValue("totalDeductions") as number).toFixed(2)}</div>
         },
         {
-            accessorKey: "NetPay",
+            accessorKey: "netPay",
             header: ({ column }) => (
                 <div className="text-right">
                     <Button variant="ghost" className="hover:bg-transparent text-xs font-semibold" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
@@ -382,17 +403,17 @@ const PayrollTab = () => {
                     </Button>
                 </div>
             ),
-            cell: ({ row }) => <div className="text-right font-mono font-bold text-emerald-700 dark:text-emerald-400">₱{(row.getValue("NetPay") as number).toFixed(2)}</div>
+            cell: ({ row }) => <div className="text-right font-mono font-bold text-emerald-700 dark:text-emerald-400">₱{(row.getValue("netPay") as number).toFixed(2)}</div>
         },
         {
-            accessorKey: "Status",
+            accessorKey: "status",
             header: ({ column }) => (
                 <Button variant="ghost" className="hover:bg-transparent -ml-3 text-xs font-semibold" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
                     Status <ArrowUpDown className="ml-2 h-4 w-4" />
                 </Button>
             ),
             cell: ({ row }) => {
-                const status = row.getValue("Status") as string;
+                const status = row.getValue("status") as string;
                 return <StatusDot variant={status === 'Paid' ? 'success' : 'warning'}>{status}</StatusDot>;
             }
         },
@@ -409,10 +430,24 @@ const PayrollTab = () => {
         }
     ], []);
 
-    const handleRunPayroll = () => {
-        console.log("Running Payroll");
-        setIsPayrollModalOpen(false);
-    }
+    const handleRunPayroll = async () => {
+        if (!payPeriodStart || !payPeriodEnd) return;
+        setIsRunning(true);
+        try {
+            await hrService.runPayroll({ payPeriodStart, payPeriodEnd });
+            setIsPayrollModalOpen(false);
+            setPayPeriodStart('');
+            setPayPeriodEnd('');
+            await loadPayroll();
+        } catch (error) {
+            console.error("Failed to run payroll", error);
+        } finally {
+            setIsRunning(false);
+        }
+    };
+
+    const totalPayout = payrollRecords.reduce((sum, r) => sum + r.netPay, 0);
+    const pendingCount = payrollRecords.filter(r => r.status === 'Pending').length;
 
     return (
         <div className="space-y-4">
@@ -425,12 +460,14 @@ const PayrollTab = () => {
                     </DialogHeader>
                     {viewingPayroll && (
                         <div className="space-y-3 py-4 text-sm">
-                            <div className="flex justify-between"><span className="text-zinc-500">Payroll ID</span><span className="font-mono">{viewingPayroll.PayrollID}</span></div>
-                            <div className="flex justify-between"><span className="text-zinc-500">Employee</span><span className="font-medium">{viewingPayroll.EmployeeName}</span></div>
-                            <div className="border-t pt-3 flex justify-between"><span className="text-zinc-500">Basic Salary</span><span>₱{(viewingPayroll.BasicSalary as number).toFixed(2)}</span></div>
-                            <div className="flex justify-between"><span className="text-zinc-500">Total Deductions</span><span className="text-red-600">-₱{(viewingPayroll.TotalDeductions as number).toFixed(2)}</span></div>
-                            <div className="border-t pt-3 flex justify-between font-bold"><span>Net Pay</span><span className="text-emerald-600">₱{(viewingPayroll.NetPay as number).toFixed(2)}</span></div>
-                            <div className="flex justify-between"><span className="text-zinc-500">Status</span><span>{viewingPayroll.Status}</span></div>
+                            <div className="flex justify-between"><span className="text-zinc-500">Payroll ID</span><span className="font-mono">{viewingPayroll.id}</span></div>
+                            <div className="flex justify-between"><span className="text-zinc-500">Employee</span><span className="font-medium">{viewingPayroll.employeeName}</span></div>
+                            <div className="flex justify-between"><span className="text-zinc-500">Pay Period</span><span>{viewingPayroll.payPeriodStart?.split('T')[0]} – {viewingPayroll.payPeriodEnd?.split('T')[0]}</span></div>
+                            <div className="border-t pt-3 flex justify-between"><span className="text-zinc-500">Basic Salary</span><span>₱{viewingPayroll.basicSalary.toFixed(2)}</span></div>
+                            <div className="flex justify-between"><span className="text-zinc-500">Gross Pay</span><span>₱{viewingPayroll.grossPay.toFixed(2)}</span></div>
+                            <div className="flex justify-between"><span className="text-zinc-500">Total Deductions</span><span className="text-red-600">-₱{viewingPayroll.totalDeductions.toFixed(2)}</span></div>
+                            <div className="border-t pt-3 flex justify-between font-bold"><span>Net Pay</span><span className="text-emerald-600">₱{viewingPayroll.netPay.toFixed(2)}</span></div>
+                            <div className="flex justify-between"><span className="text-zinc-500">Status</span><span>{viewingPayroll.status}</span></div>
                         </div>
                     )}
                     <DialogFooter>
@@ -450,11 +487,11 @@ const PayrollTab = () => {
                     <div className="grid gap-4 py-4">
                         <div className="grid gap-2">
                             <Label>Pay Period Start</Label>
-                            <Input type="date" />
+                            <Input type="date" value={payPeriodStart} onChange={e => setPayPeriodStart(e.target.value)} />
                         </div>
                         <div className="grid gap-2">
                             <Label>Pay Period End</Label>
-                            <Input type="date" />
+                            <Input type="date" value={payPeriodEnd} onChange={e => setPayPeriodEnd(e.target.value)} />
                         </div>
                         <div className="p-4 bg-zinc-50 dark:bg-zinc-800 rounded text-sm text-zinc-600 dark:text-zinc-400">
                             <p>This will generate payroll records for all active full-time and contract employees. Drafts will be created for review.</p>
@@ -462,7 +499,10 @@ const PayrollTab = () => {
                     </div>
                     <DialogFooter>
                         <Button variant="outline" onClick={() => setIsPayrollModalOpen(false)}>Cancel</Button>
-                        <Button onClick={handleRunPayroll}>Generate Payroll</Button>
+                        <Button onClick={handleRunPayroll} disabled={isRunning || !payPeriodStart || !payPeriodEnd}>
+                            {isRunning && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                            Generate Payroll
+                        </Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
@@ -470,7 +510,7 @@ const PayrollTab = () => {
             <div className="flex justify-between items-center">
                 <div>
                     <h3 className="text-lg font-medium tracking-tight text-zinc-900 dark:text-zinc-50">Payroll Processing</h3>
-                    <p className="text-sm text-zinc-500 dark:text-zinc-400">Current pay period</p>
+                    <p className="text-sm text-zinc-500 dark:text-zinc-400">All payroll records</p>
                 </div>
                 <Button size="sm" onClick={() => setIsPayrollModalOpen(true)}>
                     <Banknote className="h-4 w-4 mr-2" /> Run Payroll
@@ -483,7 +523,7 @@ const PayrollTab = () => {
                         <Banknote className="h-4 w-4 text-zinc-500" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">₱3,200.00</div>
+                        <div className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">₱{totalPayout.toFixed(2)}</div>
                     </CardContent>
                 </Card>
                 <Card>
@@ -492,74 +532,115 @@ const PayrollTab = () => {
                         <Clock className="h-4 w-4 text-zinc-500" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold text-amber-600 dark:text-amber-500">1</div>
+                        <div className="text-2xl font-bold text-amber-600 dark:text-amber-500">{pendingCount}</div>
                     </CardContent>
                 </Card>
             </div>
-            <DataTable columns={columns} data={MOCK_PAYROLL} />
+            <div className="relative">
+                {isLoading ? (
+                    <div className="absolute inset-0 flex items-center justify-center bg-white/50 dark:bg-zinc-950/50 z-10 rounded-md">
+                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                    </div>
+                ) : null}
+                <DataTable columns={columns} data={payrollRecords} />
+            </div>
         </div>
     );
 };
 
 const AttendanceTab = () => {
-    const columns: ColumnDef<Attendance>[] = [
+    const [attendance, setAttendance] = useState<ApiAttendance[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+
+    useEffect(() => {
+        loadAttendance();
+    }, [selectedDate]);
+
+    const loadAttendance = async () => {
+        setIsLoading(true);
+        try {
+            const response = await hrService.getAttendance(selectedDate);
+            if (response.success && response.data) {
+                setAttendance(response.data);
+            }
+        } catch (error) {
+            console.error("Failed to load attendance", error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const columns = useMemo<ColumnDef<ApiAttendance>[]>(() => [
         {
-            accessorKey: "EmployeeName",
+            accessorKey: "employeeName",
             header: ({ column }) => (
                 <Button variant="ghost" className="hover:bg-transparent -ml-3 text-xs font-semibold" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
                     Employee <ArrowUpDown className="ml-2 h-4 w-4" />
                 </Button>
             ),
-            cell: ({ row }) => <span className="font-medium text-zinc-900 dark:text-zinc-100">{row.getValue("EmployeeName")}</span>
+            cell: ({ row }) => <span className="font-medium text-zinc-900 dark:text-zinc-100">{row.getValue("employeeName")}</span>
         },
         {
-            accessorKey: "Date",
+            accessorKey: "date",
             header: ({ column }) => (
                 <Button variant="ghost" className="hover:bg-transparent -ml-3 text-xs font-semibold" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
                     Date <ArrowUpDown className="ml-2 h-4 w-4" />
                 </Button>
             ),
-            cell: ({ row }) => <span className="text-zinc-700 dark:text-zinc-300">{row.getValue("Date")}</span>
+            cell: ({ row }) => <span className="text-zinc-700 dark:text-zinc-300">{(row.getValue("date") as string)?.split('T')[0]}</span>
         },
         {
-            accessorKey: "TimeIn",
+            accessorKey: "timeIn",
             header: ({ column }) => (
                 <Button variant="ghost" className="hover:bg-transparent -ml-3 text-xs font-semibold" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
                     Time In <ArrowUpDown className="ml-2 h-4 w-4" />
                 </Button>
             ),
-            cell: ({ row }) => <span className="text-emerald-600 dark:text-emerald-400">{row.getValue("TimeIn")}</span>
+            cell: ({ row }) => <span className="text-emerald-600 dark:text-emerald-400">{row.getValue("timeIn") ?? '—'}</span>
         },
         {
-            accessorKey: "TimeOut",
+            accessorKey: "timeOut",
             header: ({ column }) => (
                 <Button variant="ghost" className="hover:bg-transparent -ml-3 text-xs font-semibold" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
                     Time Out <ArrowUpDown className="ml-2 h-4 w-4" />
                 </Button>
             ),
-            cell: ({ row }) => <span className="text-zinc-500 dark:text-zinc-400">{row.getValue("TimeOut")}</span>
+            cell: ({ row }) => <span className="text-zinc-500 dark:text-zinc-400">{row.getValue("timeOut") ?? '—'}</span>
         },
         {
-            accessorKey: "Status",
+            accessorKey: "status",
             header: ({ column }) => (
                 <Button variant="ghost" className="hover:bg-transparent -ml-3 text-xs font-semibold" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
                     Status <ArrowUpDown className="ml-2 h-4 w-4" />
                 </Button>
             ),
             cell: ({ row }) => {
-                const status = row.getValue("Status") as string;
+                const status = row.getValue("status") as string;
                 return <StatusDot variant={status === 'Present' ? 'success' : status === 'Late' ? 'warning' : 'neutral'}>{status}</StatusDot>;
             }
         }
-    ];
+    ], []);
 
     return (
         <div className="space-y-4">
             <div className="flex justify-between items-center">
                 <h3 className="text-lg font-medium tracking-tight text-zinc-900 dark:text-zinc-50">Daily Attendance Log</h3>
-                <div className="text-sm text-zinc-500 bg-white dark:bg-zinc-900 border dark:border-zinc-800 px-3 py-1 rounded">Date: Today</div>
+                <Input
+                    type="date"
+                    value={selectedDate}
+                    onChange={e => setSelectedDate(e.target.value)}
+                    className="w-auto"
+                />
             </div>
-            <DataTable columns={columns} data={MOCK_ATTENDANCE} />
+            <div className="relative">
+                {isLoading ? (
+                    <div className="absolute inset-0 flex items-center justify-center bg-white/50 dark:bg-zinc-950/50 z-10 rounded-md">
+                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                    </div>
+                ) : null}
+                <DataTable columns={columns} data={attendance} />
+            </div>
         </div>
     );
 };

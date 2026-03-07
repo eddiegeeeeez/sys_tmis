@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Sidebar } from './Sidebar';
+import { Sidebar, getNavItems } from './Sidebar';
 import { UserRole } from '../../types';
 import { Menu, CircuitBoard, LogOut, Sun, Moon } from 'lucide-react';
 import { Button } from '../ui/Button';
@@ -112,8 +112,34 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
             </div>
             <Button variant="ghost" size="icon" onClick={() => setIsMobileMenuOpen(false)}>✕</Button>
           </div>
-          <nav className="space-y-4">
-            {/* Mobile nav items */}
+          <nav className="space-y-4 flex-1 overflow-y-auto">
+            {getNavItems(currentRole).map((group, groupIdx) => (
+              <div key={groupIdx}>
+                <h3 className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2">{group.section}</h3>
+                <div className="space-y-1">
+                  {group.items.map((item) => {
+                    const Icon = item.icon;
+                    const isActive = location.pathname.substring(1) === item.id ||
+                      location.pathname.substring(1).startsWith(item.id + '/');
+                    return (
+                      <button
+                        key={item.id}
+                        onClick={() => { navigate('/' + item.id); setIsMobileMenuOpen(false); }}
+                        className={cn(
+                          'w-full flex items-center gap-3 px-3 py-3 rounded-md text-base font-medium transition-colors',
+                          isActive
+                            ? 'bg-primary/10 text-primary'
+                            : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+                        )}
+                      >
+                        <Icon size={20} className={isActive ? 'text-primary' : ''} />
+                        <span>{item.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
           </nav>
         </div>
       )}
