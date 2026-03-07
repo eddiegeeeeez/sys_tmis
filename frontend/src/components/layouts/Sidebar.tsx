@@ -2,8 +2,8 @@ import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { UserRole } from '../../types';
 import {
-  LayoutDashboard, ShoppingCart, Package, Users, LogOut,
-  CircuitBoard, Shield, Database, Lock,
+  LayoutDashboard, ShoppingCart, Package, Users,
+  Shield, Database, Lock,
   Briefcase, Truck, Wallet, UserSquare2, ArchiveRestore, ReceiptText
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '../ui/Avatar';
