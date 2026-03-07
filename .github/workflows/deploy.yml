@@ -43,6 +43,54 @@ jobs:
           # No path overrides or flattening needed.
           dotnet publish -c Release -o ./publish
 
+      - name: Inject production secrets into web.config
+        env:
+          PROD_CONNECTION_STRING: ${{ secrets.PROD_CONNECTION_STRING }}
+          PROD_JWT_KEY: ${{ secrets.PROD_JWT_KEY }}
+          PROD_JWT_ISSUER: ${{ secrets.PROD_JWT_ISSUER }}
+          PROD_JWT_AUDIENCE: ${{ secrets.PROD_JWT_AUDIENCE }}
+          PROD_JWT_EXPIRY_MINUTES: ${{ secrets.PROD_JWT_EXPIRY_MINUTES }}
+          PROD_AWS_ACCESS_KEY: ${{ secrets.PROD_AWS_ACCESS_KEY }}
+          PROD_AWS_SECRET_KEY: ${{ secrets.PROD_AWS_SECRET_KEY }}
+          PROD_AWS_BUCKET_NAME: ${{ secrets.PROD_AWS_BUCKET_NAME }}
+          PROD_AWS_REGION: ${{ secrets.PROD_AWS_REGION }}
+          PROD_AWS_BASE_URL: ${{ secrets.PROD_AWS_BASE_URL }}
+        run: |
+          python3 << 'PYEOF'
+          import os, xml.sax.saxutils as saxutils
+
+          def e(v):
+              """XML-escape a secret value so it's safe as an attribute value."""
+              return saxutils.escape(v or "", {'"': '&quot;'})
+
+          new_vars = (
+              f'          <environmentVariable name="ConnectionStrings__DefaultConnection" value="{e(os.environ["PROD_CONNECTION_STRING"])}" />\n'
+              f'          <environmentVariable name="Jwt__Key" value="{e(os.environ["PROD_JWT_KEY"])}" />\n'
+              f'          <environmentVariable name="Jwt__Issuer" value="{e(os.environ["PROD_JWT_ISSUER"])}" />\n'
+              f'          <environmentVariable name="Jwt__Audience" value="{e(os.environ["PROD_JWT_AUDIENCE"])}" />\n'
+              f'          <environmentVariable name="Jwt__ExpiryMinutes" value="{e(os.environ["PROD_JWT_EXPIRY_MINUTES"])}" />\n'
+              f'          <environmentVariable name="AWS__S3__AccessKey" value="{e(os.environ["PROD_AWS_ACCESS_KEY"])}" />\n'
+              f'          <environmentVariable name="AWS__S3__SecretKey" value="{e(os.environ["PROD_AWS_SECRET_KEY"])}" />\n'
+              f'          <environmentVariable name="AWS__S3__BucketName" value="{e(os.environ["PROD_AWS_BUCKET_NAME"])}" />\n'
+              f'          <environmentVariable name="AWS__S3__Region" value="{e(os.environ["PROD_AWS_REGION"])}" />\n'
+              f'          <environmentVariable name="AWS__S3__BaseUrl" value="{e(os.environ["PROD_AWS_BASE_URL"])}" />\n'
+          )
+
+          path = 'backend/TradeMatrix.Server/publish/web.config'
+          with open(path, 'r') as f:
+              content = f.read()
+
+          content = content.replace(
+              '</environmentVariables>',
+              new_vars + '        </environmentVariables>'
+          )
+
+          with open(path, 'w') as f:
+              f.write(content)
+
+          print("web.config secrets injected successfully.")
+          PYEOF
+
       - name: FTP Deploy
         uses: SamKirkland/FTP-Deploy-Action@v4.3.4
         with:

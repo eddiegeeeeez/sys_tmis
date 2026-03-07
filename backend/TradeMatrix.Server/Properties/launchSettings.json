@@ -7,7 +7,17 @@
       "launchBrowser": false,
       "applicationUrl": "http://localhost:5009",
       "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development"
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ConnectionStrings__DefaultConnection": "Data Source=PAMMY\\SQLEXPRESS;Initial Catalog=db32949;Integrated Security=True;Connect Timeout=30;Encrypt=True;Trust Server Certificate=True;Application Intent=ReadWrite;Multi Subnet Failover=False",
+        "Jwt__Key": "YourSuperSecretKeyThatIsLongEnough123!",
+        "Jwt__Issuer": "TradeMatrixServer",
+        "Jwt__Audience": "TradeMatrixClient",
+        "Jwt__ExpiryMinutes": "1440",
+        "AWS__S3__BucketName": "tradematrix-uploads",
+        "AWS__S3__Region": "us-east-1",
+        "AWS__S3__AccessKey": "REPLACE_WITH_YOUR_AWS_ACCESS_KEY",
+        "AWS__S3__SecretKey": "REPLACE_WITH_YOUR_AWS_SECRET_KEY",
+        "AWS__S3__BaseUrl": "https://tradematrix-uploads.s3.us-east-1.amazonaws.com"
       }
     },
     "https": {
@@ -16,7 +26,17 @@
       "launchBrowser": false,
       "applicationUrl": "https://localhost:7055;http://localhost:5009",
       "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development"
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ConnectionStrings__DefaultConnection": "Data Source=PAMMY\\SQLEXPRESS;Initial Catalog=db32949;Integrated Security=True;Connect Timeout=30;Encrypt=True;Trust Server Certificate=True;Application Intent=ReadWrite;Multi Subnet Failover=False",
+        "Jwt__Key": "YourSuperSecretKeyThatIsLongEnough123!",
+        "Jwt__Issuer": "TradeMatrixServer",
+        "Jwt__Audience": "TradeMatrixClient",
+        "Jwt__ExpiryMinutes": "1440",
+        "AWS__S3__BucketName": "tradematrix-uploads",
+        "AWS__S3__Region": "us-east-1",
+        "AWS__S3__AccessKey": "REPLACE_WITH_YOUR_AWS_ACCESS_KEY",
+        "AWS__S3__SecretKey": "REPLACE_WITH_YOUR_AWS_SECRET_KEY",
+        "AWS__S3__BaseUrl": "https://tradematrix-uploads.s3.us-east-1.amazonaws.com"
       }
     }
   }

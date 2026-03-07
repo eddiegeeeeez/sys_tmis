@@ -172,6 +172,7 @@ namespace TradeMatrix.Server.Controllers
             var jwtKey = _configuration["Jwt:Key"] ?? "YourSuperSecretKeyThatIsLongEnough123!";
             var jwtIssuer = _configuration["Jwt:Issuer"] ?? "TradeMatrixServer";
             var jwtAudience = _configuration["Jwt:Audience"] ?? "TradeMatrixClient";
+            var expiryMinutes = int.TryParse(_configuration["Jwt:ExpiryMinutes"], out var m) ? m : 1440;
 
             var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
             var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
@@ -192,7 +193,7 @@ namespace TradeMatrix.Server.Controllers
                 issuer: jwtIssuer,
                 audience: jwtAudience,
                 claims: claims,
-                expires: DateTime.Now.AddHours(24),
+                expires: DateTime.UtcNow.AddMinutes(expiryMinutes),
                 signingCredentials: credentials);
 
             return new JwtSecurityTokenHandler().WriteToken(token);
