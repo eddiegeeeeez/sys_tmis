@@ -5,7 +5,7 @@ import { Input } from "../../../components/ui/Input"
 import { Eye, EyeOff } from 'lucide-react';
 import { UserRole } from '../../../types';
 
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import api from '../../../lib/axios';
 
 interface LoginFormProps extends React.HTMLAttributes<HTMLDivElement> {
@@ -24,6 +24,7 @@ export function LoginForm({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleSuccess = (role: UserRole, token: string, name: string) => {
     // Store token and user info
@@ -32,7 +33,14 @@ export function LoginForm({
 
     onLogin(role);
 
-    // Redirect based on role
+    // If ProtectedRoute redirected the user here from a specific page, send them back there.
+    const from = (location.state as any)?.from?.pathname;
+    if (from && from !== '/login') {
+      navigate(from, { replace: true });
+      return;
+    }
+
+    // Default role-based redirect for fresh logins (no prior destination).
     if (role === UserRole.SUPER_ADMIN) {
       navigate('/admin/users');
     } else if (role === UserRole.CASHIER) {

@@ -4,7 +4,7 @@ import { UserRole } from './types';
 import { DashboardLayout } from './components/layouts/DashboardLayout';
 import { LoginPage } from './features/auth/pages/LoginPage';
 import { Unauthorized } from './components/common/Unauthorized';
-import { ThemeProvider } from './components/providers/ThemeProvider';
+import { ThemeProvider, useTheme } from './components/providers/ThemeProvider';
 import { ProtectedRoute } from './components/common/ProtectedRoute';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { PageTitle } from './components/common/PageTitle';
@@ -28,7 +28,10 @@ import { DatabaseAdmin } from './features/admin/pages/DatabaseAdmin';
 import { Security } from './features/admin/pages/Security';
 import { Archive } from './features/admin/pages/Archive';
 
-const App: React.FC = () => {
+// Inner component that lives inside ThemeProvider so it can access useTheme()
+const AppContent: React.FC = () => {
+  const { setTheme } = useTheme();
+
   // Initialize state from localStorage for instantaneous session restoration
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(() => !!localStorage.getItem('token'));
   const [currentRole, setCurrentRole] = useState<UserRole>(() => {
@@ -111,25 +114,26 @@ const App: React.FC = () => {
     setTimeout(() => {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
+      // Reset theme to light so the login page always appears in light mode
+      setTheme('light');
       setIsLoggedIn(false);
       setIsLoggingOut(false);
     }, 800);
   };
 
   return (
-    <ThemeProvider defaultTheme="light" storageKey="tradematrix-theme">
-      <ErrorBoundary>
-        <Router>
-          <PageTitle />
-          {isLoggingOut && (
-            <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-white/80 dark:bg-zinc-950/80 backdrop-blur-sm transition-all duration-300">
-              <div className="flex flex-col items-center space-y-4">
-                <div className="h-10 w-10 border-4 border-zinc-200 border-t-brand-600 rounded-full animate-spin dark:border-zinc-800 dark:border-t-brand-500" />
-                <p className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Signing out safely...</p>
-              </div>
+    <ErrorBoundary>
+      <Router>
+        <PageTitle />
+        {isLoggingOut && (
+          <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-white/80 dark:bg-zinc-950/80 backdrop-blur-sm transition-all duration-300">
+            <div className="flex flex-col items-center space-y-4">
+              <div className="h-10 w-10 border-4 border-zinc-200 border-t-brand-600 rounded-full animate-spin dark:border-zinc-800 dark:border-t-brand-500" />
+              <p className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Signing out safely...</p>
             </div>
-          )}
-          <Routes>
+          </div>
+        )}
+        <Routes>
             {/* Public Routes */}
             <Route path="/login" element={
               !isLoggedIn ? (
@@ -303,6 +307,13 @@ const App: React.FC = () => {
           </Routes>
         </Router>
       </ErrorBoundary>
+  );
+};
+
+const App: React.FC = () => {
+  return (
+    <ThemeProvider defaultTheme="light" storageKey="tradematrix-theme">
+      <AppContent />
     </ThemeProvider>
   );
 };

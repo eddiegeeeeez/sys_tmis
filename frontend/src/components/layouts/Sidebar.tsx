@@ -89,7 +89,29 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentRole }) => {
         ];
 
       default:
-        return [];
+        // Dynamic/custom roles: fall back to Manager nav so the sidebar is never empty.
+        return [
+          {
+            section: 'Overview', items: [
+              { id: 'dashboard', label: 'Business Dashboard', icon: LayoutDashboard },
+            ]
+          },
+          {
+            section: 'Operations', items: [
+              { id: 'pos', label: 'Point of Sale', icon: ShoppingCart },
+              { id: 'sales', label: 'Sales History', icon: ReceiptText },
+              { id: 'inventory', label: 'Inventory', icon: Package },
+              { id: 'procurement', label: 'Procurement', icon: Truck },
+            ]
+          },
+          {
+            section: 'Management', items: [
+              { id: 'hr', label: 'HR & Payroll', icon: Briefcase },
+              { id: 'crm', label: 'Customers', icon: UserSquare2 },
+              { id: 'finance', label: 'Finance', icon: Wallet },
+            ]
+          },
+        ];
     }
   };
 
