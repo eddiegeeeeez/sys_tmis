@@ -1,5 +1,5 @@
 import React from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { UserRole } from '../../types';
 import {
   LayoutDashboard, ShoppingCart, Package, Users,
@@ -121,7 +121,6 @@ export function getNavItems(currentRole: UserRole) {
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ currentRole }) => {
-  const navigate = useNavigate();
   const location = useLocation();
   const activeView = location.pathname.substring(1); // remove leading slash
 
@@ -179,11 +178,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentRole }) => {
                   (activeView.startsWith(item.id + '/'));
 
                 return (
-                  <button
+                  <Link
                     key={item.id}
-                    onClick={() => navigate('/' + item.id)}
+                    to={'/' + item.id}
                     className={cn(
-                      "w-full flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors",
+                      "flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors no-underline",
                       isActive
                         ? "bg-primary/10 text-primary shadow-sm ring-1 ring-primary/20"
                         : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
@@ -191,7 +190,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentRole }) => {
                   >
                     <Icon size={18} className={isActive ? 'text-primary' : ''} />
                     <span>{item.label}</span>
-                  </button>
+                  </Link>
                 );
               })}
             </div>

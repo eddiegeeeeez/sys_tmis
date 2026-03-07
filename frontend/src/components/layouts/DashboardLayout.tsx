@@ -5,7 +5,7 @@ import { Menu, CircuitBoard, LogOut, Sun, Moon } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { Separator } from '../ui/Separator';
 import { useTheme } from '../providers/ThemeProvider';
-import { Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { Link, Outlet, useLocation } from 'react-router-dom';
 import { cn } from '../../lib/utils';
 
 import { LogoutConfirmation } from '../common/LogoutConfirmation';
@@ -25,7 +25,6 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
   const { theme, setTheme } = useTheme();
   const location = useLocation();
-  const navigate = useNavigate();
 
   const activeView = location.pathname.substring(1); // remove leading slash
   const isPOS = location.pathname === '/pos';
@@ -122,11 +121,12 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
                     const isActive = location.pathname.substring(1) === item.id ||
                       location.pathname.substring(1).startsWith(item.id + '/');
                     return (
-                      <button
+                      <Link
                         key={item.id}
-                        onClick={() => { navigate('/' + item.id); setIsMobileMenuOpen(false); }}
+                        to={'/' + item.id}
+                        onClick={() => setIsMobileMenuOpen(false)}
                         className={cn(
-                          'w-full flex items-center gap-3 px-3 py-3 rounded-md text-base font-medium transition-colors',
+                          'flex items-center gap-3 px-3 py-3 rounded-md text-base font-medium transition-colors no-underline',
                           isActive
                             ? 'bg-primary/10 text-primary'
                             : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
@@ -134,7 +134,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
                       >
                         <Icon size={20} className={isActive ? 'text-primary' : ''} />
                         <span>{item.label}</span>
-                      </button>
+                      </Link>
                     );
                   })}
                 </div>
