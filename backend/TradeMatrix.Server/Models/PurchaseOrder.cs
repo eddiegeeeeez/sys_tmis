@@ -31,6 +31,11 @@ namespace TradeMatrix.Server.Models
         public ICollection<PurchaseOrderItem> Items { get; set; } = new List<PurchaseOrderItem>();
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+        public DateTime? ReceivedDate { get; set; }
+
+        [MaxLength(100)]
+        public string? ReceivedBy { get; set; }
     }
 
     public class PurchaseOrderItem

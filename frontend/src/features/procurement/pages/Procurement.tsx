@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Label } from '../../../components/ui/Label';
 import { Select } from '../../../components/ui/Select';
 import { procurementService, Supplier as ApiSupplier, PurchaseOrder as ApiPO } from '../services/procurementService';
-import { Loader2, Truck, PackagePlus, Plus, Phone, Mail, ArrowUpDown, ArrowUp, ArrowDown, UserSquare2 } from 'lucide-react';
+import { Loader2, Truck, PackagePlus, Plus, Phone, Mail, ArrowUpDown, ArrowUp, ArrowDown, UserSquare2, PackageCheck } from 'lucide-react';
 import { PurchaseOrder } from '../../../types';
 
 const ITEMS_PER_PAGE = 10;
@@ -114,6 +114,23 @@ export const Procurement: React.FC = () => {
         }
     };
 
+    const [isReceiving, setIsReceiving] = useState(false);
+
+    const handleReceivePO = async (poId: number) => {
+        setIsReceiving(true);
+        try {
+            const res = await procurementService.receivePurchaseOrder(poId);
+            if (res.data.success) {
+                fetchData();
+            }
+        } catch (error: any) {
+            const msg = error?.response?.data?.message || 'Failed to receive PO';
+            alert(msg);
+        } finally {
+            setIsReceiving(false);
+        }
+    };
+
     const columns: ColumnDef<ApiPO>[] = [
         {
             accessorKey: "poNumber",
@@ -172,6 +189,28 @@ export const Procurement: React.FC = () => {
             cell: ({ row }) => {
                 const status = row.getValue("status") as string;
                 return <StatusDot variant={status === 'Received' ? 'success' : 'warning'}>{status}</StatusDot>;
+            }
+        },
+        {
+            id: "actions",
+            header: () => <div className="text-right text-xs font-semibold pr-2">Actions</div>,
+            cell: ({ row }) => {
+                const po = row.original;
+                if (po.status === 'Received') {
+                    return (
+                        <div className="text-right text-xs text-zinc-400 dark:text-zinc-500 pr-2">
+                            {po.receivedDate ? new Date(po.receivedDate).toLocaleDateString() : ''}{po.receivedBy ? ` by ${po.receivedBy}` : ''}
+                        </div>
+                    );
+                }
+                return (
+                    <div className="flex justify-end pr-2">
+                        <Button size="sm" variant="outline" disabled={isReceiving} onClick={() => handleReceivePO(po.id)}>
+                            {isReceiving ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <PackageCheck className="mr-1 h-3 w-3" />}
+                            Receive
+                        </Button>
+                    </div>
+                );
             }
         }
     ];

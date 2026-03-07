@@ -24,6 +24,7 @@ namespace TradeMatrix.Server.Data
         public DbSet<Expense> Expenses { get; set; }
         public DbSet<Transaction> Transactions { get; set; }
         public DbSet<TransactionItem> TransactionItems { get; set; }
+        public DbSet<StockMovement> StockMovements { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -50,6 +51,7 @@ namespace TradeMatrix.Server.Data
             modelBuilder.Entity<Product>(e =>
             {
                 e.HasIndex(p => p.SKU).IsUnique();
+                e.HasIndex(p => p.Barcode).IsUnique().HasFilter("[Barcode] IS NOT NULL");
                 e.HasIndex(p => p.Category);
                 e.HasIndex(p => p.IsActive);
             });
@@ -126,6 +128,15 @@ namespace TradeMatrix.Server.Data
                 e.HasIndex(a => a.ActorEmail);
                 e.HasIndex(a => a.Event);
                 e.HasIndex(a => a.Severity);
+            });
+
+            // ── Stock Movements ─────────────────────────────────────
+            modelBuilder.Entity<StockMovement>(e =>
+            {
+                e.HasIndex(sm => sm.ProductId);
+                e.HasIndex(sm => sm.MovementType);
+                e.HasIndex(sm => sm.CreatedAt);
+                e.HasIndex(sm => sm.Reference);
             });
         }
     }

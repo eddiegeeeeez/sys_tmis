@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { Product, CartItem } from '../../../types';
 import { fetchProducts, createTransaction, TransactionResult } from '../services/posService';
+import { inventoryService } from '../../inventory/services/inventoryService';
 import { cn } from '../../../lib/utils';
 import { useNavigate } from 'react-router-dom';
 import { AuthConfirmationModal } from '../../../components/common/AuthConfirmationModal';
@@ -95,7 +96,7 @@ export const POS: React.FC = () => {
   const filteredProducts = useMemo(() => {
     const q = searchTerm.toLowerCase();
     return products.filter(p => {
-      const matchSearch = !q || p.name.toLowerCase().includes(q) || p.sku.toLowerCase().includes(q) || p.category.toLowerCase().includes(q);
+      const matchSearch = !q || p.name.toLowerCase().includes(q) || p.sku.toLowerCase().includes(q) || p.category.toLowerCase().includes(q) || (p.barcode && p.barcode.toLowerCase().includes(q));
       const matchCat = activeCategory === ALL_CAT || p.category === activeCategory;
       return matchSearch && matchCat;
     });
@@ -114,14 +115,36 @@ export const POS: React.FC = () => {
     });
   }, []);
 
-  const handleBarcodeScan = useCallback((code: string) => {
+  const handleBarcodeScan = useCallback(async (code: string) => {
     const trimmed = code.trim();
     if (!trimmed) return;
-    const product = products.find(p => p.sku.toLowerCase() === trimmed.toLowerCase());
+    // Try local match first (SKU or barcode field)
+    const product = products.find(p =>
+      p.sku.toLowerCase() === trimmed.toLowerCase() ||
+      (p.barcode && p.barcode.toLowerCase() === trimmed.toLowerCase())
+    );
     if (product) {
       addToCart(product);
     } else {
-      alert(`No product found for SKU/Barcode: ${trimmed}`);
+      // Fallback: try backend lookup to get product by barcode/SKU
+      try {
+        const res = await inventoryService.lookupProduct(trimmed);
+        if (res.data.success && res.data.data) {
+          const p = res.data.data;
+          const mapped: Product = {
+            id: String(p.id), name: p.name, category: p.category,
+            price: p.sellingPrice, stock: p.stock, sku: p.sku,
+            barcode: p.barcode, reorderLevel: p.reorderLevel ?? 0,
+            unitOfMeasure: p.unitOfMeasure ?? 'pcs', image: p.imageUrl ?? undefined,
+          };
+          if (mapped.stock > 0) addToCart(mapped);
+          else alert(`Product "${mapped.name}" is out of stock.`);
+        } else {
+          alert(`No product found for: ${trimmed}`);
+        }
+      } catch {
+        alert(`No product found for: ${trimmed}`);
+      }
     }
     setBarcodeInput('');
   }, [products, addToCart]);

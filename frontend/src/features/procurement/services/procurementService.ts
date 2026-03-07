@@ -19,6 +19,8 @@ export interface PurchaseOrder {
     expectedDeliveryDate?: string;
     totalAmount: number;
     status: string;
+    receivedDate?: string;
+    receivedBy?: string;
 }
 
 export const procurementService = {
@@ -36,4 +38,7 @@ export const procurementService = {
 
     createPurchaseOrder: (poData: any) =>
         api.post<ApiResponse<PurchaseOrder>>('/procurement/purchase-orders', poData),
+
+    receivePurchaseOrder: (id: number) =>
+        api.post<ApiResponse<PurchaseOrder>>(`/procurement/purchase-orders/${id}/receive`),
 };

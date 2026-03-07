@@ -53,5 +53,7 @@ namespace TradeMatrix.Server.DTOs
         public DateTime? ExpectedDeliveryDate { get; set; }
         public decimal TotalAmount { get; set; }
         public string Status { get; set; } = string.Empty;
+        public DateTime? ReceivedDate { get; set; }
+        public string? ReceivedBy { get; set; }
     }
 }

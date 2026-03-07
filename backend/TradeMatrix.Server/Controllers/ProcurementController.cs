@@ -98,5 +98,28 @@ namespace TradeMatrix.Server.Controllers
                 return StatusCode(500, ApiResponse<string>.ErrorResponse("Error updating supplier"));
             }
         }
+
+        [HttpPost("purchase-orders/{id}/receive")]
+        [Authorize(Roles = "SuperAdmin,Manager,InventoryClerk")]
+        public async Task<ActionResult<ApiResponse<PurchaseOrderDto>>> ReceivePurchaseOrder(int id)
+        {
+            try
+            {
+                var userName = User.FindFirst("Name")?.Value ?? User.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value ?? "Unknown";
+                var result = await _procurementService.ReceivePurchaseOrderAsync(id, userName);
+                if (result == null)
+                    return NotFound(ApiResponse<PurchaseOrderDto>.ErrorResponse("Purchase order not found"));
+                return Ok(ApiResponse<PurchaseOrderDto>.SuccessResponse(result, "Purchase order received and stock updated."));
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ApiResponse<PurchaseOrderDto>.ErrorResponse(ex.Message));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error receiving purchase order {Id}", id);
+                return StatusCode(500, ApiResponse<string>.ErrorResponse("Error receiving purchase order"));
+            }
+        }
     }
 }

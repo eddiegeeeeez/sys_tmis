@@ -8,10 +8,12 @@ namespace TradeMatrix.Server.Services
     public class ProcurementService : IProcurementService
     {
         private readonly ApplicationDbContext _context;
+        private readonly IStockMovementService _stockMovementService;
 
-        public ProcurementService(ApplicationDbContext context)
+        public ProcurementService(ApplicationDbContext context, IStockMovementService stockMovementService)
         {
             _context = context;
+            _stockMovementService = stockMovementService;
         }
 
         public async Task<List<SupplierDto>> GetSuppliersAsync()
@@ -92,7 +94,9 @@ namespace TradeMatrix.Server.Services
                     OrderDate = po.OrderDate,
                     ExpectedDeliveryDate = po.ExpectedDeliveryDate,
                     TotalAmount = po.TotalAmount,
-                    Status = po.Status
+                    Status = po.Status,
+                    ReceivedDate = po.ReceivedDate,
+                    ReceivedBy = po.ReceivedBy
                 })
                 .ToListAsync();
         }
@@ -125,6 +129,50 @@ namespace TradeMatrix.Server.Services
             await _context.SaveChangesAsync();
 
             return po;
+        }
+
+        public async Task<PurchaseOrderDto?> ReceivePurchaseOrderAsync(int id, string receivedBy)
+        {
+            var po = await _context.PurchaseOrders
+                .Include(p => p.Items)
+                .Include(p => p.Supplier)
+                .FirstOrDefaultAsync(p => p.Id == id);
+
+            if (po == null) return null;
+            if (po.Status == "Received")
+                throw new ArgumentException("Purchase order has already been received.");
+
+            // Create STOCK_IN movement for each PO item
+            foreach (var item in po.Items)
+            {
+                await _stockMovementService.RecordMovementAsync(
+                    item.ProductId,
+                    "STOCK_IN",
+                    item.Quantity,
+                    receivedBy,
+                    reference: po.PONumber,
+                    notes: $"Received from PO {po.PONumber}",
+                    costPrice: item.UnitCost);
+            }
+
+            po.Status = "Received";
+            po.ReceivedDate = DateTime.UtcNow;
+            po.ReceivedBy = receivedBy;
+            await _context.SaveChangesAsync();
+
+            return new PurchaseOrderDto
+            {
+                Id = po.Id,
+                PONumber = po.PONumber,
+                SupplierId = po.SupplierId,
+                SupplierName = po.Supplier?.CompanyName ?? "Unknown",
+                OrderDate = po.OrderDate,
+                ExpectedDeliveryDate = po.ExpectedDeliveryDate,
+                TotalAmount = po.TotalAmount,
+                Status = po.Status,
+                ReceivedDate = po.ReceivedDate,
+                ReceivedBy = po.ReceivedBy
+            };
         }
     }
 }

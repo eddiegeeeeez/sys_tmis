@@ -10,9 +10,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Label } from '../../../components/ui/Label';
 import { Select } from '../../../components/ui/Select';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../../../components/ui/DropdownMenu';
-import { inventoryService, Product as ApiProduct } from '../services/inventoryService';
+import { inventoryService, Product as ApiProduct, StockMovement, StockMovementSummary } from '../services/inventoryService';
 import { procurementService, Supplier } from '../../procurement/services/procurementService';
-import { Loader2, Search, ArrowUpCircle, MoreHorizontal, Download, ArrowUpDown, X, Pencil, Upload, Trash2 } from 'lucide-react';
+import { Loader2, Search, ArrowUpCircle, MoreHorizontal, Download, ArrowUpDown, X, Pencil, Upload, Trash2, PackagePlus, History } from 'lucide-react';
 import { Product } from '../../../types';
 
 export const Inventory: React.FC = () => {
@@ -29,10 +29,27 @@ export const Inventory: React.FC = () => {
     const [saveError, setSaveError] = useState<string | null>(null);
     const [editError, setEditError] = useState<string | null>(null);
 
+    // Stock Movement State
+    const [isMovementOpen, setIsMovementOpen] = useState(false);
+    const [movementProduct, setMovementProduct] = useState<ApiProduct | null>(null);
+    const [movementType, setMovementType] = useState<'STOCK_IN' | 'WASTE' | 'ADJUSTMENT'>('STOCK_IN');
+    const [movementQty, setMovementQty] = useState(1);
+    const [movementNotes, setMovementNotes] = useState('');
+    const [movementRef, setMovementRef] = useState('');
+    const [movementError, setMovementError] = useState<string | null>(null);
+
+    // Stock History State
+    const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+    const [historyProduct, setHistoryProduct] = useState<ApiProduct | null>(null);
+    const [historyMovements, setHistoryMovements] = useState<StockMovement[]>([]);
+    const [historySummary, setHistorySummary] = useState<StockMovementSummary | null>(null);
+    const [isHistoryLoading, setIsHistoryLoading] = useState(false);
+
     // Form State
     const [newProduct, setNewProduct] = useState({
         name: '',
         sku: '',
+        barcode: '',
         category: 'Electronics',
         unitOfMeasure: 'pcs',
         costPrice: 0,
@@ -80,7 +97,8 @@ export const Inventory: React.FC = () => {
             const lowerTerm = filterTerm.toLowerCase();
             data = data.filter(item =>
                 item.name.toLowerCase().includes(lowerTerm) ||
-                item.sku.toLowerCase().includes(lowerTerm)
+                item.sku.toLowerCase().includes(lowerTerm) ||
+                (item.barcode && item.barcode.toLowerCase().includes(lowerTerm))
             );
         }
 
@@ -125,7 +143,7 @@ export const Inventory: React.FC = () => {
                 setIsAddProductOpen(false);
                 fetchData();
                 setNewProduct({
-                    name: '', sku: '', category: 'Electronics', unitOfMeasure: 'pcs',
+                    name: '', sku: '', barcode: '', category: 'Electronics', unitOfMeasure: 'pcs',
                     costPrice: 0, sellingPrice: 0, initialStock: 0, reorderLevel: 10, supplierId: ''
                 });
             } else {
@@ -205,6 +223,60 @@ export const Inventory: React.FC = () => {
             setEditError(error?.response?.data?.message || 'Failed to remove image');
         } finally {
             setIsUploadingImage(false);
+        }
+    };
+
+    const openMovementDialog = (product: ApiProduct) => {
+        setMovementProduct(product);
+        setMovementType('STOCK_IN');
+        setMovementQty(1);
+        setMovementNotes('');
+        setMovementRef('');
+        setMovementError(null);
+        setIsMovementOpen(true);
+    };
+
+    const handleRecordMovement = async () => {
+        if (!movementProduct) return;
+        setMovementError(null);
+        setIsSaving(true);
+        try {
+            const res = await inventoryService.recordStockMovement(movementProduct.id, {
+                productId: movementProduct.id,
+                movementType,
+                quantity: movementQty,
+                reference: movementRef || undefined,
+                notes: movementNotes || undefined,
+            });
+            if (res.data.success) {
+                setIsMovementOpen(false);
+                fetchData();
+            } else {
+                setMovementError(res.data.message || 'Failed to record movement.');
+            }
+        } catch (error: any) {
+            setMovementError(error?.response?.data?.message || 'An error occurred.');
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const openHistoryDialog = async (product: ApiProduct) => {
+        setHistoryProduct(product);
+        setIsHistoryOpen(true);
+        setIsHistoryLoading(true);
+        try {
+            const [movRes, sumRes] = await Promise.all([
+                inventoryService.getProductMovements(product.id, { pageSize: 50 }),
+                inventoryService.getProductStockSummary(product.id),
+            ]);
+            if (movRes.data.success) setHistoryMovements(movRes.data.data);
+            if (sumRes.data.success) setHistorySummary(sumRes.data.data);
+        } catch {
+            setHistoryMovements([]);
+            setHistorySummary(null);
+        } finally {
+            setIsHistoryLoading(false);
         }
     };
 
@@ -301,9 +373,15 @@ export const Inventory: React.FC = () => {
                                 <span className="sr-only">Actions</span>
                             </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-[160px] bg-white dark:bg-zinc-900 dark:border-zinc-800">
+                        <DropdownMenuContent align="end" className="w-[180px] bg-white dark:bg-zinc-900 dark:border-zinc-800">
                             <DropdownMenuItem onClick={() => { setEditingProduct(row.original); setIsEditProductOpen(true); }}>
                                 <Pencil className="mr-2 h-4 w-4" /> Edit Product
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => openMovementDialog(row.original)}>
+                                <PackagePlus className="mr-2 h-4 w-4" /> Stock Movement
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => openHistoryDialog(row.original)}>
+                                <History className="mr-2 h-4 w-4" /> Movement History
                             </DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
@@ -336,13 +414,22 @@ export const Inventory: React.FC = () => {
                                 />
                             </div>
                             <div className="grid gap-2">
-                                <Label>SKU / Barcode</Label>
+                                <Label>SKU <span className="text-zinc-400 font-normal">(auto-generated if blank)</span></Label>
                                 <Input
-                                    placeholder="Scan or enter SKU"
+                                    placeholder="Leave blank for auto-SKU"
                                     value={newProduct.sku}
                                     onChange={e => setNewProduct({ ...newProduct, sku: e.target.value })}
                                 />
                             </div>
+                        </div>
+
+                        <div className="grid gap-2">
+                            <Label>Barcode <span className="text-zinc-400 font-normal">(optional)</span></Label>
+                            <Input
+                                placeholder="Scan or enter barcode"
+                                value={newProduct.barcode}
+                                onChange={e => setNewProduct({ ...newProduct, barcode: e.target.value })}
+                            />
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
@@ -464,9 +551,13 @@ export const Inventory: React.FC = () => {
                                     <Input required value={editingProduct.name} onChange={e => setEditingProduct({ ...editingProduct, name: e.target.value })} />
                                 </div>
                                 <div className="grid gap-2">
-                                    <Label>SKU / Barcode</Label>
-                                    <Input value={editingProduct.sku} onChange={e => setEditingProduct({ ...editingProduct, sku: e.target.value })} />
+                                    <Label>SKU</Label>
+                                    <Input value={editingProduct.sku} readOnly className="bg-zinc-50 dark:bg-zinc-800 text-zinc-500" />
                                 </div>
+                            </div>
+                            <div className="grid gap-2">
+                                <Label>Barcode <span className="text-zinc-400 font-normal">(optional)</span></Label>
+                                <Input value={editingProduct.barcode ?? ''} onChange={e => setEditingProduct({ ...editingProduct, barcode: e.target.value || undefined })} placeholder="Scan or enter barcode" />
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="grid gap-2">
@@ -619,6 +710,128 @@ export const Inventory: React.FC = () => {
             ) : (
                 <DataTable columns={columns} data={processedData} />
             )}
+
+            {/* Stock Movement Modal */}
+            <Dialog open={isMovementOpen} onOpenChange={open => { setIsMovementOpen(open); if (!open) setMovementError(null); }}>
+                <DialogContent className="max-w-md">
+                    <DialogHeader>
+                        <DialogTitle>Record Stock Movement</DialogTitle>
+                        <DialogDescription>{movementProduct?.name} — Current Stock: {movementProduct?.stock}</DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                        <div className="grid gap-2">
+                            <Label>Movement Type</Label>
+                            <select
+                                className="flex h-10 w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm ring-offset-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950 dark:border-zinc-800 dark:bg-zinc-950 dark:ring-offset-zinc-950 dark:focus-visible:ring-zinc-300"
+                                value={movementType}
+                                onChange={e => setMovementType(e.target.value as any)}
+                            >
+                                <option value="STOCK_IN">Stock In (add stock)</option>
+                                <option value="WASTE">Waste / Damage (remove stock)</option>
+                                <option value="ADJUSTMENT">Adjustment (+ or -)</option>
+                            </select>
+                        </div>
+                        <div className="grid gap-2">
+                            <Label>Quantity</Label>
+                            <Input type="number" min={1} value={movementQty} onChange={e => setMovementQty(parseInt(e.target.value) || 1)} />
+                        </div>
+                        <div className="grid gap-2">
+                            <Label>Reference <span className="text-zinc-400 font-normal">(optional)</span></Label>
+                            <Input placeholder="e.g. PO number, receipt #" value={movementRef} onChange={e => setMovementRef(e.target.value)} />
+                        </div>
+                        <div className="grid gap-2">
+                            <Label>Notes <span className="text-zinc-400 font-normal">(optional)</span></Label>
+                            <Input placeholder="Reason for movement" value={movementNotes} onChange={e => setMovementNotes(e.target.value)} />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        {movementError && <p className="text-sm text-red-500 mr-auto">{movementError}</p>}
+                        <Button variant="outline" onClick={() => setIsMovementOpen(false)}>Cancel</Button>
+                        <Button onClick={handleRecordMovement} disabled={isSaving}>
+                            {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PackagePlus className="mr-2 h-4 w-4" />}
+                            Record Movement
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Stock Movement History Modal */}
+            <Dialog open={isHistoryOpen} onOpenChange={setIsHistoryOpen}>
+                <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                    <DialogHeader>
+                        <DialogTitle>Movement History</DialogTitle>
+                        <DialogDescription>{historyProduct?.name} ({historyProduct?.sku})</DialogDescription>
+                    </DialogHeader>
+                    {isHistoryLoading ? (
+                        <div className="flex items-center justify-center py-8"><Loader2 className="h-6 w-6 animate-spin" /></div>
+                    ) : (
+                        <div className="space-y-4 py-2">
+                            {historySummary && (
+                                <div className="grid grid-cols-3 sm:grid-cols-5 gap-3">
+                                    <div className="p-3 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 text-center">
+                                        <p className="text-xs text-zinc-500 dark:text-zinc-400">Stock In</p>
+                                        <p className="text-lg font-bold text-emerald-600 dark:text-emerald-400">+{historySummary.totalStockIn}</p>
+                                    </div>
+                                    <div className="p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-center">
+                                        <p className="text-xs text-zinc-500 dark:text-zinc-400">Sales</p>
+                                        <p className="text-lg font-bold text-blue-600 dark:text-blue-400">-{historySummary.totalSales}</p>
+                                    </div>
+                                    <div className="p-3 rounded-lg bg-red-50 dark:bg-red-900/20 text-center">
+                                        <p className="text-xs text-zinc-500 dark:text-zinc-400">Waste</p>
+                                        <p className="text-lg font-bold text-red-600 dark:text-red-400">-{historySummary.totalWaste}</p>
+                                    </div>
+                                    <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 text-center">
+                                        <p className="text-xs text-zinc-500 dark:text-zinc-400">Adjusted</p>
+                                        <p className="text-lg font-bold text-amber-600 dark:text-amber-400">{historySummary.totalAdjustments >= 0 ? '+' : ''}{historySummary.totalAdjustments}</p>
+                                    </div>
+                                    <div className="p-3 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-center">
+                                        <p className="text-xs text-zinc-500 dark:text-zinc-400">Current</p>
+                                        <p className="text-lg font-bold text-zinc-900 dark:text-zinc-100">{historySummary.currentStock}</p>
+                                    </div>
+                                </div>
+                            )}
+                            {historyMovements.length === 0 ? (
+                                <p className="text-center text-zinc-400 py-4">No movement records found.</p>
+                            ) : (
+                                <div className="border rounded-md overflow-hidden dark:border-zinc-800">
+                                    <table className="w-full text-sm">
+                                        <thead className="bg-zinc-50 dark:bg-zinc-800/50">
+                                            <tr>
+                                                <th className="px-3 py-2 text-left font-medium text-zinc-600 dark:text-zinc-400">Date</th>
+                                                <th className="px-3 py-2 text-left font-medium text-zinc-600 dark:text-zinc-400">Type</th>
+                                                <th className="px-3 py-2 text-right font-medium text-zinc-600 dark:text-zinc-400">Qty</th>
+                                                <th className="px-3 py-2 text-left font-medium text-zinc-600 dark:text-zinc-400">Reference</th>
+                                                <th className="px-3 py-2 text-left font-medium text-zinc-600 dark:text-zinc-400">By</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+                                            {historyMovements.map(m => (
+                                                <tr key={m.id} className="hover:bg-zinc-50 dark:hover:bg-zinc-800/30">
+                                                    <td className="px-3 py-2 text-zinc-600 dark:text-zinc-300">{new Date(m.createdAt).toLocaleString()}</td>
+                                                    <td className="px-3 py-2">
+                                                        <Badge variant={
+                                                            m.movementType === 'STOCK_IN' || m.movementType === 'VOID_RESTORE' ? 'success' :
+                                                            m.movementType === 'SALE' ? 'secondary' :
+                                                            m.movementType === 'WASTE' ? 'destructive' : 'warning'
+                                                        } className="text-xs">
+                                                            {m.movementType.replace('_', ' ')}
+                                                        </Badge>
+                                                    </td>
+                                                    <td className="px-3 py-2 text-right font-mono font-medium">
+                                                        {['STOCK_IN', 'VOID_RESTORE', 'ADJUSTMENT'].includes(m.movementType) ? '+' : '-'}{m.quantity}
+                                                    </td>
+                                                    <td className="px-3 py-2 text-zinc-500 dark:text-zinc-400 text-xs">{m.reference || '—'}</td>
+                                                    <td className="px-3 py-2 text-zinc-500 dark:text-zinc-400 text-xs">{m.recordedBy}</td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </DialogContent>
+            </Dialog>
         </div>
     );
 };

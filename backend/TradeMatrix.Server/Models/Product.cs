@@ -42,5 +42,8 @@ namespace TradeMatrix.Server.Models
 
         [MaxLength(500)]
         public string? ImageUrl { get; set; }
+
+        [MaxLength(50)]
+        public string? Barcode { get; set; }
     }
 }
