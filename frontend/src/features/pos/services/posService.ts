@@ -47,7 +47,6 @@ export const fetchProducts = async (): Promise<Product[]> => {
       price: p.sellingPrice,
       stock: p.stock,
       sku: p.sku,
-      barcode: p.barcode ?? undefined,
       reorderLevel: p.reorderLevel ?? 0,
       unitOfMeasure: p.unitOfMeasure ?? 'pcs',
       image: p.imageUrl ?? undefined,

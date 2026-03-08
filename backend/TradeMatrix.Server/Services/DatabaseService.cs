@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
 using TradeMatrix.Server.Data;
 using TradeMatrix.Server.DTOs;
+using TradeMatrix.Server.Models;
 
 namespace TradeMatrix.Server.Services
 {
@@ -8,11 +10,13 @@ namespace TradeMatrix.Server.Services
     {
         private readonly ApplicationDbContext _context;
         private readonly IConfiguration _configuration;
+        private readonly IS3StorageService _s3;
 
-        public DatabaseService(ApplicationDbContext context, IConfiguration configuration)
+        public DatabaseService(ApplicationDbContext context, IConfiguration configuration, IS3StorageService s3)
         {
             _context = context;
             _configuration = configuration;
+            _s3 = s3;
         }
 
         public async Task<DatabaseInfoDto> GetDatabaseInfoAsync()
@@ -192,5 +196,105 @@ namespace TradeMatrix.Server.Services
                 .FirstOrDefault(x => x.Trim().StartsWith($"{key}=", StringComparison.OrdinalIgnoreCase));
             return part?.Split('=')[1].Trim();
         }
+
+        // ── Backup ────────────────────────────────────────────────────────────
+
+        public async Task<ApiResponse<BackupRecordDto>> CreateBackupAsync(string triggeredBy)
+        {
+            var timestamp = DateTime.UtcNow;
+            var fileName = $"backup_{timestamp:yyyyMMdd_HHmmss}.json";
+            var record = new BackupRecord
+            {
+                FileName = fileName,
+                TriggeredBy = triggeredBy,
+                Status = "Failed",
+                CreatedAt = timestamp
+            };
+
+            try
+            {
+                // Collect all table data
+                var payload = new
+                {
+                    ExportedAt = timestamp,
+                    TriggeredBy = triggeredBy,
+                    Products          = await _context.Products.AsNoTracking().ToListAsync(),
+                    Suppliers         = await _context.Suppliers.AsNoTracking().ToListAsync(),
+                    PurchaseOrders    = await _context.PurchaseOrders.AsNoTracking().ToListAsync(),
+                    PurchaseOrderItems = await _context.PurchaseOrderItems.AsNoTracking().ToListAsync(),
+                    Transactions      = await _context.Transactions.AsNoTracking().ToListAsync(),
+                    TransactionItems  = await _context.TransactionItems.AsNoTracking().ToListAsync(),
+                    Employees         = await _context.Employees.AsNoTracking().ToListAsync(),
+                    Attendances       = await _context.Attendances.AsNoTracking().ToListAsync(),
+                    PayrollRecords    = await _context.PayrollRecords.AsNoTracking().ToListAsync(),
+                    Customers         = await _context.Customers.AsNoTracking().ToListAsync(),
+                    Expenses          = await _context.Expenses.AsNoTracking().ToListAsync(),
+                    SystemSettings    = await _context.SystemSettings.AsNoTracking().ToListAsync(),
+                    StockMovements    = await _context.StockMovements.AsNoTracking().ToListAsync()
+                };
+
+                var json = JsonSerializer.Serialize(payload, new JsonSerializerOptions { WriteIndented = false });
+                var bytes = System.Text.Encoding.UTF8.GetBytes(json);
+
+                using var stream = new MemoryStream(bytes);
+                var s3Url = await _s3.UploadFileAsync(stream, fileName, "application/json", "backups");
+
+                record.S3Url = s3Url;
+                record.FileSizeBytes = bytes.LongLength;
+                record.Status = "Success";
+            }
+            catch (Exception ex)
+            {
+                record.Status = "Failed";
+                record.ErrorMessage = ex.Message;
+            }
+
+            _context.BackupRecords.Add(record);
+            await _context.SaveChangesAsync();
+
+            // Prune to keep only the last 30 backups
+            var old = await _context.BackupRecords
+                .OrderByDescending(b => b.CreatedAt)
+                .Skip(30)
+                .ToListAsync();
+
+            foreach (var stale in old)
+            {
+                if (!string.IsNullOrEmpty(stale.S3Url))
+                    await _s3.DeleteFileAsync(stale.S3Url);
+                _context.BackupRecords.Remove(stale);
+            }
+
+            if (old.Count > 0)
+                await _context.SaveChangesAsync();
+
+            if (record.Status == "Failed")
+                return ApiResponse<BackupRecordDto>.ErrorResponse(record.ErrorMessage ?? "Backup failed");
+
+            return ApiResponse<BackupRecordDto>.SuccessResponse(MapBackup(record), "Backup completed successfully");
+        }
+
+        public async Task<ApiResponse<List<BackupRecordDto>>> GetBackupHistoryAsync()
+        {
+            var records = await _context.BackupRecords
+                .OrderByDescending(b => b.CreatedAt)
+                .Take(30)
+                .ToListAsync();
+
+            return ApiResponse<List<BackupRecordDto>>.SuccessResponse(
+                records.Select(MapBackup).ToList());
+        }
+
+        private static BackupRecordDto MapBackup(BackupRecord b) => new()
+        {
+            Id = b.Id,
+            FileName = b.FileName,
+            S3Url = b.S3Url,
+            FileSizeBytes = b.FileSizeBytes,
+            TriggeredBy = b.TriggeredBy,
+            Status = b.Status,
+            ErrorMessage = b.ErrorMessage,
+            CreatedAt = b.CreatedAt
+        };
     }
 }

@@ -25,6 +25,7 @@ namespace TradeMatrix.Server.Data
         public DbSet<Transaction> Transactions { get; set; }
         public DbSet<TransactionItem> TransactionItems { get; set; }
         public DbSet<StockMovement> StockMovements { get; set; }
+        public DbSet<BackupRecord> BackupRecords { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -51,7 +52,6 @@ namespace TradeMatrix.Server.Data
             modelBuilder.Entity<Product>(e =>
             {
                 e.HasIndex(p => p.SKU).IsUnique();
-                e.HasIndex(p => p.Barcode).IsUnique().HasFilter("[Barcode] IS NOT NULL");
                 e.HasIndex(p => p.Category);
                 e.HasIndex(p => p.IsActive);
             });
@@ -137,6 +137,13 @@ namespace TradeMatrix.Server.Data
                 e.HasIndex(sm => sm.MovementType);
                 e.HasIndex(sm => sm.CreatedAt);
                 e.HasIndex(sm => sm.Reference);
+            });
+
+            // ── Backup Records ──────────────────────────────────────
+            modelBuilder.Entity<BackupRecord>(e =>
+            {
+                e.HasIndex(b => b.CreatedAt);
+                e.HasIndex(b => b.Status);
             });
         }
     }

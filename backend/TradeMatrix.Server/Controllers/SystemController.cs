@@ -1,7 +1,5 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using TradeMatrix.Server.Data;
 using TradeMatrix.Server.Models;
 using TradeMatrix.Server.Services;
 using TradeMatrix.Server.DTOs;

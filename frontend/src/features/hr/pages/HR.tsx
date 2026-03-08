@@ -4,6 +4,7 @@ import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
 import { DataTable } from '../../../components/ui/data-table';
 import { StatusDot } from '../../../components/ui/StatusDot';
+import { Alert, AlertDescription } from '../../../components/ui/Alert';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../../../components/ui/Tabs';
 import { ColumnDef } from '@tanstack/react-table';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../../../components/ui/Dialog';
@@ -12,7 +13,7 @@ import { Select } from '../../../components/ui/Select';
 import { Avatar, AvatarFallback } from '../../../components/ui/Avatar';
 import { hrService, Employee as ApiEmployee, Attendance as ApiAttendance, PayrollRecord as ApiPayroll } from '../services/hrService';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../../../components/ui/DropdownMenu';
-import { Loader2, Banknote, Clock, Plus, MoreHorizontal, FileText, ArrowUpDown, Pencil } from 'lucide-react';
+import { Loader2, Banknote, Clock, Plus, MoreHorizontal, FileText, ArrowUpDown, Pencil, CheckCircle2, AlertCircle } from 'lucide-react';
 
 const EmployeesTab = () => {
     const [employees, setEmployees] = useState<ApiEmployee[]>([]);
@@ -20,6 +21,8 @@ const EmployeesTab = () => {
     const [isAddEmployeeOpen, setIsAddEmployeeOpen] = useState(false);
     const [isEditEmployeeOpen, setIsEditEmployeeOpen] = useState(false);
     const [editingEmployee, setEditingEmployee] = useState<ApiEmployee | null>(null);
+    const [addFeedback, setAddFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+    const [editFeedback, setEditFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
     const [newEmployee, setNewEmployee] = useState<Partial<ApiEmployee>>({
         firstName: '',
         lastName: '',
@@ -133,31 +136,40 @@ const EmployeesTab = () => {
 
     const handleSaveEmployee = async (e: React.FormEvent) => {
         e.preventDefault();
+        setAddFeedback(null);
         try {
             const response = await hrService.createEmployee(newEmployee);
             if (response.success) {
-                alert("Employee added successfully");
-                setIsAddEmployeeOpen(false);
-                loadEmployees();
+                setAddFeedback({ type: 'success', message: 'Employee added successfully.' });
+                setTimeout(() => {
+                    setIsAddEmployeeOpen(false);
+                    setAddFeedback(null);
+                    loadEmployees();
+                }, 800);
             }
         } catch (error) {
             console.error("Failed to add employee", error);
-            alert("Failed to add employee");
+            setAddFeedback({ type: 'error', message: 'Failed to add employee.' });
         }
     }
 
     const handleUpdateEmployee = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!editingEmployee) return;
+        setEditFeedback(null);
         try {
             const response = await hrService.updateEmployee(editingEmployee.id, editingEmployee);
             if (response.success) {
-                setIsEditEmployeeOpen(false);
-                loadEmployees();
+                setEditFeedback({ type: 'success', message: 'Employee updated successfully.' });
+                setTimeout(() => {
+                    setIsEditEmployeeOpen(false);
+                    setEditFeedback(null);
+                    loadEmployees();
+                }, 800);
             }
         } catch (error) {
             console.error("Failed to update employee", error);
-            alert("Failed to update employee");
+            setEditFeedback({ type: 'error', message: 'Failed to update employee.' });
         }
     };
 
@@ -229,6 +241,12 @@ const EmployeesTab = () => {
                         </div>
 
                         <DialogFooter>
+                            {addFeedback && (
+                                <Alert variant={addFeedback.type === 'success' ? 'success' : 'destructive'} className="mr-auto py-2">
+                                    {addFeedback.type === 'success' ? <CheckCircle2 className="h-4 w-4" /> : <AlertCircle className="h-4 w-4" />}
+                                    <AlertDescription>{addFeedback.message}</AlertDescription>
+                                </Alert>
+                            )}
                             <Button type="button" variant="outline" onClick={() => setIsAddEmployeeOpen(false)}>Cancel</Button>
                             <Button type="submit">Create Record</Button>
                         </DialogFooter>
@@ -299,6 +317,12 @@ const EmployeesTab = () => {
                                 </div>
                             </div>
                             <DialogFooter>
+                                {editFeedback && (
+                                    <Alert variant={editFeedback.type === 'success' ? 'success' : 'destructive'} className="mr-auto py-2">
+                                        {editFeedback.type === 'success' ? <CheckCircle2 className="h-4 w-4" /> : <AlertCircle className="h-4 w-4" />}
+                                        <AlertDescription>{editFeedback.message}</AlertDescription>
+                                    </Alert>
+                                )}
                                 <Button type="button" variant="outline" onClick={() => setIsEditEmployeeOpen(false)}>Cancel</Button>
                                 <Button type="submit">Save Changes</Button>
                             </DialogFooter>

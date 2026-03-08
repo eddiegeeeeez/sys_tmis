@@ -7,8 +7,9 @@ import { Label } from '../../../components/ui/Label';
 import {
   Search, Plus, Minus, Receipt, ShoppingBag, X, Banknote,
   Loader2, CheckCircle2, AlertTriangle, Package, CreditCard,
-  Smartphone, Trash2, ChevronRight, LayoutGrid, List, ArrowLeft, ScanBarcode
+  Smartphone, Trash2, ChevronRight, LayoutGrid, List, ArrowLeft, ScanBarcode, AlertCircle
 } from 'lucide-react';
+import { Alert, AlertDescription } from '../../../components/ui/Alert';
 import { Product, CartItem } from '../../../types';
 import { fetchProducts, createTransaction, TransactionResult } from '../services/posService';
 import { inventoryService } from '../../inventory/services/inventoryService';
@@ -62,6 +63,8 @@ export const POS: React.FC = () => {
   const searchRef = useRef<HTMLInputElement>(null);
   const barcodeRef = useRef<HTMLInputElement>(null);
   const [barcodeInput, setBarcodeInput] = useState('');
+  const [scanError, setScanError] = useState<string | null>(null);
+  const [payError, setPayError] = useState<string | null>(null);
 
   // ── Load products on mount ─────────────────────────────────────────────
   const loadProducts = useCallback(() => {
@@ -96,7 +99,7 @@ export const POS: React.FC = () => {
   const filteredProducts = useMemo(() => {
     const q = searchTerm.toLowerCase();
     return products.filter(p => {
-      const matchSearch = !q || p.name.toLowerCase().includes(q) || p.sku.toLowerCase().includes(q) || p.category.toLowerCase().includes(q) || (p.barcode && p.barcode.toLowerCase().includes(q));
+      const matchSearch = !q || p.name.toLowerCase().includes(q) || p.sku.toLowerCase().includes(q) || p.category.toLowerCase().includes(q);
       const matchCat = activeCategory === ALL_CAT || p.category === activeCategory;
       return matchSearch && matchCat;
     });
@@ -118,10 +121,9 @@ export const POS: React.FC = () => {
   const handleBarcodeScan = useCallback(async (code: string) => {
     const trimmed = code.trim();
     if (!trimmed) return;
-    // Try local match first (SKU or barcode field)
+    // Try local match first by SKU
     const product = products.find(p =>
-      p.sku.toLowerCase() === trimmed.toLowerCase() ||
-      (p.barcode && p.barcode.toLowerCase() === trimmed.toLowerCase())
+      p.sku.toLowerCase() === trimmed.toLowerCase()
     );
     if (product) {
       addToCart(product);
@@ -134,16 +136,21 @@ export const POS: React.FC = () => {
           const mapped: Product = {
             id: String(p.id), name: p.name, category: p.category,
             price: p.sellingPrice, stock: p.stock, sku: p.sku,
-            barcode: p.barcode, reorderLevel: p.reorderLevel ?? 0,
+            reorderLevel: p.reorderLevel ?? 0,
             unitOfMeasure: p.unitOfMeasure ?? 'pcs', image: p.imageUrl ?? undefined,
           };
           if (mapped.stock > 0) addToCart(mapped);
-          else alert(`Product "${mapped.name}" is out of stock.`);
+          else {
+            setScanError(`Product "${mapped.name}" is out of stock.`);
+            setTimeout(() => setScanError(null), 4000);
+          }
         } else {
-          alert(`No product found for: ${trimmed}`);
+          setScanError(`No product found for: ${trimmed}`);
+          setTimeout(() => setScanError(null), 4000);
         }
       } catch {
-        alert(`No product found for: ${trimmed}`);
+        setScanError(`No product found for: ${trimmed}`);
+        setTimeout(() => setScanError(null), 4000);
       }
     }
     setBarcodeInput('');
@@ -220,7 +227,7 @@ export const POS: React.FC = () => {
       setReceiptOpen(true);
       loadProducts();
     } catch (err: any) {
-      alert(err?.response?.data?.message ?? 'Transaction failed. Please try again.');
+      setPayError(err?.response?.data?.message ?? 'Transaction failed. Please try again.');
     } finally {
       setIsProcessing(false);
     }
@@ -294,10 +301,16 @@ export const POS: React.FC = () => {
                 className="pl-9 h-10 bg-white dark:bg-zinc-900 text-sm font-mono"
                 value={barcodeInput}
                 onChange={e => setBarcodeInput(e.target.value)}
-                onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleBarcodeScan(barcodeInput); } }}
+                onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleBarcodeScan(e.currentTarget.value); } }}
                 aria-label="Scan or type barcode / SKU"
               />
             </div>
+            {scanError && (
+              <Alert variant="destructive" className="py-2 mt-1">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{scanError}</AlertDescription>
+              </Alert>
+            )}
             <Button
               variant="outline"
               size="icon"
@@ -725,6 +738,12 @@ export const POS: React.FC = () => {
           </div>
 
           <DialogFooter className="gap-2">
+            {payError && (
+              <Alert variant="destructive" className="mr-auto py-2">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{payError}</AlertDescription>
+              </Alert>
+            )}
             <Button variant="outline" onClick={() => setPayModalOpen(false)} disabled={isProcessing}>
               Cancel
             </Button>

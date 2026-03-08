@@ -1,7 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
-import { Database, Activity, CheckCircle, FileText, RefreshCw, AlertTriangle, HardDrive, Download, Shield } from 'lucide-react';
+import { Badge } from '../../../components/ui/Badge';
+import { Database, Activity, CheckCircle, CheckCircle2, FileText, RefreshCw, AlertTriangle, HardDrive, Download, Shield, Clock, ExternalLink, Loader2, AlertCircle } from 'lucide-react';
+import { Alert, AlertDescription } from '../../../components/ui/Alert';
 import { AuthConfirmationModal } from '../../../components/common/AuthConfirmationModal';
 import { Skeleton } from '../../../components/ui/Skeleton';
 import { adminService } from '../services/adminService';
@@ -29,20 +31,45 @@ interface DatabaseHealth {
   message: string;
 }
 
+interface BackupRecord {
+  id: number;
+  fileName: string;
+  s3Url?: string;
+  fileSizeBytes: number;
+  triggeredBy: string;
+  status: 'Success' | 'Failed';
+  errorMessage?: string;
+  createdAt: string;
+}
+
+const formatBytes = (bytes: number): string => {
+  if (bytes === 0) return '—';
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+};
+
+const formatDatePHT = (iso: string): string => {
+  return new Date(iso).toLocaleString('en-PH', {
+    timeZone: 'Asia/Manila',
+    month: 'short', day: 'numeric', year: 'numeric',
+    hour: '2-digit', minute: '2-digit', hour12: true
+  });
+};
+
 export const DatabaseAdmin: React.FC = () => {
   const [info, setInfo] = useState<DatabaseInfo | null>(null);
   const [stats, setStats] = useState<DatabaseStats | null>(null);
   const [health, setHealth] = useState<DatabaseHealth | null>(null);
+  const [backups, setBackups] = useState<BackupRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isBackupsLoading, setIsBackupsLoading] = useState(true);
   const [isActionLoading, setIsActionLoading] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [activeAction, setActiveAction] = useState<{ id: string, description: string, fn: () => Promise<void> } | null>(null);
+  const [actionFeedback, setActionFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setIsLoading(true);
     try {
       const [infoRes, statsRes, healthRes] = await Promise.all([
@@ -58,7 +85,31 @@ export const DatabaseAdmin: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
+
+  const fetchBackups = useCallback(async () => {
+    setIsBackupsLoading(true);
+    try {
+      const res = await adminService.getBackupHistory();
+      if (res.data.success) setBackups(res.data.data as unknown as BackupRecord[]);
+    } catch {
+      setBackups([]);
+    } finally {
+      setIsBackupsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchData();
+    fetchBackups();
+  }, [fetchData, fetchBackups]);
+
+  // Auto-dismiss feedback
+  useEffect(() => {
+    if (!actionFeedback) return;
+    const t = setTimeout(() => setActionFeedback(null), 5000);
+    return () => clearTimeout(t);
+  }, [actionFeedback]);
 
   const handleActionInitiate = (id: string, description: string, fn: () => Promise<void>) => {
     setActiveAction({ id, description, fn });
@@ -72,8 +123,8 @@ export const DatabaseAdmin: React.FC = () => {
     try {
       await activeAction.fn();
       await fetchData();
-    } catch (error) {
-      console.error(`Action ${activeAction.id} failed:`, error);
+    } catch (error: any) {
+      setActionFeedback({ type: 'error', message: error?.response?.data?.message || 'Action failed.' });
     } finally {
       setIsActionLoading(false);
       setActiveAction(null);
@@ -82,12 +133,20 @@ export const DatabaseAdmin: React.FC = () => {
 
   const runBackup = async () => {
     const res = await adminService.runDatabaseBackup();
-    alert(res.data.message);
+    if (res.data.success) {
+      setActionFeedback({ type: 'success', message: `Backup created: ${res.data.data?.fileName}` });
+      await fetchBackups();
+    } else {
+      setActionFeedback({ type: 'error', message: res.data.message || 'Backup failed.' });
+    }
   };
 
   const runMigrations = async () => {
     const res = await adminService.runDatabaseMigrations();
-    alert(res.data.message);
+    setActionFeedback({
+      type: res.data.success ? 'success' : 'error',
+      message: res.data.message || 'Migrations completed.'
+    });
   };
 
   const exportUsers = async () => {
@@ -95,12 +154,12 @@ export const DatabaseAdmin: React.FC = () => {
       const res = await adminService.exportUsers();
       const payload = res.data.data;
       const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(payload.data, null, 2));
-      const downloadAnchorNode = document.createElement('a');
-      downloadAnchorNode.setAttribute("href", dataStr);
-      downloadAnchorNode.setAttribute("download", payload.filename);
-      document.body.appendChild(downloadAnchorNode);
-      downloadAnchorNode.click();
-      downloadAnchorNode.remove();
+      const a = document.createElement('a');
+      a.href = dataStr;
+      a.download = payload.filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
     } catch (error) {
       console.error('Export failed:', error);
     }
@@ -115,7 +174,6 @@ export const DatabaseAdmin: React.FC = () => {
         </div>
         <Skeleton className="h-10 w-48" />
       </div>
-
       <div className="grid gap-4 md:grid-cols-3">
         {[1, 2, 3].map((i) => (
           <Card key={i}>
@@ -132,11 +190,8 @@ export const DatabaseAdmin: React.FC = () => {
           </Card>
         ))}
       </div>
-
       <Card>
-        <CardHeader>
-          <Skeleton className="h-6 w-48" />
-        </CardHeader>
+        <CardHeader><Skeleton className="h-6 w-48" /></CardHeader>
         <CardContent className="space-y-4">
           {[1, 2].map((i) => (
             <div key={i} className="flex items-center justify-between p-4 border border-zinc-100 dark:border-zinc-800 rounded-lg">
@@ -155,25 +210,38 @@ export const DatabaseAdmin: React.FC = () => {
     </div>
   );
 
-  if (isLoading) {
-    return renderSkeleton();
-  }
+  if (isLoading) return renderSkeleton();
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex justify-between items-center">
         <div>
           <h3 className="text-lg font-medium text-zinc-900 dark:text-zinc-50">Database Administration</h3>
           <p className="text-sm text-zinc-500 dark:text-zinc-400">Manage backups, migrations, and view database health.</p>
         </div>
         <Button
-          onClick={() => handleActionInitiate('backup', 'Request an automated backup of the system database.', runBackup)}
+          onClick={() => handleActionInitiate('backup', 'Create a full JSON backup of all system data and upload it to S3 storage.', runBackup)}
           disabled={isActionLoading}
         >
-          <HardDrive className="mr-2 h-4 w-4" /> Run Manual Backup
+          {isActionLoading && activeAction?.id === 'backup'
+            ? <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            : <HardDrive className="mr-2 h-4 w-4" />}
+          Run Manual Backup
         </Button>
       </div>
 
+      {/* Action feedback */}
+      {actionFeedback && (
+        <Alert variant={actionFeedback.type === 'success' ? 'success' : 'destructive'}>
+          {actionFeedback.type === 'success'
+            ? <CheckCircle2 className="h-4 w-4" />
+            : <AlertCircle className="h-4 w-4" />}
+          <AlertDescription>{actionFeedback.message}</AlertDescription>
+        </Alert>
+      )}
+
+      {/* Status cards */}
       <div className="grid gap-4 md:grid-cols-3">
         <Card className="bg-zinc-50 border-zinc-200 dark:bg-zinc-900 dark:border-zinc-800">
           <CardContent className="p-6">
@@ -221,6 +289,8 @@ export const DatabaseAdmin: React.FC = () => {
         </Card>
       </div>
 
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+      {/* Operations */}
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Database Operations</CardTitle>
@@ -262,24 +332,81 @@ export const DatabaseAdmin: React.FC = () => {
               </Button>
             </div>
           </div>
-
-          <div className="mt-6 pt-6 border-t border-zinc-100 dark:border-zinc-800">
-            <h4 className="text-sm font-medium text-red-600 dark:text-red-400 mb-3 flex items-center gap-2">
-              <AlertTriangle className="h-4 w-4" /> Danger Zone
-            </h4>
-            <div className="p-4 border border-red-100 dark:border-red-900/30 rounded-lg bg-red-50/30 dark:bg-red-900/10">
-              <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-4">
-                These actions are destructive and should only be performed under supervision.
-              </p>
-              <div className="flex gap-4">
-                <Button variant="outline" className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20 dark:border-red-900/50 border-red-200">
-                  Reset Database
-                </Button>
-              </div>
-            </div>
-          </div>
         </CardContent>
       </Card>
+
+      {/* Backup History */}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Clock className="h-4 w-4 text-zinc-400" />
+            <CardTitle className="text-base">Backup History</CardTitle>
+          </div>
+          <p className="text-xs text-zinc-400">Automatic backups run daily at 12:00 AM PHT · Last 30 kept</p>
+        </CardHeader>
+        <CardContent>
+          {isBackupsLoading ? (
+            <div className="space-y-3">
+              {[1,2,3].map(i => <Skeleton key={i} className="h-12 w-full" />)}
+            </div>
+          ) : backups.length === 0 ? (
+            <div className="text-center py-10 text-zinc-400 dark:text-zinc-500">
+              <HardDrive className="h-8 w-8 mx-auto mb-2 opacity-40" />
+              <p className="text-sm">No backups yet. Run a manual backup or wait for tonight's automatic backup.</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-zinc-100 dark:border-zinc-800">
+                    <th className="text-left py-2 pr-4 text-xs font-semibold text-zinc-500 dark:text-zinc-400">Date &amp; Time (PHT)</th>
+                    <th className="text-left py-2 pr-4 text-xs font-semibold text-zinc-500 dark:text-zinc-400">File Name</th>
+                    <th className="text-left py-2 pr-4 text-xs font-semibold text-zinc-500 dark:text-zinc-400">Size</th>
+                    <th className="text-left py-2 pr-4 text-xs font-semibold text-zinc-500 dark:text-zinc-400">Triggered By</th>
+                    <th className="text-left py-2 pr-4 text-xs font-semibold text-zinc-500 dark:text-zinc-400">Status</th>
+                    <th className="text-right py-2 text-xs font-semibold text-zinc-500 dark:text-zinc-400">Action</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-zinc-50 dark:divide-zinc-800/60">
+                  {backups.map(b => (
+                    <tr key={b.id} className="hover:bg-zinc-50 dark:hover:bg-zinc-800/30 transition-colors">
+                      <td className="py-3 pr-4 text-zinc-700 dark:text-zinc-300 whitespace-nowrap text-xs">
+                        {formatDatePHT(b.createdAt)}
+                      </td>
+                      <td className="py-3 pr-4 font-mono text-xs text-zinc-500 dark:text-zinc-400 max-w-[180px] truncate">
+                        {b.fileName}
+                      </td>
+                      <td className="py-3 pr-4 text-xs text-zinc-500 dark:text-zinc-400 whitespace-nowrap">
+                        {formatBytes(b.fileSizeBytes)}
+                      </td>
+                      <td className="py-3 pr-4 text-xs text-zinc-700 dark:text-zinc-300">
+                        {b.triggeredBy === 'Automatic'
+                          ? <span className="flex items-center gap-1"><Clock className="h-3 w-3 text-blue-500" /> Automatic</span>
+                          : <span className="flex items-center gap-1"><Shield className="h-3 w-3 text-zinc-400" /> {b.triggeredBy}</span>}
+                      </td>
+                      <td className="py-3 pr-4">
+                        {b.status === 'Success'
+                          ? <Badge variant="success" className="text-xs">Success</Badge>
+                          : <span title={b.errorMessage ?? ''}><Badge variant="destructive" className="text-xs cursor-help">Failed</Badge></span>}
+                      </td>
+                      <td className="py-3 text-right">
+                        {b.s3Url
+                          ? <a href={b.s3Url} target="_blank" rel="noopener noreferrer" download={b.fileName}>
+                              <Button size="sm" variant="outline" className="h-7 text-xs px-2">
+                                <ExternalLink className="mr-1 h-3 w-3" /> Download
+                              </Button>
+                            </a>
+                          : <span className="text-xs text-zinc-400">—</span>}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+      </div>
 
       <AuthConfirmationModal
         isOpen={isAuthModalOpen}

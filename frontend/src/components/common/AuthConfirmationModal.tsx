@@ -3,7 +3,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Input } from '../ui/Input';
 import { Button } from '../ui/Button';
 import { Label } from '../ui/Label';
-import { Lock } from 'lucide-react';
+import { Lock, AlertCircle } from 'lucide-react';
+import { Alert, AlertDescription } from '../ui/Alert';
 import api from '../../lib/axios';
 
 interface AuthConfirmationModalProps {
@@ -71,7 +72,12 @@ export const AuthConfirmationModal: React.FC<AuthConfirmationModalProps> = ({
               autoFocus
               className="border-zinc-300 focus:border-amber-500 focus:ring-amber-500"
             />
-            {error && <p className="text-xs text-red-600 font-medium">{error}</p>}
+            {error && (
+              <Alert variant="destructive" className="py-2">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
           </div>
 
           <DialogFooter className="pt-2">

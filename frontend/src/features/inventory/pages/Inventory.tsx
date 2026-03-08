@@ -13,7 +13,8 @@ import { Select } from '../../../components/ui/Select';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '../../../components/ui/DropdownMenu';
 import { inventoryService, Product as ApiProduct, StockMovement, StockMovementSummary } from '../services/inventoryService';
 import { procurementService, Supplier } from '../../procurement/services/procurementService';
-import { Loader2, Search, ArrowUpCircle, MoreHorizontal, Download, ArrowUpDown, X, Pencil, Upload, Trash2, PackagePlus, History, Eye, Plus, AlertTriangle, CheckCircle2, Printer } from 'lucide-react';
+import { Loader2, Search, ArrowUpCircle, MoreHorizontal, Download, ArrowUpDown, X, Pencil, Upload, Trash2, PackagePlus, History, Eye, Plus, AlertTriangle, CheckCircle2, Printer, AlertCircle } from 'lucide-react';
+import { Alert, AlertDescription } from '../../../components/ui/Alert';
 import { UserRole, Product } from '../../../types';
 
 const PRODUCT_CATEGORIES = [
@@ -61,18 +62,18 @@ export const Inventory: React.FC<InventoryProps> = ({ currentRole }) => {
             .replace(/"/g, '&quot;');
         const safeName = escHtml(product.name);
         const safeSku = escHtml(product.sku);
-        const win = window.open('', '_blank', 'width=320,height=260');
+        const win = window.open('', '_blank', 'width=320,height=220');
         if (!win) return;
         win.document.write(`<!DOCTYPE html><html><head>
             <title>Label \u2013 ${safeSku}</title>
             <style>
                 @page { size: 60mm 40mm; margin: 0; }
-                body { margin: 0; display: flex; align-items: center; justify-content: center; min-height: 100vh; font-family: sans-serif; background: #fff; }
-                .label { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 4mm; text-align: center; }
-                .product-name { font-size: 7pt; font-weight: bold; max-width: 52mm; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-                .sku { font-size: 6.5pt; letter-spacing: 0.5px; font-family: monospace; }
-                .price { font-size: 9pt; font-weight: bold; }
-                svg { display: block; }
+                html, body { margin: 0; padding: 0; width: 60mm; height: 40mm; overflow: hidden; font-family: sans-serif; background: #fff; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+                .label { width: 60mm; height: 40mm; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; padding: 2mm 3mm; text-align: center; }
+                .product-name { font-size: 6.5pt; font-weight: bold; max-width: 54mm; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+                .sku { font-size: 6pt; letter-spacing: 0.5px; font-family: monospace; }
+                .price { font-size: 8.5pt; font-weight: bold; }
+                svg { display: block; width: 19mm !important; height: 19mm !important; }
             </style>
         </head><body>
             <div class="label">
@@ -136,7 +137,6 @@ export const Inventory: React.FC<InventoryProps> = ({ currentRole }) => {
     const [newProduct, setNewProduct] = useState({
         name: '',
         sku: '',
-        barcode: '',
         category: 'Electronics',
         unitOfMeasure: 'pcs',
         costPrice: 0,
@@ -196,8 +196,7 @@ export const Inventory: React.FC<InventoryProps> = ({ currentRole }) => {
             const lowerTerm = filterTerm.toLowerCase();
             data = data.filter(item =>
                 item.name.toLowerCase().includes(lowerTerm) ||
-                item.sku.toLowerCase().includes(lowerTerm) ||
-                (item.barcode && item.barcode.toLowerCase().includes(lowerTerm))
+                item.sku.toLowerCase().includes(lowerTerm)
             );
         }
 
@@ -268,7 +267,7 @@ export const Inventory: React.FC<InventoryProps> = ({ currentRole }) => {
                 setIsAddProductOpen(false);
                 fetchData();
                 setNewProduct({
-                    name: '', sku: '', barcode: '', category: 'Electronics', unitOfMeasure: 'pcs',
+                    name: '', sku: '', category: 'Electronics', unitOfMeasure: 'pcs',
                     costPrice: 0, sellingPrice: 0, initialStock: 0, reorderLevel: 10, supplierId: ''
                 });
                 showToast('success', `Product "${res.data.data.name}" added successfully (SKU: ${res.data.data.sku}).`);
@@ -601,13 +600,13 @@ export const Inventory: React.FC<InventoryProps> = ({ currentRole }) => {
 
             {/* Add Product Modal */}
             <Dialog open={isAddProductOpen} onOpenChange={open => { setIsAddProductOpen(open); if (!open) setSaveError(null); }}>
-                <DialogContent className="max-w-xl flex flex-col max-h-[90vh]">
-                    <DialogHeader>
+                <DialogContent className="max-w-xl flex flex-col max-h-[90vh] p-0">
+                    <DialogHeader className="px-6 pt-6 pb-4">
                         <DialogTitle>Add New Product</DialogTitle>
                         <DialogDescription>Enter product details to add to inventory.</DialogDescription>
                     </DialogHeader>
                     <form onSubmit={handleSaveProduct} className="flex flex-col flex-1 min-h-0">
-                        <div className="flex-1 overflow-y-auto pr-4 flex flex-col gap-4 py-2">
+                        <div className="flex-1 min-h-0 overflow-y-auto flex flex-col gap-5 pl-6 pr-4">
                         <div className="grid grid-cols-2 gap-4">
                             <div className="grid gap-2">
                                 <Label>Product Name <span className="text-red-500">*</span></Label>
@@ -626,15 +625,6 @@ export const Inventory: React.FC<InventoryProps> = ({ currentRole }) => {
                                     onChange={e => setNewProduct({ ...newProduct, sku: e.target.value })}
                                 />
                             </div>
-                        </div>
-
-                        <div className="grid gap-2">
-                            <Label>Barcode <span className="text-zinc-400 font-normal">(optional)</span></Label>
-                            <Input
-                                placeholder="Scan or enter barcode"
-                                value={newProduct.barcode}
-                                onChange={e => setNewProduct({ ...newProduct, barcode: e.target.value })}
-                            />
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
@@ -736,9 +726,12 @@ export const Inventory: React.FC<InventoryProps> = ({ currentRole }) => {
                             </div>
                         </div>
                         </div>
-                        <DialogFooter className="pt-4 border-t border-zinc-100 dark:border-zinc-800 mt-2">
+                        <DialogFooter className="px-6 pt-4 pb-5 border-t border-zinc-100 dark:border-zinc-800">
                             {saveError && (
-                                <p className="text-sm text-red-500 mr-auto">{saveError}</p>
+                                <Alert variant="destructive" className="mr-auto py-2">
+                                    <AlertCircle className="h-4 w-4" />
+                                    <AlertDescription>{saveError}</AlertDescription>
+                                </Alert>
                             )}
                             <Button type="button" variant="outline" onClick={() => setIsAddProductOpen(false)}>Cancel</Button>
                             <Button type="submit" disabled={isSaving}>
@@ -751,15 +744,15 @@ export const Inventory: React.FC<InventoryProps> = ({ currentRole }) => {
             </Dialog>
 
             {/* Edit Product Modal */}
-            <Dialog open={isEditProductOpen} onOpenChange={setIsEditProductOpen}>
-                <DialogContent className="max-w-xl flex flex-col max-h-[90vh]">
-                    <DialogHeader>
+            <Dialog open={isEditProductOpen} onOpenChange={open => { setIsEditProductOpen(open); if (!open) setEditError(null); }}>
+                <DialogContent className="max-w-xl flex flex-col max-h-[90vh] p-0">
+                    <DialogHeader className="px-6 pt-6 pb-4">
                         <DialogTitle>Edit Product</DialogTitle>
                         <DialogDescription>Update product details.</DialogDescription>
                     </DialogHeader>
                     {editingProduct && (
                         <form onSubmit={handleUpdateProduct} className="flex flex-col flex-1 min-h-0">
-                            <div className="flex-1 overflow-y-auto pr-4 flex flex-col gap-4 py-2">
+                            <div className="flex-1 min-h-0 overflow-y-auto flex flex-col gap-5 pl-6 pr-4">
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="grid gap-2">
                                     <Label>Product Name <span className="text-red-500">*</span></Label>
@@ -769,10 +762,6 @@ export const Inventory: React.FC<InventoryProps> = ({ currentRole }) => {
                                     <Label>SKU <span className="text-zinc-400 font-normal">(read-only)</span></Label>
                                     <Input value={editingProduct.sku} readOnly className="bg-zinc-50 dark:bg-zinc-800 text-zinc-500" />
                                 </div>
-                            </div>
-                            <div className="grid gap-2">
-                                <Label>Barcode <span className="text-zinc-400 font-normal">(optional)</span></Label>
-                                <Input value={editingProduct.barcode ?? ''} onChange={e => setEditingProduct({ ...editingProduct, barcode: e.target.value || undefined })} placeholder="Scan or enter barcode" />
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="grid gap-2">
@@ -856,9 +845,12 @@ export const Inventory: React.FC<InventoryProps> = ({ currentRole }) => {
                                 <p className="text-xs text-zinc-400 dark:text-zinc-500">Accepted: JPG, PNG, WebP, GIF &nbsp;·&nbsp; Max 5 MB</p>
                             </div>
                             </div>
-                            <DialogFooter className="pt-4 border-t border-zinc-100 dark:border-zinc-800 mt-2">
+                            <DialogFooter className="px-6 pt-4 pb-5 border-t border-zinc-100 dark:border-zinc-800">
                                 {editError && (
-                                    <p className="text-sm text-red-500 mr-auto">{editError}</p>
+                                    <Alert variant="destructive" className="mr-auto py-2">
+                                        <AlertCircle className="h-4 w-4" />
+                                        <AlertDescription>{editError}</AlertDescription>
+                                    </Alert>
                                 )}
                                 <Button type="button" variant="outline" onClick={() => setIsEditProductOpen(false)}>Cancel</Button>
                                 <Button type="submit" disabled={isSaving}>
@@ -914,8 +906,8 @@ export const Inventory: React.FC<InventoryProps> = ({ currentRole }) => {
                         className="w-full sm:w-[180px]"
                     >
                         <option value="All">All Statuses</option>
-                        <option value="In Stock">In Stock (10+)</option>
-                        <option value="Low Stock">Low Stock (&lt;10)</option>
+                        <option value="In Stock">In Stock (≥ reorder level)</option>
+                        <option value="Low Stock">Low Stock (below reorder level)</option>
                         <option value="Out of Stock">Out of Stock (0)</option>
                     </Select>
                     {hasActiveFilters && (
@@ -969,7 +961,12 @@ export const Inventory: React.FC<InventoryProps> = ({ currentRole }) => {
                         </div>
                     </div>
                     <DialogFooter>
-                        {movementError && <p className="text-sm text-red-500 mr-auto">{movementError}</p>}
+                        {movementError && (
+                            <Alert variant="destructive" className="mr-auto py-2">
+                                <AlertCircle className="h-4 w-4" />
+                                <AlertDescription>{movementError}</AlertDescription>
+                            </Alert>
+                        )}
                         <Button variant="outline" onClick={() => setIsMovementOpen(false)}>Cancel</Button>
                         <Button onClick={handleRecordMovement} disabled={isSaving}>
                             {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PackagePlus className="mr-2 h-4 w-4" />}
@@ -1065,7 +1062,7 @@ export const Inventory: React.FC<InventoryProps> = ({ currentRole }) => {
                         <DialogDescription>{detailProduct?.sku}</DialogDescription>
                     </DialogHeader>
                     {detailProduct && (
-                        <div className="flex-1 overflow-y-auto pr-4">
+                        <div className="flex-1 min-h-0 overflow-y-auto pl-6 pr-4">
                         <div className="space-y-4 py-2">
                             {detailProduct.imageUrl && (
                                 <img src={detailProduct.imageUrl} alt={detailProduct.name} className="w-full h-48 object-contain rounded-md border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800" />
@@ -1100,10 +1097,6 @@ export const Inventory: React.FC<InventoryProps> = ({ currentRole }) => {
                                 <div>
                                     <p className="text-zinc-500 dark:text-zinc-400 text-xs">Reorder Level</p>
                                     <p className="font-mono font-medium">{detailProduct.reorderLevel} {detailProduct.unitOfMeasure}</p>
-                                </div>
-                                <div>
-                                    <p className="text-zinc-500 dark:text-zinc-400 text-xs">Barcode</p>
-                                    <p className="font-mono text-xs">{detailProduct.barcode || '—'}</p>
                                 </div>
                                 <div>
                                     <p className="text-zinc-500 dark:text-zinc-400 text-xs">Supplier</p>
@@ -1183,7 +1176,12 @@ export const Inventory: React.FC<InventoryProps> = ({ currentRole }) => {
                         </div>
                     </div>
                     <DialogFooter>
-                        {supplierSaveError && <p className="text-sm text-red-500 mr-auto">{supplierSaveError}</p>}
+                        {supplierSaveError && (
+                            <Alert variant="destructive" className="mr-auto py-2">
+                                <AlertCircle className="h-4 w-4" />
+                                <AlertDescription>{supplierSaveError}</AlertDescription>
+                            </Alert>
+                        )}
                         <Button variant="outline" onClick={() => setIsAddSupplierOpen(false)}>Cancel</Button>
                         <Button onClick={handleSaveInlineSupplier} disabled={isSaving || !newSupplierForm.companyName || !newSupplierForm.contactPerson || !newSupplierForm.contactNumber || !newSupplierForm.email}>
                             {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}

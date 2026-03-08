@@ -101,17 +101,37 @@ namespace TradeMatrix.Server.Controllers
             }
         }
 
-        [HttpPost("backup/request")]
-        public IActionResult RequestBackup()
+        [HttpPost("backup/run")]
+        public async Task<ActionResult<ApiResponse<BackupRecordDto>>> RunBackup()
         {
-            // This remains a static info call as it doesn't involve complex DB logic beyond the service's scope for now
-            return Ok(ApiResponse<object>.SuccessResponse(new
+            try
             {
-                provider = "MonsterASP.NET",
-                backupFrequency = "Automatic daily backups",
-                retentionPeriod = "30 days",
-                recommendation = "Contact support@monsterasp.net for manual backup requests or restore operations"
-            }, "Database is hosted on MonsterASP.NET. Backups are managed automatically."));
+                var actorName = User.FindFirst("Name")?.Value
+                    ?? User.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value
+                    ?? "SuperAdmin";
+                var result = await _databaseService.CreateBackupAsync(actorName);
+                if (!result.Success)
+                    return StatusCode(500, result);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResponse<object>.ErrorResponse(ex.Message));
+            }
+        }
+
+        [HttpGet("backup/history")]
+        public async Task<ActionResult<ApiResponse<List<BackupRecordDto>>>> GetBackupHistory()
+        {
+            try
+            {
+                var result = await _databaseService.GetBackupHistoryAsync();
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResponse<object>.ErrorResponse(ex.Message));
+            }
         }
     }
 }

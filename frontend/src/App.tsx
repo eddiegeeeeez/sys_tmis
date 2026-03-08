@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { UserRole } from './types';
 import { DashboardLayout } from './components/layouts/DashboardLayout';
@@ -11,23 +11,23 @@ import { PageTitle } from './components/common/PageTitle';
 import api from './lib/axios';
 import { LoadingScreen } from './components/common/LoadingScreen';
 
-// Pages
-import { Dashboard } from './features/dashboard/pages/Dashboard';
-import { POS } from './features/pos/pages/POS';
-import { SalesHistory } from './features/pos/pages/SalesHistory';
-import { Inventory } from './features/inventory/pages/Inventory';
-import { HR } from './features/hr/pages/HR';
-import { Procurement } from './features/procurement/pages/Procurement';
-import CRM from './features/crm/pages/CRM';
-import Finance from './features/finance/pages/Finance';
+// Pages — lazy-loaded so each route becomes its own JS chunk
+const Dashboard             = React.lazy(() => import('./features/dashboard/pages/Dashboard').then(m => ({ default: m.Dashboard })));
+const POS                   = React.lazy(() => import('./features/pos/pages/POS').then(m => ({ default: m.POS })));
+const SalesHistory          = React.lazy(() => import('./features/pos/pages/SalesHistory').then(m => ({ default: m.SalesHistory })));
+const Inventory             = React.lazy(() => import('./features/inventory/pages/Inventory').then(m => ({ default: m.Inventory })));
+const HR                    = React.lazy(() => import('./features/hr/pages/HR').then(m => ({ default: m.HR })));
+const Procurement           = React.lazy(() => import('./features/procurement/pages/Procurement').then(m => ({ default: m.Procurement })));
+const CRM                   = React.lazy(() => import('./features/crm/pages/CRM'));
+const Finance               = React.lazy(() => import('./features/finance/pages/Finance'));
 
-// Admin Pages
-import { UserManagement } from './features/admin/pages/UserManagement';
-import { RoleManagement } from './features/admin/pages/RoleManagement';
-import { RolePermissionsEditor } from './features/admin/pages/RolePermissionsEditor';
-import { DatabaseAdmin } from './features/admin/pages/DatabaseAdmin';
-import { Security } from './features/admin/pages/Security';
-import { Archive } from './features/admin/pages/Archive';
+// Admin Pages — lazy-loaded (SuperAdmin-only routes)
+const UserManagement        = React.lazy(() => import('./features/admin/pages/UserManagement').then(m => ({ default: m.UserManagement })));
+const RoleManagement        = React.lazy(() => import('./features/admin/pages/RoleManagement').then(m => ({ default: m.RoleManagement })));
+const RolePermissionsEditor = React.lazy(() => import('./features/admin/pages/RolePermissionsEditor').then(m => ({ default: m.RolePermissionsEditor })));
+const DatabaseAdmin         = React.lazy(() => import('./features/admin/pages/DatabaseAdmin').then(m => ({ default: m.DatabaseAdmin })));
+const Security              = React.lazy(() => import('./features/admin/pages/Security').then(m => ({ default: m.Security })));
+const Archive               = React.lazy(() => import('./features/admin/pages/Archive').then(m => ({ default: m.Archive })));
 
 // Inner component that lives inside ThemeProvider so it can access useTheme()
 const AppContent: React.FC = () => {
@@ -135,6 +135,7 @@ const AppContent: React.FC = () => {
         {isLoggingOut && (
           <LoadingScreen message="Signing out safely..." />
         )}
+        <Suspense fallback={<LoadingScreen message="Loading..." />}>
         <Routes>
             {/* Public Routes */}
             <Route path="/login" element={
@@ -307,6 +308,7 @@ const AppContent: React.FC = () => {
             {/* Catch all */}
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Routes>
+        </Suspense>
         </Router>
       </ErrorBoundary>
   );

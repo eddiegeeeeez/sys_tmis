@@ -3,9 +3,10 @@ import { Button } from '../../../components/ui/Button';
 import { Select } from '../../../components/ui/Select';
 import { Badge } from '../../../components/ui/Badge';
 import { Input } from '../../../components/ui/Input';
+import { Alert, AlertDescription } from '../../../components/ui/Alert';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../../../components/ui/Dialog';
 import { Label } from '../../../components/ui/Label';
-import { ArrowUpDown, Search, Edit, Archive, UserPlus, MoreHorizontal, User } from 'lucide-react';
+import { ArrowUpDown, Search, Edit, Archive, UserPlus, MoreHorizontal, User, AlertCircle } from 'lucide-react';
 import { User as UserType, Role, UserRole } from '../../../types';
 import { Skeleton } from '../../../components/ui/Skeleton';
 import { adminService } from '../services/adminService';
@@ -321,7 +322,10 @@ export const UserManagement: React.FC = () => {
           </DialogHeader>
           <div className="grid gap-4 py-4">
             {createError && (
-              <div className="p-2 text-sm text-red-500 bg-red-50 rounded border border-red-200">{createError}</div>
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{createError}</AlertDescription>
+              </Alert>
             )}
             <div className="grid gap-2">
               <Label>Full Name</Label>
@@ -391,7 +395,10 @@ export const UserManagement: React.FC = () => {
           {editingUser && (
             <div className="grid gap-4 py-4">
               {editError && (
-                <div className="p-2 text-sm text-red-500 bg-red-50 rounded border border-red-200">{editError}</div>
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>{editError}</AlertDescription>
+                </Alert>
               )}
               <div className="grid gap-2">
                 <Label>Full Name</Label>

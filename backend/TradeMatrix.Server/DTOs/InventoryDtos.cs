@@ -16,7 +16,6 @@ namespace TradeMatrix.Server.DTOs
         public int? SupplierId { get; set; }
         public string? SupplierName { get; set; }
         public string? ImageUrl { get; set; }
-        public string? Barcode { get; set; }
     }
 
     public class CreateProductDto
@@ -32,6 +31,5 @@ namespace TradeMatrix.Server.DTOs
         public int ReorderLevel { get; set; } = 10;
         public string UnitOfMeasure { get; set; } = "pcs";
         public int? SupplierId { get; set; }
-        public string? Barcode { get; set; }
     }
 }

@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { cn } from "../../../lib/utils"
 import { Button } from "../../../components/ui/Button"
 import { Input } from "../../../components/ui/Input"
-import { Eye, EyeOff } from 'lucide-react';
+import { Alert, AlertDescription } from "../../../components/ui/Alert"
+import { Eye, EyeOff, AlertCircle } from 'lucide-react';
 import { UserRole } from '../../../types';
 
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -84,9 +85,10 @@ export function LoginForm({
       </div>
 
       {error && (
-        <div className="p-3 text-sm text-red-500 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md">
-          {error}
-        </div>
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
       )}
 
       <form onSubmit={handleSubmit}>

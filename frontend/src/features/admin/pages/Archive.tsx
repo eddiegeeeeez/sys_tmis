@@ -7,6 +7,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '../../../components/ui
 import { adminService } from '../services/adminService';
 import { User, Role } from '../../../types';
 import { AlertCircle, ArchiveRestore, RefreshCw, UserSquare2, MoreHorizontal, Eye, Shield, User as UserIcon } from 'lucide-react';
+import { Alert, AlertDescription } from '../../../components/ui/Alert';
 import { ColumnDef } from '@tanstack/react-table';
 import { DataTable } from '../../../components/ui/data-table';
 import { Avatar, AvatarFallback } from '../../../components/ui/Avatar';
@@ -23,6 +24,7 @@ export const Archive: React.FC = () => {
     const [archivedRoles, setArchivedRoles] = useState<Role[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [restoreError, setRestoreError] = useState<string | null>(null);
 
     const [userPage, setUserPage] = useState(1);
     const [userTotalPages, setUserTotalPages] = useState(1);
@@ -64,7 +66,7 @@ export const Archive: React.FC = () => {
             loadData();
         } catch (err) {
             console.error('Failed to restore user:', err);
-            alert('Failed to restore user.');
+            setRestoreError('Failed to restore user.');
         }
     };
 
@@ -76,7 +78,7 @@ export const Archive: React.FC = () => {
             loadData();
         } catch (err) {
             console.error('Failed to restore role:', err);
-            alert('Failed to restore role.');
+            setRestoreError('Failed to restore role.');
         }
     };
 
@@ -192,13 +194,19 @@ export const Archive: React.FC = () => {
             </div>
 
             {error && (
-                <div className="p-4 bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400 rounded-md border border-red-200 dark:border-red-800/30 flex items-start gap-3 text-sm">
-                    <AlertCircle className="h-5 w-5 mt-0.5 shrink-0" />
-                    <div>
-                        <p className="font-medium">Error loading data</p>
-                        <p className="mt-1">{error}</p>
-                    </div>
-                </div>
+                <Alert variant="destructive">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>
+                        <span className="font-medium">Error loading data</span><br />{error}
+                    </AlertDescription>
+                </Alert>
+            )}
+
+            {restoreError && (
+                <Alert variant="destructive">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>{restoreError}</AlertDescription>
+                </Alert>
             )}
 
             <Tabs defaultValue="users" className="w-full">

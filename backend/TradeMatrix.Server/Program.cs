@@ -101,6 +101,9 @@ builder.Services.AddSingleton<IAmazonS3>(sp =>
 });
 builder.Services.AddScoped<IS3StorageService, S3StorageService>();
 
+// Background Services
+builder.Services.AddHostedService<MidnightBackupService>();
+
 // Authentication
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -193,21 +196,5 @@ app.MapControllers();
 
 // 6. SPA Fallback
 app.MapFallbackToFile("index.html");
-
-using (var scope = app.Services.CreateScope())
-{
-    var services = scope.ServiceProvider;
-    try
-    {
-        var context = services.GetRequiredService<ApplicationDbContext>();
-        var logger = services.GetRequiredService<ILogger<Program>>();
-        await DbInitializer.SeedAsync(context, logger);
-    }
-    catch (Exception ex)
-    {
-        var logger = services.GetRequiredService<ILogger<Program>>();
-        logger.LogError(ex, "An error occurred seeding the database.");
-    }
-}
 
 app.Run();

@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
-import { ArrowLeft, Save, AlertTriangle, LayoutGrid, List } from 'lucide-react';
+import { ArrowLeft, Save, AlertTriangle, LayoutGrid, List, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Alert, AlertDescription } from '../../../components/ui/Alert';
 import { ALL_PERMISSIONS } from '../../../types';
 import { AuthConfirmationModal } from '../../../components/common/AuthConfirmationModal';
 import { Skeleton } from '../../../components/ui/Skeleton';
@@ -18,6 +19,7 @@ export const RolePermissionsEditor: React.FC = () => {
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
     const [isLoading, setIsLoading] = useState(true);
     const [roleId, setRoleId] = useState<number | null>(null);
+    const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
     useEffect(() => {
         fetchRolePermissions();
@@ -37,6 +39,7 @@ export const RolePermissionsEditor: React.FC = () => {
             }
         } catch (error) {
             console.error('Failed to fetch role permissions:', error);
+            setFeedback({ type: 'error', message: 'Failed to load role permissions.' });
         } finally {
             setIsLoading(false);
         }
@@ -57,15 +60,18 @@ export const RolePermissionsEditor: React.FC = () => {
     const handleConfirmSave = async () => {
         if (!roleId) return;
         setIsAuthModalOpen(false);
+        setFeedback(null);
         try {
             await adminService.updateRole(roleId, {
                 name: roleName,
                 description: '', // Keep original description if possible (need to fetch it)
                 permissions: selectedPermissions.join(',')
             });
-            onBack();
+            setFeedback({ type: 'success', message: 'Permissions saved successfully.' });
+            setTimeout(() => onBack(), 900);
         } catch (error) {
             console.error('Failed to save permissions:', error);
+            setFeedback({ type: 'error', message: 'Failed to save permissions. Please try again.' });
         }
     };
 
@@ -203,6 +209,12 @@ export const RolePermissionsEditor: React.FC = () => {
             </Card>
 
             <div className="flex justify-end gap-3 pt-4 border-t border-zinc-200 dark:border-zinc-800">
+                {feedback && (
+                    <Alert variant={feedback.type === 'success' ? 'success' : 'destructive'} className="mr-auto py-2">
+                        {feedback.type === 'success' ? <CheckCircle2 className="h-4 w-4" /> : <AlertCircle className="h-4 w-4" />}
+                        <AlertDescription>{feedback.message}</AlertDescription>
+                    </Alert>
+                )}
                 <Button variant="ghost" onClick={onBack}>Cancel</Button>
                 <Button onClick={handleSaveAttempt} className="min-w-[150px] shadow-lg shadow-zinc-900/20">
                     <Save className="mr-2 h-4 w-4" /> Save Changes

@@ -1,0 +1,6 @@
+import{c as n,a as e}from"./index-CQrybBne.js";/**
+ * @license lucide-react v0.574.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */const c=[["path",{d:"M10 11v6",key:"nco0om"}],["path",{d:"M14 11v6",key:"outv1u"}],["path",{d:"M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6",key:"miytrc"}],["path",{d:"M3 6h18",key:"d0wm0j"}],["path",{d:"M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2",key:"e791ji"}]],s=n("trash-2",c),a={getProducts:()=>e.get("/inventory/products"),createProduct:t=>e.post("/inventory/products",t),updateProduct:(t,o)=>e.put(`/inventory/products/${t}`,o),lookupProduct:t=>e.get(`/inventory/products/lookup/${encodeURIComponent(t)}`),recordStockMovement:(t,o)=>e.post(`/inventory/products/${t}/stock-movements`,o),getProductMovements:(t,o)=>e.get(`/inventory/products/${t}/stock-movements`,{params:o}),getProductStockSummary:t=>e.get(`/inventory/products/${t}/stock-summary`),getAllMovements:t=>e.get("/inventory/stock-movements",{params:t}),uploadProductImage:(t,o)=>{const r=new FormData;return r.append("file",o),e.post(`/inventory/products/${t}/upload-image`,r)},deleteProductImage:t=>e.delete(`/inventory/products/${t}/image`),deleteProduct:t=>e.delete(`/inventory/products/${t}`),getProductById:t=>e.get(`/inventory/products/${t}`)};export{s as T,a as i};

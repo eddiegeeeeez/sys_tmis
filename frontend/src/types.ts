@@ -21,7 +21,6 @@ export interface Product {
   price: number;
   stock: number;
   sku: string;
-  barcode?: string;
   reorderLevel: number;
   unitOfMeasure: string;
   image?: string;
@@ -42,73 +41,12 @@ export interface User {
   lastLogin?: string;
 }
 
-export interface Role {
-  id: number;
-  name: string;
-  description: string;
-  permissions: string;
-  isSystemRole: boolean;
-  isArchived: boolean;
-  createdAt?: string;
-}
-
-export interface Transaction {
-  id: string;
-  date: string;
-  total: number;
-  status: 'Completed' | 'Refunded';
-}
-
-// --- New Types based on PDF Data Dictionary ---
-
-export interface Employee {
-  EmployeeID: string;
-  FirstName: string;
-  LastName: string;
-  Position: string;
-  Department: string;
-  Email: string;
-  ContactNumber: string;
-  EmploymentStatus: 'Full-time' | 'Part-time' | 'Contract';
-  BasicSalary: number;
-  HireDate: string;
-}
-
-export interface PayrollRecord {
-  PayrollID: string;
-  EmployeeName: string; // Joined for display
-  PayPeriodStart: string;
-  PayPeriodEnd: string;
-  BasicSalary: number;
-  GrossPay: number;
-  TotalDeductions: number;
-  NetPay: number;
-  Status: 'Pending' | 'Approved' | 'Paid';
-}
-
 export interface SystemSetting {
   key: string;
   value: string;
   description: string;
   group: string;
   updatedAt: string;
-}
-
-export interface Attendance {
-  AttendanceID: string;
-  EmployeeName: string;
-  Date: string;
-  TimeIn: string;
-  TimeOut: string;
-  Status: 'Present' | 'Absent' | 'Late' | 'On Leave';
-}
-
-export interface Supplier {
-  SupplierID: string;
-  SupplierName: string;
-  ContactPerson: string;
-  ContactNumber: string;
-  Email: string;
 }
 
 export interface PurchaseOrder {
@@ -121,21 +59,14 @@ export interface PurchaseOrder {
   Status: 'Pending' | 'Approved' | 'Received' | 'Cancelled';
 }
 
-export interface Customer {
-  CustomerID: string;
-  CustomerName: string;
-  CustomerType: 'Retail' | 'Wholesale' | 'Corporate';
-  ContactNumber: string;
-  LoyaltyPoints: number;
-}
-
-export interface Expense {
-  ExpenseID: string;
-  ExpenseCategory: string; // Utilities, Rent, etc.
-  Description: string;
-  Amount: number;
-  ExpenseDate: string;
-  Status: 'Pending' | 'Approved' | 'Paid';
+export interface Role {
+  id: number;
+  name: string;
+  description: string;
+  permissions: string;
+  isSystemRole: boolean;
+  isArchived: boolean;
+  createdAt?: string;
 }
 
 export interface LogEntry {

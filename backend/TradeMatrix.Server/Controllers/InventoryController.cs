@@ -123,7 +123,7 @@ namespace TradeMatrix.Server.Controllers
         {
             try
             {
-                var result = await _inventoryService.GetProductByBarcodeOrSkuAsync(code);
+                var result = await _inventoryService.GetProductBySkuAsync(code);
                 if (result == null) return NotFound(ApiResponse<ProductDto>.ErrorResponse("Product not found"));
                 return Ok(ApiResponse<ProductDto>.SuccessResponse(result));
             }

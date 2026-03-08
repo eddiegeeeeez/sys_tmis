@@ -21,6 +21,29 @@ export default defineConfig(({ mode }) => {
     build: {
       outDir: '../backend/TradeMatrix.Server/wwwroot',
       emptyOutDir: true,
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            'vendor-react':  ['react', 'react-dom', 'react-router-dom'],
+            'vendor-charts': ['recharts'],
+            'vendor-table':  ['@tanstack/react-table'],
+            'vendor-ui': [
+              '@radix-ui/react-avatar',
+              '@radix-ui/react-dialog',
+              '@radix-ui/react-dropdown-menu',
+              '@radix-ui/react-label',
+              '@radix-ui/react-select',
+              '@radix-ui/react-separator',
+              '@radix-ui/react-slot',
+              '@radix-ui/react-tabs',
+              'class-variance-authority',
+              'clsx',
+              'tailwind-merge',
+            ],
+            'vendor-misc': ['axios', 'qrcode.react'],
+          },
+        },
+      },
     },
     define: {
       'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY),

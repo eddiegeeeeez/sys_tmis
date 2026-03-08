@@ -8,7 +8,8 @@ import { DataTable } from '../../../components/ui/data-table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../../../components/ui/Dialog';
 import { Input } from '../../../components/ui/Input';
 import { Label } from '../../../components/ui/Label';
-import { LayoutGrid, List, Plus, Shield, Users, Eye, Edit, Archive, ArrowUpDown, ArrowUp, ArrowDown, MoreHorizontal } from 'lucide-react';
+import { LayoutGrid, List, Plus, Shield, Users, Eye, Edit, Archive, ArrowUpDown, ArrowUp, ArrowDown, MoreHorizontal, AlertCircle } from 'lucide-react';
+import { Alert, AlertDescription } from '../../../components/ui/Alert';
 import { Role } from '../../../types';
 import { AuthConfirmationModal } from '../../../components/common/AuthConfirmationModal';
 import { Skeleton } from '../../../components/ui/Skeleton';
@@ -52,6 +53,7 @@ export const RoleManagement: React.FC = () => {
     const [isEditRoleOpen, setIsEditRoleOpen] = useState(false);
     const [editingRole, setEditingRole] = useState<{ id: number; name: string; description: string, isSystemRole: boolean, permissions: string } | null>(null);
     const [editError, setEditError] = useState('');
+    const [createRoleError, setCreateRoleError] = useState('');
 
     // Feature States
 
@@ -85,16 +87,16 @@ export const RoleManagement: React.FC = () => {
 
     const handleCreateRoleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+        setCreateRoleError('');
+        if (newRoleName === 'SuperAdmin') {
+            setCreateRoleError(`Cannot create another role named "${newRoleName}"`);
+            return;
+        }
         setIsAuthModalOpen(true);
     };
 
     const handleAuthConfirm = async () => {
         try {
-            if (newRoleName === 'SuperAdmin') {
-                alert(`Cannot create another role named "${newRoleName}"`);
-                return;
-            }
-
             await adminService.createRole({
                 name: newRoleName,
                 description: newRoleDesc,
@@ -377,6 +379,12 @@ export const RoleManagement: React.FC = () => {
                         <div className="p-3 bg-zinc-50 border border-zinc-100 rounded-md text-sm text-zinc-500 dark:bg-zinc-800/50 dark:border-zinc-800 dark:text-zinc-400">
                             <p className="flex items-center gap-2"><Shield className="h-4 w-4" /> Permissions can be configured after creation.</p>
                         </div>
+                        {createRoleError && (
+                            <Alert variant="destructive">
+                                <AlertCircle className="h-4 w-4" />
+                                <AlertDescription>{createRoleError}</AlertDescription>
+                            </Alert>
+                        )}
                         <DialogFooter>
                             <Button type="button" variant="outline" onClick={() => setIsCreateRoleOpen(false)}>Cancel</Button>
                             <Button type="submit">Create Role</Button>
@@ -394,7 +402,10 @@ export const RoleManagement: React.FC = () => {
                     </DialogHeader>
                     <div className="space-y-4 py-4">
                         {editError && (
-                            <div className="p-2 text-sm text-red-500 bg-red-50 rounded border border-red-200">{editError}</div>
+                            <Alert variant="destructive">
+                                <AlertCircle className="h-4 w-4" />
+                                <AlertDescription>{editError}</AlertDescription>
+                            </Alert>
                         )}
                         <div className="space-y-2">
                             <Label className="text-zinc-900 dark:text-zinc-200">Role Name</Label>

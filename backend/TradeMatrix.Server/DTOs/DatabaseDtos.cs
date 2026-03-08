@@ -56,4 +56,16 @@ namespace TradeMatrix.Server.DTOs
         public string MaxSize { get; set; } = string.Empty;
         public string ConnectionLifetime { get; set; } = string.Empty;
     }
+
+    public class BackupRecordDto
+    {
+        public int Id { get; set; }
+        public string FileName { get; set; } = string.Empty;
+        public string? S3Url { get; set; }
+        public long FileSizeBytes { get; set; }
+        public string TriggeredBy { get; set; } = string.Empty;
+        public string Status { get; set; } = string.Empty;
+        public string? ErrorMessage { get; set; }
+        public DateTime CreatedAt { get; set; }
+    }
 }

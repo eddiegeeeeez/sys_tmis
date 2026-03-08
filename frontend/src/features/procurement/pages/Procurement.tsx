@@ -3,6 +3,7 @@ import { Card, CardContent } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
 import { Badge } from '../../../components/ui/Badge';
 import { StatusDot } from '../../../components/ui/StatusDot';
+import { Alert, AlertDescription } from '../../../components/ui/Alert';
 import { Input } from '../../../components/ui/Input';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../../../components/ui/Tabs';
 import { ColumnDef } from '@tanstack/react-table';
@@ -11,7 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Label } from '../../../components/ui/Label';
 import { Select } from '../../../components/ui/Select';
 import { procurementService, Supplier as ApiSupplier, PurchaseOrder as ApiPO } from '../services/procurementService';
-import { Loader2, Truck, PackagePlus, Plus, Phone, Mail, ArrowUpDown, ArrowUp, ArrowDown, UserSquare2, PackageCheck } from 'lucide-react';
+import { Loader2, Truck, PackagePlus, Plus, Phone, Mail, ArrowUpDown, ArrowUp, ArrowDown, UserSquare2, PackageCheck, AlertCircle } from 'lucide-react';
 import { PurchaseOrder, UserRole } from '../../../types';
 
 const ITEMS_PER_PAGE = 10;
@@ -30,6 +31,7 @@ export const Procurement: React.FC<ProcurementProps> = ({ currentRole }) => {
     const [isPOModalOpen, setIsPOModalOpen] = useState(false);
     const [isEditSupplierOpen, setIsEditSupplierOpen] = useState(false);
     const [editingSupplier, setEditingSupplier] = useState<ApiSupplier | null>(null);
+    const [pageFeedback, setPageFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
     // Form States
     const [newSupplier, setNewSupplier] = useState({
@@ -61,6 +63,7 @@ export const Procurement: React.FC<ProcurementProps> = ({ currentRole }) => {
             if (poRes.data.success) setPurchaseOrders(poRes.data.data);
         } catch (error) {
             console.error("Failed to fetch procurement data", error);
+            setPageFeedback({ type: 'error', message: 'Failed to load procurement data.' });
         } finally {
             setIsLoading(false);
         }
@@ -77,6 +80,7 @@ export const Procurement: React.FC<ProcurementProps> = ({ currentRole }) => {
             }
         } catch (error) {
             console.error("Error saving supplier", error);
+            setPageFeedback({ type: 'error', message: 'Failed to save supplier.' });
         } finally {
             setIsSaving(false);
         }
@@ -93,6 +97,7 @@ export const Procurement: React.FC<ProcurementProps> = ({ currentRole }) => {
             }
         } catch (error) {
             console.error("Error updating supplier", error);
+            setPageFeedback({ type: 'error', message: 'Failed to update supplier.' });
         } finally {
             setIsSaving(false);
         }
@@ -114,6 +119,7 @@ export const Procurement: React.FC<ProcurementProps> = ({ currentRole }) => {
             }
         } catch (error) {
             console.error("Error creating PO", error);
+            setPageFeedback({ type: 'error', message: 'Failed to create purchase order.' });
         } finally {
             setIsSaving(false);
         }
@@ -130,7 +136,7 @@ export const Procurement: React.FC<ProcurementProps> = ({ currentRole }) => {
             }
         } catch (error: any) {
             const msg = error?.response?.data?.message || 'Failed to receive PO';
-            alert(msg);
+            setPageFeedback({ type: 'error', message: msg });
         } finally {
             setIsReceiving(false);
         }
@@ -380,6 +386,13 @@ export const Procurement: React.FC<ProcurementProps> = ({ currentRole }) => {
                     </p>
                 </div>
             </div>
+
+            {pageFeedback && (
+                <Alert variant={pageFeedback.type === 'error' ? 'destructive' : 'success'} className="flex items-center gap-2">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>{pageFeedback.message}</AlertDescription>
+                </Alert>
+            )}
 
             <Tabs defaultValue="po" className="w-full">
                 <div className="flex items-center justify-between mb-4">

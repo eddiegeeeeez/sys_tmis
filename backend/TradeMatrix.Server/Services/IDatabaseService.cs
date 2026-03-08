@@ -10,5 +10,7 @@ namespace TradeMatrix.Server.Services
         Task<ConnectionInfoDto> GetConnectionInfoAsync();
         Task<ApiResponse<object>> RunMigrationsAsync();
         Task<ApiResponse<object>> ExportUsersAsync();
+        Task<ApiResponse<BackupRecordDto>> CreateBackupAsync(string triggeredBy);
+        Task<ApiResponse<List<BackupRecordDto>>> GetBackupHistoryAsync();
     }
 }

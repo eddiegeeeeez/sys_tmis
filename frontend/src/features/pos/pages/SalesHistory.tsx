@@ -10,8 +10,9 @@ import { Label } from '../../../components/ui/Label';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../../../components/ui/DropdownMenu';
 import {
     Receipt, MoreHorizontal, Loader2, ArrowUpDown,
-    Ban, RefreshCw, TrendingUp, ShoppingBag, DollarSign, CalendarRange
+    Ban, RefreshCw, TrendingUp, ShoppingBag, DollarSign, CalendarRange, AlertCircle
 } from 'lucide-react';
+import { Alert, AlertDescription } from '../../../components/ui/Alert';
 import { getAllTransactions, voidTransaction, TransactionResult } from '../services/posService';
 import { UserRole } from '../../../types';
 
@@ -37,8 +38,9 @@ export const SalesHistory: React.FC<SalesHistoryProps> = ({ currentRole }) => {
     const [voidingTx, setVoidingTx] = useState<TransactionResult | null>(null);
     const [isVoidConfirmOpen, setIsVoidConfirmOpen] = useState(false);
     const [isVoiding, setIsVoiding] = useState(false);
+    const [voidError, setVoidError] = useState<string | null>(null);
 
-    const canVoid = currentRole === UserRole.SUPER_ADMIN || currentRole === UserRole.MANAGER;
+    const canVoid = currentRole === UserRole.MANAGER;
 
     const loadTransactions = useCallback(() => {
         setIsLoading(true);
@@ -55,13 +57,14 @@ export const SalesHistory: React.FC<SalesHistoryProps> = ({ currentRole }) => {
     const handleVoid = async () => {
         if (!voidingTx) return;
         setIsVoiding(true);
+        setVoidError(null);
         try {
             await voidTransaction(voidingTx.id);
             setIsVoidConfirmOpen(false);
             setVoidingTx(null);
             loadTransactions();
         } catch (err: any) {
-            alert(err?.response?.data?.message ?? 'Failed to void transaction.');
+            setVoidError(err?.response?.data?.message ?? 'Failed to void transaction.');
         } finally {
             setIsVoiding(false);
         }
@@ -306,6 +309,12 @@ export const SalesHistory: React.FC<SalesHistoryProps> = ({ currentRole }) => {
                             Total: <strong>₱{voidingTx?.totalAmount.toFixed(2)}</strong>
                         </p>
                     </div>
+                    {voidError && (
+                        <Alert variant="destructive" className="py-2">
+                            <AlertCircle className="h-4 w-4" />
+                            <AlertDescription>{voidError}</AlertDescription>
+                        </Alert>
+                    )}
                     <DialogFooter>
                         <Button variant="outline" onClick={() => setIsVoidConfirmOpen(false)} disabled={isVoiding}>
                             Cancel

@@ -4,8 +4,9 @@ import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
 import { DataTable } from '../../../components/ui/data-table';
 import { StatusDot } from '../../../components/ui/StatusDot';
+import { Alert, AlertDescription } from '../../../components/ui/Alert';
 import { ColumnDef } from '@tanstack/react-table';
-import { MoreHorizontal, UserPlus, ArrowUpDown, Loader2, Pencil } from 'lucide-react';
+import { MoreHorizontal, UserPlus, ArrowUpDown, Loader2, Pencil, CheckCircle2, AlertCircle } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../../../components/ui/DropdownMenu';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../../../components/ui/Dialog';
 import { Label } from '../../../components/ui/Label';
@@ -22,7 +23,8 @@ const CRM = ({ currentRole }: CRMProps) => {
     const [isAddOpen, setIsAddOpen] = useState(false);
     const [isEditOpen, setIsEditOpen] = useState(false);
     const [editingCustomer, setEditingCustomer] = useState<ApiCustomer | null>(null);
-    const [editSuccess, setEditSuccess] = useState(false);
+    const [addFeedback, setAddFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+    const [editFeedback, setEditFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
     const canEdit = currentRole === UserRole.MANAGER || currentRole === UserRole.CASHIER;
     const [newCustomer, setNewCustomer] = useState<Partial<ApiCustomer>>({
         customerName: '',
@@ -52,42 +54,47 @@ const CRM = ({ currentRole }: CRMProps) => {
 
     const handleCreateCustomer = async (e: React.FormEvent) => {
         e.preventDefault();
+        setAddFeedback(null);
         try {
             const response = await customerService.createCustomer(newCustomer);
             if (response.success) {
-                alert("Customer created successfully");
-                setIsAddOpen(false);
-                setNewCustomer({
-                    customerName: '',
-                    customerType: 'Retail',
-                    email: '',
-                    contactNumber: '',
-                    address: ''
-                });
-                loadCustomers();
+                setAddFeedback({ type: 'success', message: 'Customer created successfully.' });
+                setTimeout(() => {
+                    setIsAddOpen(false);
+                    setAddFeedback(null);
+                    setNewCustomer({
+                        customerName: '',
+                        customerType: 'Retail',
+                        email: '',
+                        contactNumber: '',
+                        address: ''
+                    });
+                    loadCustomers();
+                }, 800);
             }
         } catch (error) {
-            alert("Failed to create customer");
+            setAddFeedback({ type: 'error', message: 'Failed to create customer.' });
         }
     };
 
     const handleUpdateCustomer = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!editingCustomer) return;
+        setEditFeedback(null);
         try {
             const response = await customerService.updateCustomer(editingCustomer.id, editingCustomer);
             if (response.success) {
-                setEditSuccess(true);
+                setEditFeedback({ type: 'success', message: 'Customer updated successfully.' });
                 setTimeout(() => {
                     setIsEditOpen(false);
-                    setEditSuccess(false);
+                    setEditFeedback(null);
                     loadCustomers();
                 }, 800);
             } else {
-                alert(response.message || 'Failed to update customer');
+                setEditFeedback({ type: 'error', message: response.message || 'Failed to update customer.' });
             }
         } catch (error) {
-            alert("Failed to update customer");
+            setEditFeedback({ type: 'error', message: 'Failed to update customer.' });
         }
     };
 
@@ -205,6 +212,12 @@ const CRM = ({ currentRole }: CRMProps) => {
                             <Input value={newCustomer.address} onChange={e => setNewCustomer({ ...newCustomer, address: e.target.value })} />
                         </div>
                         <DialogFooter>
+                            {addFeedback && (
+                                <Alert variant={addFeedback.type === 'success' ? 'success' : 'destructive'} className="mr-auto py-2">
+                                    {addFeedback.type === 'success' ? <CheckCircle2 className="h-4 w-4" /> : <AlertCircle className="h-4 w-4" />}
+                                    <AlertDescription>{addFeedback.message}</AlertDescription>
+                                </Alert>
+                            )}
                             <Button type="button" variant="outline" onClick={() => setIsAddOpen(false)}>Cancel</Button>
                             <Button type="submit">Save Customer</Button>
                         </DialogFooter>
@@ -247,9 +260,12 @@ const CRM = ({ currentRole }: CRMProps) => {
                                 <Label>Address</Label>
                                 <Input value={editingCustomer.address || ''} onChange={e => setEditingCustomer({ ...editingCustomer, address: e.target.value })} />
                             </div>
-                            <DialogFooter>                        {editSuccess ? (
-                            <p className="text-sm text-green-600 font-medium mr-auto">✓ Customer updated successfully</p>
-                        ) : null}                                <Button type="button" variant="outline" onClick={() => setIsEditOpen(false)}>Cancel</Button>
+                            <DialogFooter>                        {editFeedback && (
+                                <Alert variant={editFeedback.type === 'success' ? 'success' : 'destructive'} className="mr-auto py-2">
+                                    {editFeedback.type === 'success' ? <CheckCircle2 className="h-4 w-4" /> : <AlertCircle className="h-4 w-4" />}
+                                    <AlertDescription>{editFeedback.message}</AlertDescription>
+                                </Alert>
+                            )}                                <Button type="button" variant="outline" onClick={() => setIsEditOpen(false)}>Cancel</Button>
                                 <Button type="submit">Save Changes</Button>
                             </DialogFooter>
                         </form>

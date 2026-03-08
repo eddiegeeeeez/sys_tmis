@@ -4,8 +4,9 @@ import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
 import { DataTable } from '../../../components/ui/data-table';
 import { StatusDot } from '../../../components/ui/StatusDot';
+import { Alert, AlertDescription } from '../../../components/ui/Alert';
 import { ColumnDef } from '@tanstack/react-table';
-import { Plus, Wallet, Receipt, MoreHorizontal, ArrowUpDown, Loader2, Pencil } from 'lucide-react';
+import { Plus, Wallet, Receipt, MoreHorizontal, ArrowUpDown, Loader2, Pencil, CheckCircle2, AlertCircle } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../../../components/ui/DropdownMenu';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../../../components/ui/Dialog';
 import { Label } from '../../../components/ui/Label';
@@ -18,7 +19,8 @@ const Finance = () => {
     const [isAddOpen, setIsAddOpen] = useState(false);
     const [isEditOpen, setIsEditOpen] = useState(false);
     const [editingExpense, setEditingExpense] = useState<ApiExpense | null>(null);
-    const [editSuccess, setEditSuccess] = useState(false);
+    const [addFeedback, setAddFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+    const [editFeedback, setEditFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
     const [isViewReceiptOpen, setIsViewReceiptOpen] = useState(false);
     const [viewingExpense, setViewingExpense] = useState<ApiExpense | null>(null);
     const [newExpense, setNewExpense] = useState<Partial<ApiExpense>>({
@@ -56,42 +58,47 @@ const Finance = () => {
 
     const handleCreateExpense = async (e: React.FormEvent) => {
         e.preventDefault();
+        setAddFeedback(null);
         try {
             const response = await financeService.createExpense(newExpense);
             if (response.success) {
-                alert("Expense recorded successfully");
-                setIsAddOpen(false);
-                setNewExpense({
-                    expenseCategory: '',
-                    description: '',
-                    amount: 0,
-                    expenseDate: new Date().toISOString().split('T')[0],
-                    status: 'Paid'
-                });
-                loadData();
+                setAddFeedback({ type: 'success', message: 'Expense recorded successfully.' });
+                setTimeout(() => {
+                    setIsAddOpen(false);
+                    setAddFeedback(null);
+                    setNewExpense({
+                        expenseCategory: '',
+                        description: '',
+                        amount: 0,
+                        expenseDate: new Date().toISOString().split('T')[0],
+                        status: 'Paid'
+                    });
+                    loadData();
+                }, 800);
             }
         } catch (error) {
-            alert("Failed to record expense");
+            setAddFeedback({ type: 'error', message: 'Failed to record expense.' });
         }
     };
 
     const handleUpdateExpense = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!editingExpense) return;
+        setEditFeedback(null);
         try {
             const response = await financeService.updateExpense(editingExpense.id, editingExpense);
             if (response.success) {
-                setEditSuccess(true);
+                setEditFeedback({ type: 'success', message: 'Expense updated successfully.' });
                 setTimeout(() => {
                     setIsEditOpen(false);
-                    setEditSuccess(false);
+                    setEditFeedback(null);
                     loadData();
                 }, 800);
             } else {
-                alert(response.message || 'Failed to update expense');
+                setEditFeedback({ type: 'error', message: response.message || 'Failed to update expense.' });
             }
         } catch (error) {
-            alert("Failed to update expense");
+            setEditFeedback({ type: 'error', message: 'Failed to update expense.' });
         }
     };
 
@@ -238,6 +245,12 @@ const Finance = () => {
                             </div>
                         </div>
                         <DialogFooter>
+                            {addFeedback && (
+                                <Alert variant={addFeedback.type === 'success' ? 'success' : 'destructive'} className="mr-auto py-2">
+                                    {addFeedback.type === 'success' ? <CheckCircle2 className="h-4 w-4" /> : <AlertCircle className="h-4 w-4" />}
+                                    <AlertDescription>{addFeedback.message}</AlertDescription>
+                                </Alert>
+                            )}
                             <Button type="button" variant="outline" onClick={() => setIsAddOpen(false)}>Cancel</Button>
                             <Button type="submit">Complete Record</Button>
                         </DialogFooter>
@@ -290,9 +303,12 @@ const Finance = () => {
                                 </select>
                             </div>
                             <DialogFooter>
-                                {editSuccess ? (
-                                    <p className="text-sm text-green-600 font-medium mr-auto">✓ Expense updated successfully</p>
-                                ) : null}
+                                {editFeedback && (
+                                    <Alert variant={editFeedback.type === 'success' ? 'success' : 'destructive'} className="mr-auto py-2">
+                                        {editFeedback.type === 'success' ? <CheckCircle2 className="h-4 w-4" /> : <AlertCircle className="h-4 w-4" />}
+                                        <AlertDescription>{editFeedback.message}</AlertDescription>
+                                    </Alert>
+                                )}
                                 <Button type="button" variant="outline" onClick={() => setIsEditOpen(false)}>Cancel</Button>
                                 <Button type="submit">Save Changes</Button>
                             </DialogFooter>

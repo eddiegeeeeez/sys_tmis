@@ -89,7 +89,10 @@ export const adminService = {
         api.get<ApiResponse<any>>('/Database/health'),
 
     runDatabaseBackup: () =>
-        api.post<ApiResponse<any>>('/Database/backup/request'),
+        api.post<ApiResponse<any>>('/Database/backup/run'),
+
+    getBackupHistory: () =>
+        api.get<ApiResponse<any[]>>('/Database/backup/history'),
 
     runDatabaseMigrations: () =>
         api.post<ApiResponse<any>>('/Database/migrate'),

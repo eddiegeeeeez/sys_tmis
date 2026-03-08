@@ -25,3 +25,6 @@ Thumbs.db
 # Dev launch settings contain local secrets — never commit real credentials
 # Copy launchSettings.json and fill in your own credentials locally
 **/Properties/launchSettings.json
+
+# Production appsettings contain real credentials — never commit
+**/appsettings.Production.json

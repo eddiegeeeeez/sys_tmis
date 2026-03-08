@@ -32,8 +32,7 @@ namespace TradeMatrix.Server.Services
                     UnitOfMeasure = p.UnitOfMeasure,
                     SupplierId = p.SupplierId,
                     SupplierName = p.Supplier != null ? p.Supplier.CompanyName : null,
-                    ImageUrl = p.ImageUrl,
-                    Barcode = p.Barcode
+                    ImageUrl = p.ImageUrl
                 })
                 .ToListAsync();
         }
@@ -49,12 +48,11 @@ namespace TradeMatrix.Server.Services
             return MapToDto(p);
         }
 
-        public async Task<ProductDto?> GetProductByBarcodeOrSkuAsync(string code)
+        public async Task<ProductDto?> GetProductBySkuAsync(string code)
         {
             var p = await _context.Products
                 .Include(p => p.Supplier)
-                .FirstOrDefaultAsync(p => p.IsActive &&
-                    (p.SKU == code || p.Barcode == code));
+                .FirstOrDefaultAsync(p => p.IsActive && p.SKU == code);
 
             if (p == null) return null;
 
@@ -78,8 +76,7 @@ namespace TradeMatrix.Server.Services
                 Stock = dto.InitialStock,
                 ReorderLevel = dto.ReorderLevel,
                 UnitOfMeasure = dto.UnitOfMeasure,
-                SupplierId = dto.SupplierId,
-                Barcode = dto.Barcode
+                SupplierId = dto.SupplierId
             };
 
             _context.Products.Add(product);
@@ -117,7 +114,6 @@ namespace TradeMatrix.Server.Services
             product.ReorderLevel = dto.ReorderLevel;
             product.UnitOfMeasure = dto.UnitOfMeasure;
             product.SupplierId = dto.SupplierId;
-            product.Barcode = dto.Barcode;
 
             await _context.SaveChangesAsync();
             return await GetProductByIdAsync(id);
@@ -211,8 +207,7 @@ namespace TradeMatrix.Server.Services
             UnitOfMeasure = p.UnitOfMeasure,
             SupplierId = p.SupplierId,
             SupplierName = p.Supplier != null ? p.Supplier.CompanyName : null,
-            ImageUrl = p.ImageUrl,
-            Barcode = p.Barcode
+            ImageUrl = p.ImageUrl
         };
     }
 }
