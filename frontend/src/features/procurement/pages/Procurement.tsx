@@ -22,7 +22,7 @@ interface ProcurementProps {
 }
 
 export const Procurement: React.FC<ProcurementProps> = ({ currentRole }) => {
-    const canManageSuppliers = currentRole === UserRole.MANAGER;
+    const canManageSuppliers = currentRole === UserRole.MANAGER || currentRole === UserRole.INVENTORY_CLERK;
     const [suppliers, setSuppliers] = useState<ApiSupplier[]>([]);
     const [purchaseOrders, setPurchaseOrders] = useState<ApiPO[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -126,6 +126,7 @@ export const Procurement: React.FC<ProcurementProps> = ({ currentRole }) => {
     };
 
     const [isReceiving, setIsReceiving] = useState(false);
+    const [activeTab, setActiveTab] = useState('po');
 
     const handleReceivePO = async (poId: number) => {
         setIsReceiving(true);
@@ -394,16 +395,24 @@ export const Procurement: React.FC<ProcurementProps> = ({ currentRole }) => {
                 </Alert>
             )}
 
-            <Tabs defaultValue="po" className="w-full">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                 <div className="flex items-center justify-between mb-4">
                     <TabsList>
                         <TabsTrigger value="po">Purchase Orders</TabsTrigger>
                         <TabsTrigger value="suppliers">Suppliers</TabsTrigger>
                     </TabsList>
                     <div className="flex gap-2">
-                        <Button onClick={() => setIsPOModalOpen(true)}>
-                            <PackagePlus className="mr-2 h-4 w-4" /> Create Purchase Order
-                        </Button>
+                        {activeTab === 'suppliers' ? (
+                            canManageSuppliers && (
+                                <Button onClick={() => setIsSupplierModalOpen(true)}>
+                                    <Plus className="mr-2 h-4 w-4" /> Add Supplier
+                                </Button>
+                            )
+                        ) : (
+                            <Button onClick={() => setIsPOModalOpen(true)}>
+                                <PackagePlus className="mr-2 h-4 w-4" /> Create Purchase Order
+                            </Button>
+                        )}
                     </div>
                 </div>
 

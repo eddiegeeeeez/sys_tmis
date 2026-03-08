@@ -208,6 +208,7 @@ export const POS: React.FC = () => {
   const openPayModal = () => {
     setAmountTendered('');
     setPaymentMethod('Cash');
+    setPayError(null);
     setPayModalOpen(true);
   };
 
@@ -616,7 +617,7 @@ export const POS: React.FC = () => {
       </div>
 
       {/* ── Payment modal ─────────────────────────────────────────────────── */}
-      <Dialog open={payModalOpen} onOpenChange={v => { if (!isProcessing) setPayModalOpen(v); }}>
+      <Dialog open={payModalOpen} onOpenChange={v => { if (!isProcessing) { setPayModalOpen(v); if (!v) setPayError(null); } }}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-lg">
