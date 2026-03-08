@@ -68,5 +68,5 @@ export const hrService = {
     runPayroll: async (data: { payPeriodStart: string; payPeriodEnd: string }) => {
         const response = await api.post<ApiResponse<boolean>>('payroll/run', data);
         return response.data;
-    }
+    },
 };

@@ -23,7 +23,7 @@ const CRM = ({ currentRole }: CRMProps) => {
     const [isEditOpen, setIsEditOpen] = useState(false);
     const [editingCustomer, setEditingCustomer] = useState<ApiCustomer | null>(null);
     const [editSuccess, setEditSuccess] = useState(false);
-    const canEdit = currentRole === UserRole.SUPER_ADMIN || currentRole === UserRole.MANAGER || currentRole === UserRole.CASHIER;
+    const canEdit = currentRole === UserRole.MANAGER || currentRole === UserRole.CASHIER;
     const [newCustomer, setNewCustomer] = useState<Partial<ApiCustomer>>({
         customerName: '',
         customerType: 'Retail',

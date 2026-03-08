@@ -7,7 +7,7 @@ namespace TradeMatrix.Server.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize]
+    [Authorize(Roles = "SuperAdmin,Manager")]
     public class PayrollController : ControllerBase
     {
         private readonly IHRService _hrService;

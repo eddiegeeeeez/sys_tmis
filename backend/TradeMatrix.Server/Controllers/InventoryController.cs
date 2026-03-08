@@ -39,7 +39,7 @@ namespace TradeMatrix.Server.Controllers
         }
 
         [HttpPost("products")]
-        [Authorize(Roles = "SuperAdmin,Manager,InventoryClerk,Cashier")]
+        [Authorize(Roles = "SuperAdmin,Manager,InventoryClerk")]
         public async Task<ActionResult<ApiResponse<ProductDto>>> CreateProduct([FromBody] CreateProductDto dto)
         {
             try
@@ -242,5 +242,50 @@ namespace TradeMatrix.Server.Controllers
                 return StatusCode(500, ApiResponse<string>.ErrorResponse("Error deleting product image"));
             }
         }
+
+        [HttpDelete("products/{id}")]
+        [Authorize(Roles = "SuperAdmin,Manager,InventoryClerk")]
+        public async Task<ActionResult<ApiResponse<string>>> DeleteProduct(int id)
+        {
+            try
+            {
+                var product = await _inventoryService.GetProductByIdAsync(id);
+                if (product == null)
+                    return NotFound(ApiResponse<string>.ErrorResponse("Product not found"));
+
+                // Clean up S3 image if exists
+                if (!string.IsNullOrEmpty(product.ImageUrl))
+                    await _s3StorageService.DeleteFileAsync(product.ImageUrl);
+
+                var success = await _inventoryService.DeleteProductAsync(id);
+                if (!success)
+                    return NotFound(ApiResponse<string>.ErrorResponse("Product not found"));
+
+                return Ok(ApiResponse<string>.SuccessResponse("Product deleted successfully"));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting product {Id}", id);
+                return StatusCode(500, ApiResponse<string>.ErrorResponse("Error deleting product"));
+            }
+        }
+
+        [HttpGet("products/{id}")]
+        public async Task<ActionResult<ApiResponse<ProductDto>>> GetProductById(int id)
+        {
+            try
+            {
+                var result = await _inventoryService.GetProductDetailAsync(id);
+                if (result == null)
+                    return NotFound(ApiResponse<ProductDto>.ErrorResponse("Product not found"));
+                return Ok(ApiResponse<ProductDto>.SuccessResponse(result));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching product {Id}", id);
+                return StatusCode(500, ApiResponse<string>.ErrorResponse("Error fetching product"));
+            }
+        }
+
     }
 }

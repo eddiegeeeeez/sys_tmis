@@ -9,7 +9,7 @@ import {
     Search, Filter, Download, Eye, AlertTriangle,
     CheckCircle, XCircle, Calendar, RefreshCw, FileJson, Shield, Monitor
 } from 'lucide-react';
-import { LogEntry } from '../../../lib/mockData';
+import { LogEntry } from '../../../types';
 import { Skeleton } from '../../../components/ui/Skeleton';
 import { StatusDot } from '../../../components/ui/StatusDot';
 import { adminService } from '../services/adminService';
@@ -41,7 +41,7 @@ export const Security: React.FC = () => {
             setLogs(Array.isArray(logsData) ? logsData : []);
         } catch (error) {
             console.error('Failed to fetch logs:', error);
-            // Fallback to empty or mock for now if API fails (since backend is still being refactored)
+            // Fallback to empty array if API fails
             setLogs([]);
         } finally {
             setIsLoading(false);

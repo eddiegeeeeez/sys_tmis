@@ -13,6 +13,7 @@ import {
     Ban, RefreshCw, TrendingUp, ShoppingBag, DollarSign, CalendarRange
 } from 'lucide-react';
 import { getAllTransactions, voidTransaction, TransactionResult } from '../services/posService';
+import { UserRole } from '../../../types';
 
 interface SalesHistoryProps {
     currentRole?: string;
@@ -37,7 +38,7 @@ export const SalesHistory: React.FC<SalesHistoryProps> = ({ currentRole }) => {
     const [isVoidConfirmOpen, setIsVoidConfirmOpen] = useState(false);
     const [isVoiding, setIsVoiding] = useState(false);
 
-    const canVoid = currentRole === 'SuperAdmin' || currentRole === 'Manager';
+    const canVoid = currentRole === UserRole.SUPER_ADMIN || currentRole === UserRole.MANAGER;
 
     const loadTransactions = useCallback(() => {
         setIsLoading(true);

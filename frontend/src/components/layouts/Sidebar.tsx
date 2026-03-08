@@ -126,6 +126,17 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentRole }) => {
 
   const navGroups = getNavItems(currentRole);
 
+  const userName = React.useMemo(() => {
+    try {
+      const stored = localStorage.getItem('user');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        return parsed.name || 'Current User';
+      }
+    } catch { /* ignore parse errors */ }
+    return 'Current User';
+  }, []);
+
   return (
     <div className="w-64 bg-card text-card-foreground flex flex-col h-full hidden md:flex border-r shrink-0">
       <div className="p-6 flex items-center justify-center gap-3 border-b">
@@ -202,11 +213,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentRole }) => {
         <div className="flex items-center gap-3 px-3 py-3 rounded-lg bg-muted/50 border">
           <Avatar className="h-8 w-8 ring-2 ring-background">
             <AvatarFallback className="bg-primary text-primary-foreground text-xs uppercase">
-              {currentRole.charAt(0)}
+              {userName.split(' ').map(w => w[0]).join('').slice(0, 2)}
             </AvatarFallback>
           </Avatar>
           <div className="flex-1 overflow-hidden text-left">
-            <p className="text-sm font-medium truncate">Current User</p>
+            <p className="text-sm font-medium truncate">{userName}</p>
             <p className="text-xs text-muted-foreground truncate">{currentRole}</p>
           </div>
         </div>

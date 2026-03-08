@@ -133,6 +133,22 @@ namespace TradeMatrix.Server.Services
             return await GetProductByIdAsync(id);
         }
 
+        public async Task<bool> DeleteProductAsync(int id)
+        {
+            var product = await _context.Products.FindAsync(id);
+            if (product == null) return false;
+
+            // Soft delete — mark as inactive
+            product.IsActive = false;
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<ProductDto?> GetProductDetailAsync(int id)
+        {
+            return await GetProductByIdAsync(id);
+        }
+
         private async Task<string> GenerateSkuAsync(string category)
         {
             // Build prefix from category: take first 2-3 uppercase letters

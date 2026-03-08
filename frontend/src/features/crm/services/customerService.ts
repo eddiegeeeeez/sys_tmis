@@ -24,5 +24,5 @@ export const customerService = {
     updateCustomer: async (id: number, data: Partial<Customer>) => {
         const response = await api.put<ApiResponse<Customer>>(`customer/${id}`, data);
         return response.data;
-    }
+    },
 };

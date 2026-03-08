@@ -86,4 +86,10 @@ export const inventoryService = {
 
     deleteProductImage: (id: number) =>
         api.delete<ApiResponse<Product>>(`/inventory/products/${id}/image`),
+
+    deleteProduct: (id: number) =>
+        api.delete<ApiResponse<string>>(`/inventory/products/${id}`),
+
+    getProductById: (id: number) =>
+        api.get<ApiResponse<Product>>(`/inventory/products/${id}`),
 };

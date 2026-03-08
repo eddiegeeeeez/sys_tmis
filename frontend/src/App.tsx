@@ -181,7 +181,7 @@ const AppContent: React.FC = () => {
                 <ProtectedRoute
                   isLoggedIn={isLoggedIn}
                   currentRole={currentRole}
-                  allowedRoles={[UserRole.SUPER_ADMIN, UserRole.MANAGER]}
+                  allowedRoles={[UserRole.MANAGER]}
                 >
                   <SalesHistory currentRole={currentRole} />
                 </ProtectedRoute>
@@ -193,7 +193,7 @@ const AppContent: React.FC = () => {
                   currentRole={currentRole}
                   allowedRoles={[UserRole.MANAGER, UserRole.INVENTORY_CLERK, UserRole.CASHIER]}
                 >
-                  <Inventory />
+                  <Inventory currentRole={currentRole} />
                 </ProtectedRoute>
               } />
 
@@ -203,7 +203,7 @@ const AppContent: React.FC = () => {
                   currentRole={currentRole}
                   allowedRoles={[UserRole.MANAGER, UserRole.INVENTORY_CLERK]}
                 >
-                  <Procurement />
+                  <Procurement currentRole={currentRole} />
                 </ProtectedRoute>
               } />
 

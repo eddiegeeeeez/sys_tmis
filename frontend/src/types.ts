@@ -137,3 +137,20 @@ export interface Expense {
   ExpenseDate: string;
   Status: 'Pending' | 'Approved' | 'Paid';
 }
+
+export interface LogEntry {
+  id: string;
+  timestamp: string;
+  actor: { name: string; email: string; ip: string };
+  event: string;
+  resource: string;
+  status: 'Success' | 'Failure' | 'Warning';
+  severity: 'Low' | 'Medium' | 'High' | 'Critical';
+  metadata: Record<string, any>;
+}
+
+export const ALL_PERMISSIONS = [
+  'view_dashboard', 'manage_users', 'manage_roles', 'view_inventory', 'manage_inventory',
+  'view_pos', 'process_transactions', 'view_reports', 'manage_settings', 'view_audit_logs',
+  'manage_database', 'manage_employees', 'process_payroll', 'manage_suppliers', 'manage_customers'
+];

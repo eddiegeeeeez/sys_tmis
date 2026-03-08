@@ -27,5 +27,5 @@ export const financeService = {
     getSummary: async (month: number, year: number) => {
         const response = await api.get<ApiResponse<number>>(`finance/summary?month=${month}&year=${year}`);
         return response.data;
-    }
+    },
 };

@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
 import { ArrowLeft, Save, AlertTriangle, LayoutGrid, List } from 'lucide-react';
-import { ALL_PERMISSIONS } from '../../../lib/mockData';
+import { ALL_PERMISSIONS } from '../../../types';
 import { AuthConfirmationModal } from '../../../components/common/AuthConfirmationModal';
 import { Skeleton } from '../../../components/ui/Skeleton';
 import { adminService } from '../services/adminService';

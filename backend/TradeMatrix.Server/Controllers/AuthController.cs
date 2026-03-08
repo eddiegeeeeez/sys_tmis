@@ -1,13 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
-using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
-using System.Text;
-using TradeMatrix.Server.Data;
 using TradeMatrix.Server.DTOs;
-using TradeMatrix.Server.Models;
 using TradeMatrix.Server.Services;
 
 namespace TradeMatrix.Server.Controllers
@@ -16,21 +10,15 @@ namespace TradeMatrix.Server.Controllers
     [ApiController]
     public class AuthController : ControllerBase
     {
-        private readonly ApplicationDbContext _context;
-        private readonly IConfiguration _configuration;
+        private readonly IAuthService _authService;
         private readonly ILogger<AuthController> _logger;
-        private readonly IPasswordHashingService _passwordHashing;
 
         public AuthController(
-            ApplicationDbContext context,
-            IConfiguration configuration,
-            ILogger<AuthController> logger,
-            IPasswordHashingService passwordHashing)
+            IAuthService authService,
+            ILogger<AuthController> logger)
         {
-            _context = context;
-            _configuration = configuration;
+            _authService = authService;
             _logger = logger;
-            _passwordHashing = passwordHashing;
         }
 
         /// <summary>
@@ -41,44 +29,20 @@ namespace TradeMatrix.Server.Controllers
         [AllowAnonymous]
         public async Task<IActionResult> Login([FromBody] LoginDto loginDto)
         {
-            // Validation is performed by data annotations in LoginDto
-            var user = await _context.Users
-                .AsNoTracking()
-                .Include(u => u.Role)
-                .FirstOrDefaultAsync(u => u.Email == loginDto.Email);
-
-            // Verify password
-            if (user == null || !_passwordHashing.VerifyPassword(loginDto.Password, user.PasswordHash))
+            var result = await _authService.LoginAsync(loginDto);
+            if (result == null)
             {
-                _logger.LogWarning($"Failed login attempt for email: {loginDto.Email}");
+                _logger.LogWarning("Failed login attempt for email: {Email}", loginDto.Email);
                 return Unauthorized(new { message = "Invalid email or password" });
             }
 
-            if (!user.IsActive)
+            _logger.LogInformation("Successful login for user: {Email}", result.Email);
+            return Ok(new
             {
-                _logger.LogWarning($"Login attempt on inactive account: {loginDto.Email}");
-                return Unauthorized(new { message = "User account is inactive" });
-            }
-
-            // Successful login - fetch tracked user and update LastLogin
-            var trackedUser = await _context.Users.FirstOrDefaultAsync(u => u.Id == user.Id);
-            if (trackedUser != null)
-            {
-                trackedUser.LastLogin = DateTime.UtcNow;
-                trackedUser.FailedLoginAttempts = 0; // Reset failed attempts on success
-                trackedUser.LockoutUntil = null; // Clear any lockout on success
-                await _context.SaveChangesAsync();
-            }
-
-            var token = GenerateJwtToken(user);
-            _logger.LogInformation($"Successful login for user: {user.Email}");
-
-            return Ok(new 
-            { 
-                token = token, 
-                role = user.Role.Name, 
-                name = user.Name,
-                email = user.Email
+                token = result.Token,
+                role = result.Role,
+                name = result.Name,
+                email = result.Email
             });
         }
 
@@ -89,40 +53,24 @@ namespace TradeMatrix.Server.Controllers
         [Authorize]
         public async Task<IActionResult> GetProfile()
         {
-            // We specifically look for 'id' first as we add it explicitly. 
-            // NameIdentifier is often mapped from 'sub' or 'nameid' by ASP.NET Core.
-            var userIdClaim = User.FindFirst("id") ?? 
-                             User.FindFirst(ClaimTypes.NameIdentifier) ?? 
-                             User.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier");
-
-            if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
+            var userId = GetCurrentUserId();
+            if (userId == null)
             {
-                // If the first find failed or returned a non-integer (like an email in 'sub'), try to find any integer claim
-                userIdClaim = User.Claims.FirstOrDefault(c => int.TryParse(c.Value, out _));
-                
-                if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out userId))
-                {
-                    _logger.LogWarning("Profile fetch failed: User ID claim is missing or invalid.");
-                    return Unauthorized(new { message = "Invalid token claims" });
-                }
+                _logger.LogWarning("Profile fetch failed: User ID claim is missing or invalid.");
+                return Unauthorized(new { message = "Invalid token claims" });
             }
 
-            var user = await _context.Users
-                .Include(u => u.Role)
-                .FirstOrDefaultAsync(u => u.Id == userId);
-            if (user == null)
-            {
-                return NotFound();
-            }
+            var profile = await _authService.GetProfileAsync(userId.Value);
+            if (profile == null) return NotFound();
 
-            return Ok(new 
-            { 
-                id = user.Id,
-                name = user.Name,
-                email = user.Email,
-                role = user.Role.Name,
-                isActive = user.IsActive,
-                lastLogin = user.LastLogin
+            return Ok(new
+            {
+                id = profile.Id,
+                name = profile.Name,
+                email = profile.Email,
+                role = profile.Role,
+                isActive = profile.IsActive,
+                lastLogin = profile.LastLogin
             });
         }
 
@@ -133,31 +81,13 @@ namespace TradeMatrix.Server.Controllers
         [Authorize]
         public async Task<IActionResult> VerifyPassword([FromBody] VerifyPasswordDto dto)
         {
-            var userIdClaim = User.FindFirst("id") ?? 
-                             User.FindFirst(ClaimTypes.NameIdentifier) ?? 
-                             User.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier");
+            var userId = GetCurrentUserId();
+            if (userId == null)
+                return Unauthorized(new { message = "Invalid token claims" });
 
-            if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
-            {
-                // Fallback: try to find any integer claim if specific ones fail
-                userIdClaim = User.Claims.FirstOrDefault(c => int.TryParse(c.Value, out _));
-                
-                if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out userId))
-                {
-                    return Unauthorized(new { message = "Invalid token claims" });
-                }
-            }
-
-            var user = await _context.Users.FindAsync(userId);
-            if (user == null)
-            {
-                return NotFound();
-            }
-
-            if (!_passwordHashing.VerifyPassword(dto.Password, user.PasswordHash))
-            {
+            var isValid = await _authService.VerifyPasswordAsync(userId.Value, dto.Password);
+            if (!isValid)
                 return Unauthorized(new { message = "Invalid password" });
-            }
 
             return Ok(new { success = true });
         }
@@ -167,36 +97,21 @@ namespace TradeMatrix.Server.Controllers
             public string Password { get; set; } = string.Empty;
         }
 
-        private string GenerateJwtToken(User user)
+        private int? GetCurrentUserId()
         {
-            var jwtKey = _configuration["Jwt:Key"] ?? "YourSuperSecretKeyThatIsLongEnough123!";
-            var jwtIssuer = _configuration["Jwt:Issuer"] ?? "TradeMatrixServer";
-            var jwtAudience = _configuration["Jwt:Audience"] ?? "TradeMatrixClient";
-            var expiryMinutes = int.TryParse(_configuration["Jwt:ExpiryMinutes"], out var m) ? m : 1440;
+            var userIdClaim = User.FindFirst("id") ??
+                             User.FindFirst(ClaimTypes.NameIdentifier) ??
+                             User.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier");
 
-            var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
-            var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
+            if (userIdClaim != null && int.TryParse(userIdClaim.Value, out int userId))
+                return userId;
 
-            var claims = new[]
-            {
-                new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
-                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-                new Claim(JwtRegisteredClaimNames.NameId, user.Id.ToString()),
-                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-                new Claim("id", user.Id.ToString()),
-                new Claim(ClaimTypes.Role, user.Role.Name),
-                new Claim(ClaimTypes.Email, user.Email),
-                new Claim(ClaimTypes.Name, user.Name)
-            };
+            // Fallback: try to find any integer claim
+            userIdClaim = User.Claims.FirstOrDefault(c => int.TryParse(c.Value, out _));
+            if (userIdClaim != null && int.TryParse(userIdClaim.Value, out userId))
+                return userId;
 
-            var token = new JwtSecurityToken(
-                issuer: jwtIssuer,
-                audience: jwtAudience,
-                claims: claims,
-                expires: DateTime.UtcNow.AddMinutes(expiryMinutes),
-                signingCredentials: credentials);
-
-            return new JwtSecurityTokenHandler().WriteToken(token);
+            return null;
         }
     }
 }

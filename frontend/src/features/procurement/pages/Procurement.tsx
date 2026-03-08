@@ -12,11 +12,16 @@ import { Label } from '../../../components/ui/Label';
 import { Select } from '../../../components/ui/Select';
 import { procurementService, Supplier as ApiSupplier, PurchaseOrder as ApiPO } from '../services/procurementService';
 import { Loader2, Truck, PackagePlus, Plus, Phone, Mail, ArrowUpDown, ArrowUp, ArrowDown, UserSquare2, PackageCheck } from 'lucide-react';
-import { PurchaseOrder } from '../../../types';
+import { PurchaseOrder, UserRole } from '../../../types';
 
 const ITEMS_PER_PAGE = 10;
 
-export const Procurement: React.FC = () => {
+interface ProcurementProps {
+    currentRole?: string;
+}
+
+export const Procurement: React.FC<ProcurementProps> = ({ currentRole }) => {
+    const canManageSuppliers = currentRole === UserRole.MANAGER;
     const [suppliers, setSuppliers] = useState<ApiSupplier[]>([]);
     const [purchaseOrders, setPurchaseOrders] = useState<ApiPO[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -318,49 +323,6 @@ export const Procurement: React.FC = () => {
                 </DialogContent>
             </Dialog>
 
-            {/* Edit Supplier Modal */}
-            <Dialog open={isEditSupplierOpen} onOpenChange={setIsEditSupplierOpen}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>Edit Supplier</DialogTitle>
-                        <DialogDescription>Update supplier details.</DialogDescription>
-                    </DialogHeader>
-                    {editingSupplier && (
-                        <div className="grid gap-4 py-4">
-                            <div className="grid gap-2">
-                                <Label>Company Name</Label>
-                                <Input value={editingSupplier.companyName} onChange={e => setEditingSupplier({ ...editingSupplier, companyName: e.target.value })} />
-                            </div>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="grid gap-2">
-                                    <Label>Contact Person</Label>
-                                    <Input value={editingSupplier.contactPerson} onChange={e => setEditingSupplier({ ...editingSupplier, contactPerson: e.target.value })} />
-                                </div>
-                                <div className="grid gap-2">
-                                    <Label>Phone Number</Label>
-                                    <Input value={editingSupplier.contactNumber} onChange={e => setEditingSupplier({ ...editingSupplier, contactNumber: e.target.value })} />
-                                </div>
-                            </div>
-                            <div className="grid gap-2">
-                                <Label>Email</Label>
-                                <Input type="email" value={editingSupplier.email} onChange={e => setEditingSupplier({ ...editingSupplier, email: e.target.value })} />
-                            </div>
-                            <div className="grid gap-2">
-                                <Label>Address</Label>
-                                <Input value={editingSupplier.address} onChange={e => setEditingSupplier({ ...editingSupplier, address: e.target.value })} />
-                            </div>
-                        </div>
-                    )}
-                    <DialogFooter>
-                        <Button variant="outline" onClick={() => setIsEditSupplierOpen(false)}>Cancel</Button>
-                        <Button onClick={handleUpdateSupplier} disabled={isSaving}>
-                            {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                            Save Changes
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
-
             {/* Create PO Modal */}
             <Dialog open={isPOModalOpen} onOpenChange={setIsPOModalOpen}>
                 <DialogContent className="max-w-xl">
@@ -413,7 +375,9 @@ export const Procurement: React.FC = () => {
             <div className="flex justify-between items-center">
                 <div>
                     <h2 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">Procurement</h2>
-                    <p className="text-zinc-500 dark:text-zinc-400 mt-1">Manage suppliers and purchase orders.</p>
+                    <p className="text-zinc-500 dark:text-zinc-400 mt-1">
+                        {canManageSuppliers ? 'Manage suppliers and purchase orders.' : 'View suppliers and manage purchase orders.'}
+                    </p>
                 </div>
             </div>
 
@@ -442,6 +406,7 @@ export const Procurement: React.FC = () => {
 
                 <TabsContent value="suppliers">
                     <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                        {canManageSuppliers && (
                         <Card
                             className="flex items-center justify-center border-dashed border-2 bg-zinc-50/50 dark:bg-zinc-900/50 hover:bg-zinc-50 dark:hover:bg-zinc-900 cursor-pointer h-full min-h-[150px] border-zinc-200 dark:border-zinc-800"
                             onClick={() => setIsSupplierModalOpen(true)}
@@ -453,6 +418,7 @@ export const Procurement: React.FC = () => {
                                 <p className="font-medium text-zinc-600 dark:text-zinc-400">Add New Supplier</p>
                             </div>
                         </Card>
+                        )}
                         {suppliers.map(sup => (
                             <Card key={sup.id} className="border-zinc-200 dark:border-zinc-800 shadow-sm hover:shadow-md transition-shadow">
                                 <CardContent className="p-6 space-y-4">
@@ -486,7 +452,9 @@ export const Procurement: React.FC = () => {
                                         </div>
                                     </div>
                                     <div className="pt-2">
+                                        {canManageSuppliers && (
                                         <Button variant="outline" size="sm" className="w-full border-zinc-200 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-800" onClick={() => { setEditingSupplier(sup); setIsEditSupplierOpen(true); }}>Edit Supplier</Button>
+                                        )}
                                     </div>
                                 </CardContent>
                             </Card>
