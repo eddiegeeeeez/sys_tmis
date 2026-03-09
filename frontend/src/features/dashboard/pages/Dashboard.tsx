@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { getDashboardSummary, DashboardSummary, emptyDashboard } from '../services/dashboardService';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../../components/ui/Card';
 import { Skeleton } from '../../../components/ui/Skeleton';
@@ -137,7 +138,9 @@ const SuperAdminDashboard = ({ data }: { data: DashboardSummary }) => (
  * Manager View
  * Focus: Financials, Sales Performance, Staffing
  */
-const ManagerDashboard = ({ data }: { data: DashboardSummary }) => (
+const ManagerDashboard = ({ data }: { data: DashboardSummary }) => {
+  const navigate = useNavigate();
+  return (
   <div className="space-y-6">
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
       <Card>
@@ -243,7 +246,8 @@ const ManagerDashboard = ({ data }: { data: DashboardSummary }) => (
       </Card>
     </div>
   </div>
-);
+  );
+};
 
 /**
  * Cashier View
@@ -348,7 +352,9 @@ const CashierDashboard = ({ data }: { data: DashboardSummary }) => (
  * Inventory Clerk View
  * Focus: Stock Levels, Shipments, POs
  */
-const InventoryDashboard = ({ data }: { data: DashboardSummary }) => (
+const InventoryDashboard = ({ data }: { data: DashboardSummary }) => {
+  const navigate = useNavigate();
+  return (
   <div className="space-y-6">
     <div className="grid gap-4 md:grid-cols-3">
       <Card className="border-l-4 border-l-red-500">
@@ -428,14 +434,15 @@ const InventoryDashboard = ({ data }: { data: DashboardSummary }) => (
             ))}
           </div>
           <div className="mt-6 pt-4 border-t border-zinc-100 dark:border-zinc-800 grid grid-cols-2 gap-3">
-            <Button className="w-full" variant="secondary"><ClipboardList className="mr-2 h-4 w-4" /> Stock Count</Button>
-            <Button className="w-full" variant="outline"><CheckCircle2 className="mr-2 h-4 w-4" /> Receive Goods</Button>
+            <Button className="w-full" variant="secondary" onClick={() => navigate('/inventory')}><ClipboardList className="mr-2 h-4 w-4" /> Stock Count</Button>
+            <Button className="w-full" variant="outline" onClick={() => navigate('/procurement')}><CheckCircle2 className="mr-2 h-4 w-4" /> Receive Goods</Button>
           </div>
         </CardContent>
       </Card>
     </div>
   </div>
-);
+  );
+};
 
 // --- Main Dashboard Component ---
 

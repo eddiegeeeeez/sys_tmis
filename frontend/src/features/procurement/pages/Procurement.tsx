@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { Card, CardContent } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
 import { Badge } from '../../../components/ui/Badge';
@@ -48,11 +48,7 @@ export const Procurement: React.FC<ProcurementProps> = ({ currentRole }) => {
         items: [] // Simplified for now
     });
 
-    useEffect(() => {
-        fetchData();
-    }, []);
-
-    const fetchData = async () => {
+    const fetchData = useCallback(async () => {
         setIsLoading(true);
         try {
             const [supRes, poRes] = await Promise.all([
@@ -67,7 +63,11 @@ export const Procurement: React.FC<ProcurementProps> = ({ currentRole }) => {
         } finally {
             setIsLoading(false);
         }
-    };
+    }, []);
+
+    useEffect(() => {
+        fetchData();
+    }, [fetchData]);
 
     const handleSaveSupplier = async () => {
         setIsSaving(true);
@@ -128,7 +128,7 @@ export const Procurement: React.FC<ProcurementProps> = ({ currentRole }) => {
     const [isReceiving, setIsReceiving] = useState(false);
     const [activeTab, setActiveTab] = useState('po');
 
-    const handleReceivePO = async (poId: number) => {
+    const handleReceivePO = useCallback(async (poId: number) => {
         setIsReceiving(true);
         try {
             const res = await procurementService.receivePurchaseOrder(poId);
@@ -141,9 +141,9 @@ export const Procurement: React.FC<ProcurementProps> = ({ currentRole }) => {
         } finally {
             setIsReceiving(false);
         }
-    };
+    }, [fetchData]);
 
-    const columns: ColumnDef<ApiPO>[] = [
+    const columns: ColumnDef<ApiPO>[] = useMemo(() => [
         {
             accessorKey: "poNumber",
             header: ({ column }) => (
@@ -225,7 +225,7 @@ export const Procurement: React.FC<ProcurementProps> = ({ currentRole }) => {
                 );
             }
         }
-    ];
+    ], [isReceiving, handleReceivePO]);
 
     return (
         <div className="space-y-6">

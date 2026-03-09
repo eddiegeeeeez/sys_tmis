@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using TradeMatrix.Server.Data;
 using TradeMatrix.Server.DTOs;
 using TradeMatrix.Server.Models;
@@ -9,11 +10,13 @@ namespace TradeMatrix.Server.Services
     {
         private readonly ApplicationDbContext _context;
         private readonly IStockMovementService _stockMovementService;
+        private readonly ILogger<TransactionService> _logger;
 
-        public TransactionService(ApplicationDbContext context, IStockMovementService stockMovementService)
+        public TransactionService(ApplicationDbContext context, IStockMovementService stockMovementService, ILogger<TransactionService> logger)
         {
             _context = context;
             _stockMovementService = stockMovementService;
+            _logger = logger;
         }
 
         public async Task<TransactionDto> CreateTransactionAsync(CreateTransactionDto dto, int? cashierId, string cashierName)
@@ -43,7 +46,7 @@ namespace TradeMatrix.Server.Services
                 .CountAsync(t => t.TransactionDate >= today);
             var txNumber = $"TRX-{today:yyyyMMdd}-{(todayCount + 1):D4}";
 
-            // Build transaction items and create SALE stock movements
+            // Build transaction items and decrement stock (core — must succeed atomically)
             var txItems = new List<TransactionItem>();
             decimal subtotal = 0;
             foreach (var item in dto.Items)
@@ -61,11 +64,8 @@ namespace TradeMatrix.Server.Services
                     LineTotal = lineTotal
                 });
 
-                // Record SALE movement (this also decrements Product.Stock)
-                await _stockMovementService.RecordMovementAsync(
-                    product.Id, "SALE", item.Quantity, cashierName,
-                    reference: txNumber,
-                    notes: $"POS sale: {item.Quantity}x {product.Name}");
+                // Decrement stock directly — this is the authoritative stock change
+                product.Stock -= item.Quantity;
             }
 
             // Philippine standard VAT rate is 12%
@@ -93,6 +93,37 @@ namespace TradeMatrix.Server.Services
             _context.Transactions.Add(transaction);
             await _context.SaveChangesAsync();
             await dbTransaction.CommitAsync();
+
+            // Record SALE stock movements for audit trail (post-commit, non-critical)
+            // This runs outside the DB transaction so any failure here does not roll back the sale.
+            foreach (var item in dto.Items)
+            {
+                try
+                {
+                    _context.StockMovements.Add(new StockMovement
+                    {
+                        ProductId = item.ProductId,
+                        MovementType = "SALE",
+                        Quantity = item.Quantity,
+                        Reference = txNumber,
+                        Notes = $"POS sale: {item.Quantity}x {txItems.First(t => t.ProductId == item.ProductId).ProductName}",
+                        RecordedBy = cashierName,
+                        CreatedAt = DateTime.UtcNow
+                    });
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Failed to queue stock movement for product {ProductId} on transaction {TxNumber}", item.ProductId, txNumber);
+                }
+            }
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to persist stock movements for transaction {TxNumber}. Transaction and stock levels are correct.", txNumber);
+            }
 
             return MapToDto(transaction, cashierName);
         }
@@ -162,18 +193,47 @@ namespace TradeMatrix.Server.Services
             if (transaction.Status == "Voided")
                 throw new ArgumentException("Transaction is already voided.");
 
-            // Restore stock via VOID_RESTORE movements
+            // Restore stock directly (core — must succeed atomically with void)
             foreach (var item in transaction.Items)
             {
-                await _stockMovementService.RecordMovementAsync(
-                    item.ProductId, "VOID_RESTORE", item.Quantity, voidedBy,
-                    reference: transaction.TransactionNumber,
-                    notes: $"Void restore: {item.Quantity}x {item.ProductName}");
+                var product = await _context.Products.FindAsync(item.ProductId);
+                if (product != null)
+                    product.Stock += item.Quantity;
             }
 
             transaction.Status = "Voided";
             await _context.SaveChangesAsync();
             await dbTransaction.CommitAsync();
+
+            // Record VOID_RESTORE stock movements for audit trail (post-commit, non-critical)
+            foreach (var item in transaction.Items)
+            {
+                try
+                {
+                    _context.StockMovements.Add(new StockMovement
+                    {
+                        ProductId = item.ProductId,
+                        MovementType = "VOID_RESTORE",
+                        Quantity = item.Quantity,
+                        Reference = transaction.TransactionNumber,
+                        Notes = $"Void restore: {item.Quantity}x {item.ProductName}",
+                        RecordedBy = voidedBy,
+                        CreatedAt = DateTime.UtcNow
+                    });
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Failed to queue void-restore movement for product {ProductId}", item.ProductId);
+                }
+            }
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to persist void-restore movements for transaction {TxNumber}. Void and stock restore are correct.", transaction.TransactionNumber);
+            }
 
             return MapToDto(transaction, transaction.Cashier?.Name);
         }
