@@ -24,6 +24,7 @@ namespace TradeMatrix.Server.Controllers
         }
 
         [HttpGet("products")]
+        [Authorize(Roles = "SuperAdmin,Manager,InventoryClerk,Cashier")]
         public async Task<ActionResult<ApiResponse<List<ProductDto>>>> GetProducts()
         {
             try
@@ -119,6 +120,7 @@ namespace TradeMatrix.Server.Controllers
         }
 
         [HttpGet("products/lookup/{code}")]
+        [Authorize(Roles = "SuperAdmin,Manager,InventoryClerk,Cashier")]
         public async Task<ActionResult<ApiResponse<ProductDto>>> LookupProduct(string code)
         {
             try
@@ -190,6 +192,11 @@ namespace TradeMatrix.Server.Controllers
                 // Validate file size (max 5MB)
                 if (file.Length > 5 * 1024 * 1024)
                     return BadRequest(ApiResponse<string>.ErrorResponse("Image must be less than 5MB"));
+
+                // Validate file signature (magic bytes) to prevent disguised uploads
+                using var validationStream = file.OpenReadStream();
+                if (!_s3StorageService.ValidateFileSignature(validationStream, file.ContentType))
+                    return BadRequest(ApiResponse<string>.ErrorResponse("File content does not match the declared type. Upload rejected."));
 
                 var product = await _inventoryService.GetProductByIdAsync(id);
                 if (product == null)
@@ -271,6 +278,7 @@ namespace TradeMatrix.Server.Controllers
         }
 
         [HttpGet("products/{id}")]
+        [Authorize(Roles = "SuperAdmin,Manager,InventoryClerk,Cashier")]
         public async Task<ActionResult<ApiResponse<ProductDto>>> GetProductById(int id)
         {
             try

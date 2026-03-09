@@ -106,20 +106,36 @@ namespace TradeMatrix.Server.Services
             }
 
             // Security Restriction: Only SuperAdmin can assign the SuperAdmin role
-            if (role.Name == "SuperAdmin" && currentUserId != null)
+            if (role.Name == "SuperAdmin")
             {
+                if (string.IsNullOrEmpty(currentUserId))
+                {
+                    return ApiResponse<UserDto>.ErrorResponse("Unauthorized to assign SuperAdmin role");
+                }
+
                 var creator = await _context.Users.Include(u => u.Role).FirstOrDefaultAsync(u => u.Id.ToString() == currentUserId);
-                if (creator?.Role.Name != "SuperAdmin")
+                if (creator == null || creator.Role.Name != "SuperAdmin")
                 {
                     return ApiResponse<UserDto>.ErrorResponse("Unauthorized to assign SuperAdmin role");
                 }
             }
 
+            // Validate password
+            if (string.IsNullOrWhiteSpace(createUserDto.Password))
+            {
+                return ApiResponse<UserDto>.ErrorResponse("Password is required");
+            }
+
+            if (createUserDto.Password.Length < 8)
+            {
+                return ApiResponse<UserDto>.ErrorResponse("Password must be at least 8 characters");
+            }
+
             var newUser = new User
             {
-                Name = createUserDto.Name,
-                Email = createUserDto.Email,
-                PasswordHash = _passwordHashing.HashPassword(createUserDto.Password ?? "TradeMatrix2024!"),
+                Name = createUserDto.Name.Trim(),
+                Email = createUserDto.Email.Trim().ToLowerInvariant(),
+                PasswordHash = _passwordHashing.HashPassword(createUserDto.Password),
                 Role = role,
                 IsActive = createUserDto.IsActive ?? true,
                 CreatedAt = DateTime.UtcNow,
@@ -129,7 +145,7 @@ namespace TradeMatrix.Server.Services
             _context.Users.Add(newUser);
             await _context.SaveChangesAsync();
 
-            _logger.LogInformation($"User created: {newUser.Email} by user ID: {currentUserId}");
+            _logger.LogInformation("User created: {UserId} by actor: {ActorId}", newUser.Id, currentUserId);
 
             var userDto = new UserDto
             {
@@ -155,14 +171,15 @@ namespace TradeMatrix.Server.Services
             }
 
             if (!string.IsNullOrWhiteSpace(updateUserDto.Name))
-                user.Name = updateUserDto.Name;
+                user.Name = updateUserDto.Name.Trim();
 
-            if (!string.IsNullOrWhiteSpace(updateUserDto.Email) && updateUserDto.Email != user.Email)
+            if (!string.IsNullOrWhiteSpace(updateUserDto.Email) && updateUserDto.Email.Trim().ToLowerInvariant() != user.Email)
             {
-                var emailExists = await _context.Users.AnyAsync(u => u.Email == updateUserDto.Email && u.Id != id);
+                var normalizedEmail = updateUserDto.Email.Trim().ToLowerInvariant();
+                var emailExists = await _context.Users.AnyAsync(u => u.Email == normalizedEmail && u.Id != id);
                 if (emailExists)
                     return ApiResponse<UserDto>.ErrorResponse("Email already in use");
-                user.Email = updateUserDto.Email;
+                user.Email = normalizedEmail;
             }
 
             Role? role = null;
@@ -178,11 +195,16 @@ namespace TradeMatrix.Server.Services
             if (role != null)
             {
                     // Security Restriction for Update
-                    if (role.Name != user.Role.Name && currentUserId != null)
+                    if (role.Name != user.Role.Name)
                     {
+                        if (string.IsNullOrEmpty(currentUserId))
+                        {
+                            return ApiResponse<UserDto>.ErrorResponse("Unauthorized to change roles");
+                        }
+
                         var updater = await _context.Users.Include(u => u.Role).FirstOrDefaultAsync(u => u.Id.ToString() == currentUserId);
                         
-                        if (role.Name == "SuperAdmin" && updater?.Role.Name != "SuperAdmin")
+                        if (role.Name == "SuperAdmin" && (updater == null || updater.Role.Name != "SuperAdmin"))
                         {
                             return ApiResponse<UserDto>.ErrorResponse("Unauthorized to assign SuperAdmin role");
                         }
@@ -198,7 +220,7 @@ namespace TradeMatrix.Server.Services
 
             await _context.SaveChangesAsync();
 
-            _logger.LogInformation($"User updated: {user.Email} by user ID: {currentUserId}");
+            _logger.LogInformation("User updated: {UserId} by actor: {ActorId}", user.Id, currentUserId);
 
             var userDto = new UserDto
             {
@@ -231,7 +253,7 @@ namespace TradeMatrix.Server.Services
             _context.Users.Remove(user);
             await _context.SaveChangesAsync();
 
-            _logger.LogInformation($"User deleted: {user.Email} by user ID: {currentUserId}");
+            _logger.LogInformation("User deleted: {UserId} by actor: {ActorId}", user.Id, currentUserId);
 
             return ApiResponse<bool>.SuccessResponse(true, "User deleted successfully");
         }
@@ -249,7 +271,7 @@ namespace TradeMatrix.Server.Services
 
             await _context.SaveChangesAsync();
 
-            _logger.LogInformation($"User account unlocked: {user.Email}");
+            _logger.LogInformation("User account unlocked: {UserId}", user.Id);
 
             return ApiResponse<bool>.SuccessResponse(true, "User account unlocked");
         }
@@ -267,13 +289,18 @@ namespace TradeMatrix.Server.Services
                 return ApiResponse<bool>.ErrorResponse("New password is required");
             }
 
+            if (newPassword.Length < 8)
+            {
+                return ApiResponse<bool>.ErrorResponse("Password must be at least 8 characters");
+            }
+
             user.PasswordHash = _passwordHashing.HashPassword(newPassword);
             user.FailedLoginAttempts = 0;
             user.LockoutUntil = null;
 
             await _context.SaveChangesAsync();
 
-            _logger.LogInformation($"Password reset for user: {user.Email}");
+            _logger.LogInformation("Password reset for user: {UserId}", user.Id);
 
             return ApiResponse<bool>.SuccessResponse(true, "Password reset successfully");
         }
@@ -288,7 +315,7 @@ namespace TradeMatrix.Server.Services
             user.IsArchived = true;
             await _context.SaveChangesAsync();
 
-            _logger.LogInformation($"User archived: {user.Email} by user ID: {currentUserId}");
+            _logger.LogInformation("User archived: {UserId} by actor: {ActorId}", user.Id, currentUserId);
             return ApiResponse<bool>.SuccessResponse(true, "User archived successfully");
         }
 
@@ -301,7 +328,7 @@ namespace TradeMatrix.Server.Services
             user.IsArchived = false;
             await _context.SaveChangesAsync();
 
-            _logger.LogInformation($"User restored: {user.Email} by user ID: {currentUserId}");
+            _logger.LogInformation("User restored: {UserId} by actor: {ActorId}", user.Id, currentUserId);
             return ApiResponse<bool>.SuccessResponse(true, "User restored successfully");
         }
     }

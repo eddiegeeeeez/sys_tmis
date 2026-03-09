@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using System.Security.Claims;
 using TradeMatrix.Server.DTOs;
 using TradeMatrix.Server.Services;
@@ -8,6 +9,7 @@ namespace TradeMatrix.Server.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [EnableRateLimiting("AuthEndpoints")]
     public class AuthController : ControllerBase
     {
         private readonly IAuthService _authService;
@@ -30,19 +32,26 @@ namespace TradeMatrix.Server.Controllers
         public async Task<IActionResult> Login([FromBody] LoginDto loginDto)
         {
             var result = await _authService.LoginAsync(loginDto);
-            if (result == null)
+
+            if (result.IsLockedOut)
             {
-                _logger.LogWarning("Failed login attempt for email: {Email}", loginDto.Email);
-                return Unauthorized(new { message = "Invalid email or password" });
+                _logger.LogWarning("Login attempt on locked account: {Email}", loginDto.Email);
+                return StatusCode(429, new { message = result.ErrorMessage });
             }
 
-            _logger.LogInformation("Successful login for user: {Email}", result.Email);
+            if (!result.IsSuccess || result.Data == null)
+            {
+                _logger.LogWarning("Failed login attempt for email: {Email}", loginDto.Email);
+                return Unauthorized(new { message = result.ErrorMessage ?? "Invalid email or password" });
+            }
+
+            _logger.LogInformation("Successful login for user: {UserId}", result.Data.Email);
             return Ok(new
             {
-                token = result.Token,
-                role = result.Role,
-                name = result.Name,
-                email = result.Email
+                token = result.Data.Token,
+                role = result.Data.Role,
+                name = result.Data.Name,
+                email = result.Data.Email
             });
         }
 
@@ -104,11 +113,6 @@ namespace TradeMatrix.Server.Controllers
                              User.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier");
 
             if (userIdClaim != null && int.TryParse(userIdClaim.Value, out int userId))
-                return userId;
-
-            // Fallback: try to find any integer claim
-            userIdClaim = User.Claims.FirstOrDefault(c => int.TryParse(c.Value, out _));
-            if (userIdClaim != null && int.TryParse(userIdClaim.Value, out userId))
                 return userId;
 
             return null;

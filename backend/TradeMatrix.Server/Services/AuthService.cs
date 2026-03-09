@@ -14,49 +14,81 @@ namespace TradeMatrix.Server.Services
         private readonly ApplicationDbContext _context;
         private readonly IConfiguration _configuration;
         private readonly IPasswordHashingService _passwordHashing;
+        private readonly ILogger<AuthService> _logger;
+
+        // Account lockout settings
+        private const int MaxFailedAttempts = 5;
+        private static readonly TimeSpan LockoutDuration = TimeSpan.FromMinutes(15);
 
         public AuthService(
             ApplicationDbContext context,
             IConfiguration configuration,
-            IPasswordHashingService passwordHashing)
+            IPasswordHashingService passwordHashing,
+            ILogger<AuthService> logger)
         {
             _context = context;
             _configuration = configuration;
             _passwordHashing = passwordHashing;
+            _logger = logger;
         }
 
-        public async Task<AuthResultDto?> LoginAsync(LoginDto loginDto)
+        public async Task<LoginResultDto> LoginAsync(LoginDto loginDto)
         {
             var user = await _context.Users
-                .AsNoTracking()
                 .Include(u => u.Role)
                 .FirstOrDefaultAsync(u => u.Email == loginDto.Email);
 
-            if (user == null || !_passwordHashing.VerifyPassword(loginDto.Password, user.PasswordHash))
-                return null;
+            if (user == null)
+            {
+                // Return generic failure — don't reveal whether user exists
+                return LoginResultDto.Failed("Invalid email or password");
+            }
+
+            // Check account lockout
+            if (user.LockoutUntil.HasValue && user.LockoutUntil.Value > DateTime.UtcNow)
+            {
+                var remaining = (int)(user.LockoutUntil.Value - DateTime.UtcNow).TotalMinutes + 1;
+                _logger.LogWarning("Login attempt on locked account: {UserId}", user.Id);
+                return LoginResultDto.Locked($"Account is locked. Try again in {remaining} minute(s).");
+            }
+
+            // Verify password
+            if (!_passwordHashing.VerifyPassword(loginDto.Password, user.PasswordHash))
+            {
+                user.FailedLoginAttempts = user.FailedLoginAttempts + 1;
+
+                if (user.FailedLoginAttempts >= MaxFailedAttempts)
+                {
+                    user.LockoutUntil = DateTime.UtcNow.Add(LockoutDuration);
+                    _logger.LogWarning("Account locked after {Attempts} failed attempts: {UserId}",
+                        user.FailedLoginAttempts, user.Id);
+                }
+
+                await _context.SaveChangesAsync();
+                return LoginResultDto.Failed("Invalid email or password");
+            }
 
             if (!user.IsActive)
-                return null;
+                return LoginResultDto.Failed("Account is deactivated. Contact your administrator.");
 
-            // Update LastLogin on tracked entity
-            var trackedUser = await _context.Users.FirstOrDefaultAsync(u => u.Id == user.Id);
-            if (trackedUser != null)
-            {
-                trackedUser.LastLogin = DateTime.UtcNow;
-                trackedUser.FailedLoginAttempts = 0;
-                trackedUser.LockoutUntil = null;
-                await _context.SaveChangesAsync();
-            }
+            if (user.IsArchived)
+                return LoginResultDto.Failed("Account has been archived. Contact your administrator.");
+
+            // Successful login — reset lockout counters
+            user.LastLogin = DateTime.UtcNow;
+            user.FailedLoginAttempts = 0;
+            user.LockoutUntil = null;
+            await _context.SaveChangesAsync();
 
             var token = GenerateJwtToken(user);
 
-            return new AuthResultDto
+            return LoginResultDto.Success(new AuthResultDto
             {
                 Token = token,
                 Role = user.Role.Name,
                 Name = user.Name,
                 Email = user.Email
-            };
+            });
         }
 
         public async Task<UserProfileDto?> GetProfileAsync(int userId)
@@ -88,10 +120,13 @@ namespace TradeMatrix.Server.Services
 
         private string GenerateJwtToken(User user)
         {
-            var jwtKey = _configuration["Jwt:Key"] ?? "YourSuperSecretKeyThatIsLongEnough123!";
-            var jwtIssuer = _configuration["Jwt:Issuer"] ?? "TradeMatrixServer";
-            var jwtAudience = _configuration["Jwt:Audience"] ?? "TradeMatrixClient";
-            var expiryMinutes = int.TryParse(_configuration["Jwt:ExpiryMinutes"], out var m) ? m : 1440;
+            var jwtKey = _configuration["Jwt:Key"]
+                ?? throw new InvalidOperationException("JWT signing key (Jwt:Key) is not configured. Application cannot issue tokens.");
+            var jwtIssuer = _configuration["Jwt:Issuer"]
+                ?? throw new InvalidOperationException("JWT issuer (Jwt:Issuer) is not configured.");
+            var jwtAudience = _configuration["Jwt:Audience"]
+                ?? throw new InvalidOperationException("JWT audience (Jwt:Audience) is not configured.");
+            var expiryMinutes = int.TryParse(_configuration["Jwt:ExpiryMinutes"], out var m) ? m : 60;
 
             var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
             var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);

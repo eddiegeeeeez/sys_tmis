@@ -7,6 +7,7 @@ namespace TradeMatrix.Server.Services
     {
         Task<string> UploadFileAsync(Stream fileStream, string fileName, string contentType, string folder = "products");
         Task<bool> DeleteFileAsync(string fileUrl);
+        bool ValidateFileSignature(Stream fileStream, string contentType);
     }
 
     public class S3StorageService : IS3StorageService
@@ -16,12 +17,46 @@ namespace TradeMatrix.Server.Services
         private readonly string _baseUrl;
         private readonly ILogger<S3StorageService> _logger;
 
+        // Magic byte signatures for allowed image types
+        private static readonly Dictionary<string, byte[][]> FileSignatures = new()
+        {
+            { "image/jpeg", new[] { new byte[] { 0xFF, 0xD8, 0xFF } } },
+            { "image/png", new[] { new byte[] { 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A } } },
+            { "image/gif", new[] { new byte[] { 0x47, 0x49, 0x46, 0x38 } } },
+            { "image/webp", new[] { new byte[] { 0x52, 0x49, 0x46, 0x46 } } } // RIFF header
+        };
+
         public S3StorageService(IAmazonS3 s3Client, IConfiguration configuration, ILogger<S3StorageService> logger)
         {
             _s3Client = s3Client;
-            _bucketName = configuration["AWS:S3:BucketName"] ?? "tradematrix-uploads";
-            _baseUrl = configuration["AWS:S3:BaseUrl"] ?? "";
+            _bucketName = configuration["AWS:S3:BucketName"]
+                ?? throw new InvalidOperationException("AWS:S3:BucketName is not configured.");
+            _baseUrl = configuration["AWS:S3:BaseUrl"]
+                ?? throw new InvalidOperationException("AWS:S3:BaseUrl is not configured.");
             _logger = logger;
+        }
+
+        /// <summary>
+        /// Validates that a file's magic bytes match the declared content type.
+        /// Prevents upload of disguised malicious files.
+        /// </summary>
+        public bool ValidateFileSignature(Stream fileStream, string contentType)
+        {
+            if (!FileSignatures.TryGetValue(contentType.ToLowerInvariant(), out var signatures))
+                return false;
+
+            var headerBytes = new byte[8];
+            var originalPosition = fileStream.Position;
+            fileStream.Position = 0;
+            var bytesRead = fileStream.Read(headerBytes, 0, headerBytes.Length);
+            fileStream.Position = originalPosition;
+
+            if (bytesRead < 3)
+                return false;
+
+            return signatures.Any(sig =>
+                sig.Length <= bytesRead &&
+                headerBytes.Take(sig.Length).SequenceEqual(sig));
         }
 
         public async Task<string> UploadFileAsync(Stream fileStream, string fileName, string contentType, string folder = "products")
@@ -36,6 +71,9 @@ namespace TradeMatrix.Server.Services
                 ContentType = contentType,
                 CannedACL = S3CannedACL.PublicRead
             };
+
+            // Add cache control for immutable content-addressed files
+            request.Headers.CacheControl = "public, max-age=31536000, immutable";
 
             await _s3Client.PutObjectAsync(request);
 

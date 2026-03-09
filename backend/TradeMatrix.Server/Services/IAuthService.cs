@@ -4,9 +4,30 @@ namespace TradeMatrix.Server.Services
 {
     public interface IAuthService
     {
-        Task<AuthResultDto?> LoginAsync(LoginDto loginDto);
+        Task<LoginResultDto> LoginAsync(LoginDto loginDto);
         Task<UserProfileDto?> GetProfileAsync(int userId);
         Task<bool> VerifyPasswordAsync(int userId, string password);
+    }
+
+    /// <summary>
+    /// Wraps the login outcome so the controller can return distinct HTTP codes
+    /// for locked accounts, invalid credentials, and success.
+    /// </summary>
+    public class LoginResultDto
+    {
+        public bool IsSuccess { get; set; }
+        public bool IsLockedOut { get; set; }
+        public string? ErrorMessage { get; set; }
+        public AuthResultDto? Data { get; set; }
+
+        public static LoginResultDto Success(AuthResultDto data) =>
+            new() { IsSuccess = true, Data = data };
+
+        public static LoginResultDto Failed(string message) =>
+            new() { IsSuccess = false, ErrorMessage = message };
+
+        public static LoginResultDto Locked(string message) =>
+            new() { IsSuccess = false, IsLockedOut = true, ErrorMessage = message };
     }
 
     public class AuthResultDto

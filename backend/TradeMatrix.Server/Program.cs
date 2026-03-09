@@ -7,6 +7,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using TradeMatrix.Server.Filters;
 using Amazon.S3;
+using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -105,6 +106,16 @@ builder.Services.AddScoped<IS3StorageService, S3StorageService>();
 builder.Services.AddHostedService<MidnightBackupService>();
 
 // Authentication
+var jwtKey = builder.Configuration["Jwt:Key"]
+    ?? throw new InvalidOperationException("FATAL: Jwt:Key is not configured. Cannot start application.");
+var jwtIssuer = builder.Configuration["Jwt:Issuer"]
+    ?? throw new InvalidOperationException("FATAL: Jwt:Issuer is not configured.");
+var jwtAudience = builder.Configuration["Jwt:Audience"]
+    ?? throw new InvalidOperationException("FATAL: Jwt:Audience is not configured.");
+
+if (jwtKey.Length < 32)
+    throw new InvalidOperationException("FATAL: Jwt:Key must be at least 32 characters (256 bits) for HMAC-SHA256.");
+
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -114,11 +125,44 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateAudience = true,
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
-            ValidIssuer = builder.Configuration["Jwt:Issuer"] ?? "TradeMatrixServer",
-            ValidAudience = builder.Configuration["Jwt:Audience"] ?? "TradeMatrixClient",
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"] ?? "YourSuperSecretKeyThatIsLongEnough123!"))
+            ValidIssuer = jwtIssuer,
+            ValidAudience = jwtAudience,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
+            ClockSkew = TimeSpan.FromMinutes(1) // Reduce default 5-min skew
         };
     });
+
+// Rate Limiting
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+    // Global sliding window: 100 requests per minute per IP
+    options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
+        RateLimitPartition.GetSlidingWindowLimiter(
+            partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            factory: _ => new SlidingWindowRateLimiterOptions
+            {
+                PermitLimit = 100,
+                Window = TimeSpan.FromMinutes(1),
+                SegmentsPerWindow = 4,
+                QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                QueueLimit = 0
+            }));
+
+    // Strict rate limit for auth endpoints
+    options.AddPolicy("AuthEndpoints", context =>
+        RateLimitPartition.GetSlidingWindowLimiter(
+            partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            factory: _ => new SlidingWindowRateLimiterOptions
+            {
+                PermitLimit = 10,
+                Window = TimeSpan.FromMinutes(5),
+                SegmentsPerWindow = 5,
+                QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                QueueLimit = 0
+            }));
+});
 
 var app = builder.Build();
 
@@ -138,7 +182,7 @@ if (!app.Environment.IsDevelopment())
     app.UseHttpsRedirection();
 }
 
-// 3. Security headers middleware (Optimized)
+// 3. Security headers middleware
 app.Use(async (context, next) =>
 {
     context.Response.OnStarting(() =>
@@ -147,19 +191,34 @@ app.Use(async (context, next) =>
         {
             context.Response.Headers.Append("Content-Security-Policy", 
                 "default-src 'self'; " +
-                "script-src 'self' 'unsafe-inline' 'unsafe-eval'; " +
+                "script-src 'self'; " +
                 "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
                 "font-src 'self' https://fonts.gstatic.com; " +
                 "img-src 'self' data: blob: https://*.s3.us-east-1.amazonaws.com https://*.s3.ap-southeast-1.amazonaws.com; " +
                 "connect-src 'self'; " +
-                "frame-ancestors 'self'");
+                "frame-ancestors 'none'; " +
+                "base-uri 'self'; " +
+                "form-action 'self'");
         }
         
         if (!context.Response.Headers.ContainsKey("X-Content-Type-Options"))
             context.Response.Headers.Append("X-Content-Type-Options", "nosniff");
-            
+
         if (!context.Response.Headers.ContainsKey("X-Frame-Options"))
-            context.Response.Headers.Append("X-Frame-Options", "SAMEORIGIN");
+            context.Response.Headers.Append("X-Frame-Options", "DENY");
+
+        // HSTS: tell browsers to always use HTTPS for this domain for 1 year (production only)
+        if (app.Environment.IsProduction() && !context.Response.Headers.ContainsKey("Strict-Transport-Security"))
+            context.Response.Headers.Append("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
+
+        if (!context.Response.Headers.ContainsKey("Referrer-Policy"))
+            context.Response.Headers.Append("Referrer-Policy", "strict-origin-when-cross-origin");
+
+        if (!context.Response.Headers.ContainsKey("Permissions-Policy"))
+            context.Response.Headers.Append("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+
+        if (!context.Response.Headers.ContainsKey("X-Permitted-Cross-Domain-Policies"))
+            context.Response.Headers.Append("X-Permitted-Cross-Domain-Policies", "none");
             
         return Task.CompletedTask;
     });
@@ -187,12 +246,17 @@ else
 }
 app.UseRouting();
 app.UseCors("AllowFrontend");
+app.UseRateLimiter();
 
 // 5. Auth & Endpoints
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+// Catch-all for unmatched /api/* routes — return 404 JSON instead of falling through to the SPA.
+// Without this, MapFallbackToFile would serve index.html for any unknown /api/ path.
+app.Map("/api/{**path}", () => Results.NotFound(new { error = "API endpoint not found", status = 404 }));
 
 // 6. SPA Fallback
 app.MapFallbackToFile("index.html");

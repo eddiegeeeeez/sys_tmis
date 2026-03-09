@@ -8,7 +8,7 @@ namespace TradeMatrix.Server.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize]
+    [Authorize(Roles = "SuperAdmin,Manager,InventoryClerk")]
     public class ProcurementController : ControllerBase
     {
         private readonly IProcurementService _procurementService;

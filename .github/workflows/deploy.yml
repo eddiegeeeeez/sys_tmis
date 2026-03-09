@@ -6,10 +6,14 @@ on:
       - main
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   build-and-deploy:
     name: Build & Deploy
     runs-on: ubuntu-latest
+    environment: production
 
     steps:
       - name: Checkout
@@ -25,7 +29,7 @@ jobs:
       - name: Build Frontend
         run: |
           cd frontend
-          npm ci
+          npm ci --ignore-scripts
           npm run build
 
       - name: Setup .NET
@@ -43,6 +47,14 @@ jobs:
           # No path overrides or flattening needed.
           dotnet publish -c Release -o ./publish
 
+      - name: Verify publish artifacts
+        run: |
+          echo "Checking publish directory structure..."
+          test -f backend/TradeMatrix.Server/publish/TradeMatrix.Server.dll || { echo "FATAL: DLL not found"; exit 1; }
+          test -f backend/TradeMatrix.Server/publish/web.config || { echo "FATAL: web.config not found"; exit 1; }
+          test -f backend/TradeMatrix.Server/publish/wwwroot/index.html || { echo "FATAL: Frontend not built"; exit 1; }
+          echo "All artifacts verified."
+
       - name: Inject production secrets into web.config
         env:
           PROD_CONNECTION_STRING: ${{ secrets.PROD_CONNECTION_STRING }}
@@ -57,11 +69,18 @@ jobs:
           PROD_AWS_BASE_URL: ${{ secrets.PROD_AWS_BASE_URL }}
         run: |
           python3 << 'PYEOF'
-          import os, xml.sax.saxutils as saxutils
+          import os, xml.sax.saxutils as saxutils, sys
 
           def e(v):
               """XML-escape a secret value so it's safe as an attribute value."""
               return saxutils.escape(v or "", {'"': '&quot;'})
+
+          # Validate required secrets exist
+          required = ["PROD_CONNECTION_STRING", "PROD_JWT_KEY", "PROD_JWT_ISSUER", "PROD_JWT_AUDIENCE"]
+          missing = [s for s in required if not os.environ.get(s)]
+          if missing:
+              print(f"FATAL: Missing required secrets: {', '.join(missing)}", file=sys.stderr)
+              sys.exit(1)
 
           new_vars = (
               f'          <environmentVariable name="ConnectionStrings__DefaultConnection" value="{e(os.environ["PROD_CONNECTION_STRING"])}" />\n'
@@ -99,7 +118,7 @@ jobs:
           password: ${{ secrets.FTP_PASSWORD }}
           local-dir: ./backend/TradeMatrix.Server/publish/
           server-dir: /wwwroot/
-          protocol: ftp
+          protocol: ftps
           port: 21
           dangerous-clean-slate: false
           exclude: |
@@ -107,3 +126,4 @@ jobs:
             **/.git*/**
             **/node_modules/**
             **/logs/*.log
+            **/appsettings.Development.json

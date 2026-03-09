@@ -25,7 +25,8 @@ namespace TradeMatrix.Server.Middleware
             }
             catch (Exception ex)
             {
-                _logger.LogError($"Unhandled exception: {ex.Message}");
+                _logger.LogError(ex, "Unhandled exception on {Method} {Path}",
+                    context.Request.Method, context.Request.Path);
                 await HandleExceptionAsync(context, ex);
             }
         }
@@ -37,9 +38,9 @@ namespace TradeMatrix.Server.Middleware
 
             switch (exception)
             {
-                case ArgumentException argEx:
+                case ArgumentException:
                     context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
-                    response.Message = argEx.Message;
+                    response.Message = "Invalid request parameters";
                     response.ErrorCode = "Invalid_Argument";
                     break;
                     
@@ -48,9 +49,16 @@ namespace TradeMatrix.Server.Middleware
                     response.Message = "Unauthorized access";
                     response.ErrorCode = "Unauthorized";
                     break;
+
+                case InvalidOperationException:
+                    context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
+                    response.Message = "A configuration or system error occurred";
+                    response.ErrorCode = "Internal_Server_Error";
+                    break;
                     
                 default:
                     context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
+                    // Never leak exception details to the client
                     response.Message = "An unexpected error occurred";
                     response.ErrorCode = "Internal_Server_Error";
                     break;

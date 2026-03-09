@@ -21,7 +21,7 @@ namespace TradeMatrix.Server.Controllers
         }
 
         [HttpPost]
-        [Authorize(Roles = "Manager,Cashier")]
+        [Authorize(Roles = "SuperAdmin,Manager,Cashier")]
         public async Task<ActionResult<ApiResponse<TransactionDto>>> CreateTransaction([FromBody] CreateTransactionDto dto)
         {
             try
@@ -45,7 +45,7 @@ namespace TradeMatrix.Server.Controllers
         }
 
         [HttpGet]
-        [Authorize(Roles = "Manager")]
+        [Authorize(Roles = "SuperAdmin,Manager")]
         public async Task<ActionResult<ApiResponse<List<TransactionDto>>>> GetTransactions(
             [FromQuery] DateTime? from = null,
             [FromQuery] DateTime? to = null,
@@ -65,7 +65,7 @@ namespace TradeMatrix.Server.Controllers
         }
 
         [HttpGet("my-today")]
-        [Authorize(Roles = "Manager,Cashier")]
+        [Authorize(Roles = "SuperAdmin,Manager,Cashier")]
         public async Task<ActionResult<ApiResponse<List<TransactionDto>>>> GetMyTodayTransactions()
         {
             try
@@ -85,7 +85,7 @@ namespace TradeMatrix.Server.Controllers
         }
 
         [HttpGet("{id:int}")]
-        [Authorize(Roles = "Manager,Cashier")]
+        [Authorize(Roles = "SuperAdmin,Manager,Cashier")]
         public async Task<ActionResult<ApiResponse<TransactionDto>>> GetById(int id)
         {
             try
@@ -108,7 +108,7 @@ namespace TradeMatrix.Server.Controllers
         }
 
         [HttpPatch("{id:int}/void")]
-        [Authorize(Roles = "Manager")]
+        [Authorize(Roles = "SuperAdmin,Manager")]
         public async Task<ActionResult<ApiResponse<TransactionDto>>> VoidTransaction(int id)
         {
             try

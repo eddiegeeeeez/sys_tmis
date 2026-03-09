@@ -55,18 +55,25 @@ export function LoginForm({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!email.trim() || !password) return;
+
     setIsLoading(true);
     setError('');
 
     try {
-      const response = await api.post('/auth/login', { email, password });
+      const response = await api.post('/auth/login', { email: email.trim(), password });
 
       const { token, role, name } = response.data;
       handleSuccess(role as UserRole, token, name);
     } catch (err: any) {
-      console.error('Login failed:', err);
-      const message = err.response?.data?.message || "Invalid credentials or server error";
-      setError(message);
+      const status = err.response?.status;
+      const message = err.response?.data?.message;
+
+      if (status === 429) {
+        setError(message || "Too many login attempts. Please try again later.");
+      } else {
+        setError(message || "Invalid credentials or server error");
+      }
     } finally {
       setIsLoading(false);
     }
