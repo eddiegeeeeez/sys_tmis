@@ -24,96 +24,102 @@ namespace TradeMatrix.Server.Services
             if (!dto.Items.Any())
                 throw new ArgumentException("Transaction must have at least one item.");
 
-            await using var dbTransaction = await _context.Database.BeginTransactionAsync();
+            Transaction transaction = null!;
 
-            var productIds = dto.Items.Select(i => i.ProductId).Distinct().ToList();
-            var products = await _context.Products
-                .Where(p => productIds.Contains(p.Id) && p.IsActive)
-                .ToListAsync();
-
-            // Validate all products exist and have sufficient stock
-            foreach (var item in dto.Items)
+            var strategy = _context.Database.CreateExecutionStrategy();
+            await strategy.ExecuteAsync(async () =>
             {
-                var product = products.FirstOrDefault(p => p.Id == item.ProductId)
-                    ?? throw new ArgumentException($"Product ID {item.ProductId} not found.");
-                if (product.Stock < item.Quantity)
-                    throw new ArgumentException($"Insufficient stock for '{product.Name}'. Available: {product.Stock}.");
-            }
+                await using var dbTransaction = await _context.Database.BeginTransactionAsync();
 
-            // Generate transaction number: TRX-YYYYMMDD-XXXX
-            var today = DateTime.UtcNow.Date;
-            var todayCount = await _context.Transactions
-                .CountAsync(t => t.TransactionDate >= today);
-            var txNumber = $"TRX-{today:yyyyMMdd}-{(todayCount + 1):D4}";
+                var productIds = dto.Items.Select(i => i.ProductId).Distinct().ToList();
+                var products = await _context.Products
+                    .Where(p => productIds.Contains(p.Id) && p.IsActive)
+                    .ToListAsync();
 
-            // Build transaction items and decrement stock (core — must succeed atomically)
-            var txItems = new List<TransactionItem>();
-            decimal subtotal = 0;
-            foreach (var item in dto.Items)
-            {
-                var product = products.First(p => p.Id == item.ProductId);
-                var lineTotal = product.SellingPrice * item.Quantity;
-                subtotal += lineTotal;
-
-                txItems.Add(new TransactionItem
+                // Validate all products exist and have sufficient stock
+                foreach (var item in dto.Items)
                 {
-                    ProductId = product.Id,
-                    ProductName = product.Name,
-                    UnitPrice = product.SellingPrice,
-                    Quantity = item.Quantity,
-                    LineTotal = lineTotal
-                });
+                    var product = products.FirstOrDefault(p => p.Id == item.ProductId)
+                        ?? throw new ArgumentException($"Product ID {item.ProductId} not found.");
+                    if (product.Stock < item.Quantity)
+                        throw new ArgumentException($"Insufficient stock for '{product.Name}'. Available: {product.Stock}.");
+                }
 
-                // Decrement stock directly — this is the authoritative stock change
-                product.Stock -= item.Quantity;
-            }
+                // Generate transaction number: TRX-YYYYMMDD-XXXX
+                var today = DateTime.UtcNow.Date;
+                var todayCount = await _context.Transactions
+                    .CountAsync(t => t.TransactionDate >= today);
+                var txNumber = $"TRX-{today:yyyyMMdd}-{(todayCount + 1):D4}";
 
-            // Philippine standard VAT rate is 12%
-            var vatableSales = Math.Round(subtotal / 1.12m, 2);
-            var taxAmount = subtotal - vatableSales;
-            taxAmount = Math.Round(taxAmount, 2);
-            var total = subtotal;
-            var change = Math.Round(dto.AmountTendered - total, 2);
+                // Build transaction items and decrement stock (core — must succeed atomically)
+                var txItems = new List<TransactionItem>();
+                decimal subtotal = 0;
+                foreach (var item in dto.Items)
+                {
+                    var product = products.First(p => p.Id == item.ProductId);
+                    var lineTotal = product.SellingPrice * item.Quantity;
+                    subtotal += lineTotal;
 
-            var transaction = new Transaction
-            {
-                TransactionNumber = txNumber,
-                CashierId = cashierId,
-                PaymentMethod = dto.PaymentMethod,
-                Subtotal = Math.Round(subtotal, 2),
-                TaxAmount = taxAmount,
-                TotalAmount = Math.Round(total, 2),
-                AmountTendered = dto.AmountTendered,
-                Change = Math.Max(0, change),
-                Status = "Completed",
-                TransactionDate = DateTime.UtcNow,
-                Items = txItems
-            };
+                    txItems.Add(new TransactionItem
+                    {
+                        ProductId = product.Id,
+                        ProductName = product.Name,
+                        UnitPrice = product.SellingPrice,
+                        Quantity = item.Quantity,
+                        LineTotal = lineTotal
+                    });
 
-            _context.Transactions.Add(transaction);
-            await _context.SaveChangesAsync();
-            await dbTransaction.CommitAsync();
+                    // Decrement stock directly — this is the authoritative stock change
+                    product.Stock -= item.Quantity;
+                }
+
+                // Philippine standard VAT rate is 12%
+                var vatableSales = Math.Round(subtotal / 1.12m, 2);
+                var taxAmount = subtotal - vatableSales;
+                taxAmount = Math.Round(taxAmount, 2);
+                var total = subtotal;
+                var change = Math.Round(dto.AmountTendered - total, 2);
+
+                transaction = new Transaction
+                {
+                    TransactionNumber = txNumber,
+                    CashierId = cashierId,
+                    PaymentMethod = dto.PaymentMethod,
+                    Subtotal = Math.Round(subtotal, 2),
+                    TaxAmount = taxAmount,
+                    TotalAmount = Math.Round(total, 2),
+                    AmountTendered = dto.AmountTendered,
+                    Change = Math.Max(0, change),
+                    Status = "Completed",
+                    TransactionDate = DateTime.UtcNow,
+                    Items = txItems
+                };
+
+                _context.Transactions.Add(transaction);
+                await _context.SaveChangesAsync();
+                await dbTransaction.CommitAsync();
+            });
 
             // Record SALE stock movements for audit trail (post-commit, non-critical)
             // This runs outside the DB transaction so any failure here does not roll back the sale.
-            foreach (var item in dto.Items)
+            foreach (var txItem in transaction.Items)
             {
                 try
                 {
                     _context.StockMovements.Add(new StockMovement
                     {
-                        ProductId = item.ProductId,
+                        ProductId = txItem.ProductId,
                         MovementType = "SALE",
-                        Quantity = item.Quantity,
-                        Reference = txNumber,
-                        Notes = $"POS sale: {item.Quantity}x {txItems.First(t => t.ProductId == item.ProductId).ProductName}",
+                        Quantity = txItem.Quantity,
+                        Reference = transaction.TransactionNumber,
+                        Notes = $"POS sale: {txItem.Quantity}x {txItem.ProductName}",
                         RecordedBy = cashierName,
                         CreatedAt = DateTime.UtcNow
                     });
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogWarning(ex, "Failed to queue stock movement for product {ProductId} on transaction {TxNumber}", item.ProductId, txNumber);
+                    _logger.LogWarning(ex, "Failed to queue stock movement for product {ProductId} on transaction {TxNumber}", txItem.ProductId, transaction.TransactionNumber);
                 }
             }
             try
@@ -122,7 +128,7 @@ namespace TradeMatrix.Server.Services
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Failed to persist stock movements for transaction {TxNumber}. Transaction and stock levels are correct.", txNumber);
+                _logger.LogWarning(ex, "Failed to persist stock movements for transaction {TxNumber}. Transaction and stock levels are correct.", transaction.TransactionNumber);
             }
 
             return MapToDto(transaction, cashierName);
@@ -182,28 +188,34 @@ namespace TradeMatrix.Server.Services
 
         public async Task<TransactionDto> VoidTransactionAsync(int id, string voidedBy)
         {
-            await using var dbTransaction = await _context.Database.BeginTransactionAsync();
+            Transaction transaction = null!;
 
-            var transaction = await _context.Transactions
-                .Include(t => t.Items)
-                .Include(t => t.Cashier)
-                .FirstOrDefaultAsync(t => t.Id == id)
-                ?? throw new ArgumentException("Transaction not found.");
-
-            if (transaction.Status == "Voided")
-                throw new ArgumentException("Transaction is already voided.");
-
-            // Restore stock directly (core — must succeed atomically with void)
-            foreach (var item in transaction.Items)
+            var strategy = _context.Database.CreateExecutionStrategy();
+            await strategy.ExecuteAsync(async () =>
             {
-                var product = await _context.Products.FindAsync(item.ProductId);
-                if (product != null)
-                    product.Stock += item.Quantity;
-            }
+                await using var dbTransaction = await _context.Database.BeginTransactionAsync();
 
-            transaction.Status = "Voided";
-            await _context.SaveChangesAsync();
-            await dbTransaction.CommitAsync();
+                transaction = await _context.Transactions
+                    .Include(t => t.Items)
+                    .Include(t => t.Cashier)
+                    .FirstOrDefaultAsync(t => t.Id == id)
+                    ?? throw new ArgumentException("Transaction not found.");
+
+                if (transaction.Status == "Voided")
+                    throw new ArgumentException("Transaction is already voided.");
+
+                // Restore stock directly (core — must succeed atomically with void)
+                foreach (var item in transaction.Items)
+                {
+                    var product = await _context.Products.FindAsync(item.ProductId);
+                    if (product != null)
+                        product.Stock += item.Quantity;
+                }
+
+                transaction.Status = "Voided";
+                await _context.SaveChangesAsync();
+                await dbTransaction.CommitAsync();
+            });
 
             // Record VOID_RESTORE stock movements for audit trail (post-commit, non-critical)
             foreach (var item in transaction.Items)
