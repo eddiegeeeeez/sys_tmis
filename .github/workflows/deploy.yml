@@ -128,3 +128,6 @@ jobs:
             **/node_modules/**
             **/logs/*.log
             **/appsettings.Development.json
+            **/appsettings.Production.json
+            **/publish/**
+            **/test-publish/**
