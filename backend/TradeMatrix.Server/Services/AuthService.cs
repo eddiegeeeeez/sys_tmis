@@ -44,18 +44,25 @@ namespace TradeMatrix.Server.Services
                 return LoginResultDto.Failed("Invalid email or password");
             }
 
-            // Check account lockout
-            if (user.LockoutUntil.HasValue && user.LockoutUntil.Value > DateTime.UtcNow)
-            {
-                var remaining = (int)(user.LockoutUntil.Value - DateTime.UtcNow).TotalMinutes + 1;
-                _logger.LogWarning("Login attempt on locked account: {UserId}", user.Id);
-                return LoginResultDto.Locked($"Account is locked. Try again in {remaining} minute(s).");
-            }
+            bool isLockedOut = user.LockoutUntil.HasValue
+                            && user.LockoutUntil.Value > DateTime.UtcNow;
 
-            // Verify password
+            // Verify password FIRST — correct password bypasses lockout so the
+            // legitimate owner is never blocked by an attacker's failed attempts
+            // from another device.
             if (!_passwordHashing.VerifyPassword(loginDto.Password, user.PasswordHash))
             {
-                user.FailedLoginAttempts = user.FailedLoginAttempts + 1;
+                // Wrong password while locked out — return lockout message, don't
+                // increment counter (already maxed).
+                if (isLockedOut)
+                {
+                    var remaining = (int)(user.LockoutUntil!.Value - DateTime.UtcNow).TotalMinutes + 1;
+                    _logger.LogWarning("Failed login on locked account: {UserId}", user.Id);
+                    return LoginResultDto.Locked($"Account is locked. Try again in {remaining} minute(s).");
+                }
+
+                // Wrong password, not locked — increment failure counter
+                user.FailedLoginAttempts++;
 
                 if (user.FailedLoginAttempts >= MaxFailedAttempts)
                 {

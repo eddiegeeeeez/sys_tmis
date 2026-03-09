@@ -8,6 +8,7 @@ using System.Text;
 using TradeMatrix.Server.Filters;
 using Amazon.S3;
 using System.Threading.RateLimiting;
+using Microsoft.AspNetCore.HttpOverrides;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -137,6 +138,23 @@ builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
 
+    // Return Retry-After header on 429 responses
+    options.OnRejected = async (context, cancellationToken) =>
+    {
+        context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
+
+        if (context.Lease.TryGetMetadata(MetadataName.RetryAfter, out var retryAfter))
+        {
+            context.HttpContext.Response.Headers.RetryAfter =
+                ((int)retryAfter.TotalSeconds).ToString();
+        }
+
+        await context.HttpContext.Response.WriteAsJsonAsync(new
+        {
+            message = "Too many requests. Please try again later."
+        }, cancellationToken);
+    };
+
     // Global sliding window: 100 requests per minute per IP
     options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
         RateLimitPartition.GetSlidingWindowLimiter(
@@ -170,6 +188,13 @@ Console.WriteLine($"[STARTUP] ContentRootPath: {app.Environment.ContentRootPath}
 Console.WriteLine($"[STARTUP] WebRootPath: {app.Environment.WebRootPath}");
 
 // Configure the HTTP request pipeline.
+
+// 0. Forwarded headers — resolve real client IPs behind reverse proxies (Nginx, IIS ARR)
+// Must run before rate limiter so RemoteIpAddress reflects the actual client, not the proxy.
+app.UseForwardedHeaders(new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+});
 
 // 1. Health check (High Priority, no Auth required)
 app.MapGet("/api/health-check", () => Results.Ok(new { status = "Healthy", time = DateTime.UtcNow }));
