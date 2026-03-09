@@ -1,0 +1,100 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    // ── DOCKER TASKS (primary workflow) ──────────────────────────────────────
+    {
+      "label": "Docker: Up (rebuild all)",
+      "type": "shell",
+      "command": "docker compose up --build -d",
+      "options": { "cwd": "${workspaceFolder}" },
+      "group": { "kind": "build", "isDefault": true },
+      "presentation": { "reveal": "always", "panel": "shared" },
+      "problemMatcher": []
+    },
+    {
+      "label": "Docker: Rebuild Frontend only",
+      "type": "shell",
+      "command": "docker compose up -d --build frontend",
+      "options": { "cwd": "${workspaceFolder}" },
+      "presentation": { "reveal": "always", "panel": "shared" },
+      "problemMatcher": []
+    },
+    {
+      "label": "Docker: Rebuild Backend only",
+      "type": "shell",
+      "command": "docker compose up -d --build backend",
+      "options": { "cwd": "${workspaceFolder}" },
+      "presentation": { "reveal": "always", "panel": "shared" },
+      "problemMatcher": []
+    },
+    {
+      "label": "Docker: Down",
+      "type": "shell",
+      "command": "docker compose down",
+      "options": { "cwd": "${workspaceFolder}" },
+      "presentation": { "reveal": "always", "panel": "shared" },
+      "problemMatcher": []
+    },
+    {
+      "label": "Docker: Status",
+      "type": "shell",
+      "command": "docker compose ps",
+      "options": { "cwd": "${workspaceFolder}" },
+      "presentation": { "reveal": "always", "panel": "shared" },
+      "problemMatcher": []
+    },
+    {
+      "label": "Docker: Logs (follow)",
+      "type": "shell",
+      "command": "docker compose logs -f",
+      "options": { "cwd": "${workspaceFolder}" },
+      "isBackground": true,
+      "presentation": { "reveal": "always", "panel": "dedicated", "label": "Docker Logs" },
+      "problemMatcher": []
+    },
+    // ── LOCAL DEV TASKS (no Docker, faster iteration) ─────────────────────────
+    {
+      "label": "Local: Start Backend (watch)",
+      "type": "shell",
+      "command": "dotnet",
+      "args": ["watch", "--project", "backend/TradeMatrix.Server/TradeMatrix.Server.csproj"],
+      "options": { "cwd": "${workspaceFolder}" },
+      "isBackground": true,
+      "problemMatcher": {
+        "owner": "dotnet",
+        "pattern": { "regexp": "^(.*)$", "file": 1, "line": 2, "message": 3 },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "Building...",
+          "endsPattern": "Application started|Now listening on"
+        }
+      },
+      "presentation": { "group": "localDev", "reveal": "always", "panel": "dedicated", "label": "Backend :5009" }
+    },
+    {
+      "label": "Local: Start Frontend (HMR)",
+      "type": "shell",
+      "command": "npm",
+      "args": ["run", "dev"],
+      "options": { "cwd": "${workspaceFolder}/frontend" },
+      "isBackground": true,
+      "problemMatcher": {
+        "owner": "vite",
+        "pattern": { "regexp": "^(.*)$", "file": 1, "line": 2, "message": 3 },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "VITE",
+          "endsPattern": "Local:|ready in"
+        }
+      },
+      "presentation": { "group": "localDev", "reveal": "always", "panel": "dedicated", "label": "Frontend :3000" }
+    },
+    {
+      "label": "Local: Start Both",
+      "dependsOn": ["Local: Start Backend (watch)", "Local: Start Frontend (HMR)"],
+      "dependsOrder": "parallel",
+      "presentation": { "reveal": "silent" },
+      "problemMatcher": []
+    }
+  ]
+}
