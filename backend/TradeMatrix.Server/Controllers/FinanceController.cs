@@ -20,17 +20,38 @@ namespace TradeMatrix.Server.Controllers
         }
 
         [HttpGet("expenses")]
-        public async Task<ActionResult<ApiResponse<List<ExpenseDto>>>> GetExpenses()
+        public async Task<ActionResult<ApiResponse<List<ExpenseDto>>>> GetExpenses(
+            [FromQuery] DateTime? from, [FromQuery] DateTime? to, [FromQuery] string? category)
         {
             try
             {
-                var expenses = await _financeService.GetExpensesAsync();
+                var expenses = (from.HasValue || to.HasValue || !string.IsNullOrWhiteSpace(category))
+                    ? await _financeService.GetExpensesAsync(from, to, category)
+                    : await _financeService.GetExpensesAsync();
                 return Ok(ApiResponse<List<ExpenseDto>>.SuccessResponse(expenses, "Expenses retrieved successfully"));
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error retrieving expenses");
                 return StatusCode(500, ApiResponse<List<ExpenseDto>>.ErrorResponse("An error occurred while retrieving expenses"));
+            }
+        }
+
+        [HttpGet("expenses/summary")]
+        public async Task<ActionResult<ApiResponse<List<ExpenseSummaryDto>>>> GetExpenseSummary(
+            [FromQuery] DateTime? from, [FromQuery] DateTime? to)
+        {
+            try
+            {
+                var fromDate = from ?? new DateTime(2000, 1, 1);
+                var toDate = to ?? DateTime.UtcNow.AddDays(1);
+                var summary = await _financeService.GetExpenseSummaryAsync(fromDate, toDate);
+                return Ok(ApiResponse<List<ExpenseSummaryDto>>.SuccessResponse(summary, "Expense summary retrieved successfully"));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving expense summary");
+                return StatusCode(500, ApiResponse<List<ExpenseSummaryDto>>.ErrorResponse("An error occurred while retrieving expense summary"));
             }
         }
 
@@ -78,6 +99,96 @@ namespace TradeMatrix.Server.Controllers
             {
                 _logger.LogError(ex, "Error updating expense");
                 return StatusCode(500, ApiResponse<ExpenseDto>.ErrorResponse("An error occurred while updating expense"));
+            }
+        }
+
+        // ── Budget Endpoints ────────────────────────────────────────
+
+        [HttpGet("budgets")]
+        public async Task<ActionResult<ApiResponse<List<BudgetDto>>>> GetBudgets(
+            [FromQuery] int month, [FromQuery] int year)
+        {
+            try
+            {
+                var budgets = await _financeService.GetBudgetsAsync(month, year);
+                return Ok(ApiResponse<List<BudgetDto>>.SuccessResponse(budgets, "Budgets retrieved successfully"));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving budgets");
+                return StatusCode(500, ApiResponse<List<BudgetDto>>.ErrorResponse("An error occurred while retrieving budgets"));
+            }
+        }
+
+        [HttpPost("budgets")]
+        public async Task<ActionResult<ApiResponse<BudgetDto>>> CreateBudget([FromBody] CreateBudgetDto dto)
+        {
+            try
+            {
+                var createdBy = User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value ?? User.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value;
+                var budget = await _financeService.CreateBudgetAsync(dto, createdBy);
+                return Ok(ApiResponse<BudgetDto>.SuccessResponse(budget, "Budget created successfully"));
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ApiResponse<BudgetDto>.ErrorResponse(ex.Message));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating budget");
+                return StatusCode(500, ApiResponse<BudgetDto>.ErrorResponse("An error occurred while creating budget"));
+            }
+        }
+
+        [HttpPut("budgets/{id}")]
+        public async Task<ActionResult<ApiResponse<BudgetDto>>> UpdateBudget(int id, [FromBody] CreateBudgetDto dto)
+        {
+            try
+            {
+                var result = await _financeService.UpdateBudgetAsync(id, dto);
+                if (result == null) return NotFound(ApiResponse<BudgetDto>.ErrorResponse("Budget not found"));
+                return Ok(ApiResponse<BudgetDto>.SuccessResponse(result, "Budget updated successfully"));
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ApiResponse<BudgetDto>.ErrorResponse(ex.Message));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating budget");
+                return StatusCode(500, ApiResponse<BudgetDto>.ErrorResponse("An error occurred while updating budget"));
+            }
+        }
+
+        [HttpDelete("budgets/{id}")]
+        public async Task<ActionResult<ApiResponse<bool>>> DeleteBudget(int id)
+        {
+            try
+            {
+                var result = await _financeService.DeleteBudgetAsync(id);
+                if (!result) return NotFound(ApiResponse<bool>.ErrorResponse("Budget not found"));
+                return Ok(ApiResponse<bool>.SuccessResponse(true, "Budget deleted successfully"));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting budget");
+                return StatusCode(500, ApiResponse<bool>.ErrorResponse("An error occurred while deleting budget"));
+            }
+        }
+
+        [HttpGet("budget-vs-actual")]
+        public async Task<ActionResult<ApiResponse<BudgetSummaryDto>>> GetBudgetVsActual(
+            [FromQuery] int month, [FromQuery] int year)
+        {
+            try
+            {
+                var summary = await _financeService.GetBudgetVsActualAsync(month, year);
+                return Ok(ApiResponse<BudgetSummaryDto>.SuccessResponse(summary, "Budget vs actual retrieved successfully"));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving budget vs actual");
+                return StatusCode(500, ApiResponse<BudgetSummaryDto>.ErrorResponse("An error occurred while retrieving budget vs actual"));
             }
         }
     }

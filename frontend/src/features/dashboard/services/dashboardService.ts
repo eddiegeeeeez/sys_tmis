@@ -56,6 +56,18 @@ export interface DashboardSummary {
   todayTransactionCount: number;
   todayItemsSold: number;
   recentTransactions: RecentTransaction[];
+  // Phase 3 & 4 — Enhanced metrics
+  monthlyRevenue: number;
+  previousMonthRevenue: number;
+  previousMonthExpenses: number;
+  profitEstimate: number;
+  databaseConnected: boolean;
+  pendingMigrationsCount: number;
+  revenueTrend: number;
+  expenseTrend: number;
+  attendanceRate: number;
+  payrollDueSoon: boolean;
+  newStockAlerts: number;
 }
 
 export const emptyDashboard: DashboardSummary = {
@@ -76,6 +88,17 @@ export const emptyDashboard: DashboardSummary = {
   todayTransactionCount: 0,
   todayItemsSold: 0,
   recentTransactions: [],
+  monthlyRevenue: 0,
+  previousMonthRevenue: 0,
+  previousMonthExpenses: 0,
+  profitEstimate: 0,
+  databaseConnected: false,
+  pendingMigrationsCount: 0,
+  revenueTrend: 0,
+  expenseTrend: 0,
+  attendanceRate: 0,
+  payrollDueSoon: false,
+  newStockAlerts: 0,
 };
 
 export const getDashboardSummary = async (): Promise<DashboardSummary> => {

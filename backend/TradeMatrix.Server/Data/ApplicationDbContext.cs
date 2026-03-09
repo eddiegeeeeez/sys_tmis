@@ -26,6 +26,7 @@ namespace TradeMatrix.Server.Data
         public DbSet<TransactionItem> TransactionItems { get; set; }
         public DbSet<StockMovement> StockMovements { get; set; }
         public DbSet<BackupRecord> BackupRecords { get; set; }
+        public DbSet<Budget> Budgets { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -144,6 +145,13 @@ namespace TradeMatrix.Server.Data
             {
                 e.HasIndex(b => b.CreatedAt);
                 e.HasIndex(b => b.Status);
+            });
+
+            // ── Budgets ────────────────────────────────────────────
+            modelBuilder.Entity<Budget>(e =>
+            {
+                e.HasIndex(b => new { b.Category, b.Month, b.Year }).IsUnique();
+                e.HasIndex(b => new { b.Month, b.Year });
             });
         }
     }

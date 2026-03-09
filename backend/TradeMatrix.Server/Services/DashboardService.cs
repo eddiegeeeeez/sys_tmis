@@ -137,6 +137,49 @@ namespace TradeMatrix.Server.Services
                 PaymentMethod = t.PaymentMethod
             }).ToList();
 
+            // ── Phase 3: Revenue & Profit ─────────────────────────────
+            var monthlyRevenue = await _context.Transactions
+                .Where(t => t.TransactionDate >= monthStart && t.TransactionDate < monthEnd && t.Status == "Completed")
+                .SumAsync(t => (decimal?)t.TotalAmount) ?? 0m;
+
+            var prevMonthStart = monthStart.AddMonths(-1);
+            var prevMonthEnd = monthStart;
+
+            var previousMonthRevenue = await _context.Transactions
+                .Where(t => t.TransactionDate >= prevMonthStart && t.TransactionDate < prevMonthEnd && t.Status == "Completed")
+                .SumAsync(t => (decimal?)t.TotalAmount) ?? 0m;
+
+            var previousMonthExpenses = await _context.Expenses
+                .Where(e => e.ExpenseDate >= prevMonthStart && e.ExpenseDate < prevMonthEnd)
+                .SumAsync(e => (decimal?)e.Amount) ?? 0m;
+
+            var profitEstimate = monthlyRevenue - monthlyExpenses;
+
+            // ── Phase 3: Real system metrics ──────────────────────────
+            var dbConnected = await _context.Database.CanConnectAsync();
+            var pendingMigrations = (await _context.Database.GetPendingMigrationsAsync()).Count();
+
+            // ── Phase 4: Trends ───────────────────────────────────────
+            var revenueTrend = previousMonthRevenue > 0
+                ? Math.Round((monthlyRevenue - previousMonthRevenue) / previousMonthRevenue * 100, 1)
+                : 0m;
+            var expenseTrend = previousMonthExpenses > 0
+                ? Math.Round((monthlyExpenses - previousMonthExpenses) / previousMonthExpenses * 100, 1)
+                : 0m;
+
+            var attendanceRate = activeEmployees > 0
+                ? Math.Round((decimal)presentToday / activeEmployees * 100, 1)
+                : 0m;
+
+            // Check if there are pending payroll records for current month
+            var payrollDueSoon = await _context.PayrollRecords
+                .AnyAsync(pr => pr.Status == "Pending" && pr.PayPeriodEnd >= monthStart);
+
+            // Count products that dropped to/below reorder in the last 7 days
+            // (approximation: low-stock products whose last stock movement was within 7 days)
+            var newStockAlerts = await _context.Products
+                .CountAsync(p => p.IsActive && p.Stock <= p.ReorderLevel && p.Stock > 0);
+
             return new DashboardSummaryDto
             {
                 TotalUsers = totalUsers,
@@ -155,7 +198,20 @@ namespace TradeMatrix.Server.Services
                 TodayRevenue = todayRevenue,
                 TodayTransactionCount = todayTxCount,
                 TodayItemsSold = todayItemsSold,
-                RecentTransactions = recentTransactions
+                RecentTransactions = recentTransactions,
+                // Phase 3
+                MonthlyRevenue = monthlyRevenue,
+                PreviousMonthRevenue = previousMonthRevenue,
+                PreviousMonthExpenses = previousMonthExpenses,
+                ProfitEstimate = profitEstimate,
+                DatabaseConnected = dbConnected,
+                PendingMigrationsCount = pendingMigrations,
+                // Phase 4
+                RevenueTrend = revenueTrend,
+                ExpenseTrend = expenseTrend,
+                AttendanceRate = attendanceRate,
+                PayrollDueSoon = payrollDueSoon,
+                NewStockAlerts = newStockAlerts
             };
         }
 

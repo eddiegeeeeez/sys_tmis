@@ -85,6 +85,7 @@ builder.Services.AddScoped<ICustomerService, CustomerService>();
 builder.Services.AddScoped<IFinanceService, FinanceService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IReportService, ReportService>();
 
 // AWS S3
 builder.Services.AddSingleton<IAmazonS3>(sp =>

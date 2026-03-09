@@ -4,7 +4,7 @@ import { UserRole } from '../../types';
 import {
   LayoutDashboard, ShoppingCart, Package, Users,
   Shield, Database, Lock,
-  Briefcase, Truck, Wallet, UserSquare2, ArchiveRestore, ReceiptText
+  Briefcase, Truck, Wallet, UserSquare2, ArchiveRestore, ReceiptText, BarChart3
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '../ui/Avatar';
 import { cn } from '../../lib/utils';
@@ -21,6 +21,7 @@ export function getNavItems(currentRole: UserRole) {
           section: 'System Core', items: [
             { id: 'dashboard', label: 'System Overview', icon: LayoutDashboard },
             { id: 'admin/db', label: 'Database Admin', icon: Database },
+            { id: 'reports', label: 'Reports', icon: BarChart3 },
           ]
         },
         {
@@ -54,6 +55,7 @@ export function getNavItems(currentRole: UserRole) {
             { id: 'hr', label: 'HR & Payroll', icon: Briefcase },
             { id: 'crm', label: 'Customers', icon: UserSquare2 },
             { id: 'finance', label: 'Finance', icon: Wallet },
+            { id: 'reports', label: 'Reports', icon: BarChart3 },
           ]
         },
       ];
@@ -114,6 +116,7 @@ export function getNavItems(currentRole: UserRole) {
             { id: 'hr', label: 'HR & Payroll', icon: Briefcase },
             { id: 'crm', label: 'Customers', icon: UserSquare2 },
             { id: 'finance', label: 'Finance', icon: Wallet },
+            { id: 'reports', label: 'Reports', icon: BarChart3 },
           ]
         },
       ];

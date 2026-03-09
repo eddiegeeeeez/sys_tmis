@@ -28,6 +28,23 @@ namespace TradeMatrix.Server.DTOs
         public int TodayTransactionCount { get; set; }
         public int TodayItemsSold { get; set; }
         public List<RecentTransactionDto> RecentTransactions { get; set; } = new();
+
+        // Phase 3: Revenue & Profit (Manager)
+        public decimal MonthlyRevenue { get; set; }
+        public decimal PreviousMonthRevenue { get; set; }
+        public decimal PreviousMonthExpenses { get; set; }
+        public decimal ProfitEstimate { get; set; }
+
+        // Phase 3: Real system metrics (SuperAdmin)
+        public bool DatabaseConnected { get; set; }
+        public int PendingMigrationsCount { get; set; }
+
+        // Phase 4: Trends & Monitoring
+        public decimal RevenueTrend { get; set; }      // % change vs prev month
+        public decimal ExpenseTrend { get; set; }      // % change vs prev month
+        public decimal AttendanceRate { get; set; }    // % present / active
+        public bool PayrollDueSoon { get; set; }
+        public int NewStockAlerts { get; set; }        // newly low since 7d ago
     }
 
     public class RecentTransactionDto

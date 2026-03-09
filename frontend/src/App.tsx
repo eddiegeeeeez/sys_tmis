@@ -20,6 +20,7 @@ const HR                    = React.lazy(() => import('./features/hr/pages/HR').
 const Procurement           = React.lazy(() => import('./features/procurement/pages/Procurement').then(m => ({ default: m.Procurement })));
 const CRM                   = React.lazy(() => import('./features/crm/pages/CRM'));
 const Finance               = React.lazy(() => import('./features/finance/pages/Finance'));
+const Reports               = React.lazy(() => import('./features/reports/pages/Reports'));
 
 // Admin Pages — lazy-loaded (SuperAdmin-only routes)
 const UserManagement        = React.lazy(() => import('./features/admin/pages/UserManagement').then(m => ({ default: m.UserManagement })));
@@ -235,6 +236,16 @@ const AppContent: React.FC = () => {
                   allowedRoles={[UserRole.MANAGER]}
                 >
                   <Finance />
+                </ProtectedRoute>
+              } />
+
+              <Route path="reports" element={
+                <ProtectedRoute
+                  isLoggedIn={isLoggedIn}
+                  currentRole={currentRole}
+                  allowedRoles={[UserRole.SUPER_ADMIN, UserRole.MANAGER]}
+                >
+                  <Reports />
                 </ProtectedRoute>
               } />
 

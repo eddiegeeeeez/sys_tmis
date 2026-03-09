@@ -39,12 +39,16 @@ const SuperAdminDashboard = ({ data }: { data: DashboardSummary }) => (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
       <Card className="border-l-4 border-l-emerald-500">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium text-zinc-600 dark:text-zinc-400">System Status</CardTitle>
-          <Activity className="h-4 w-4 text-emerald-500" />
+          <CardTitle className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Database</CardTitle>
+          <Database className="h-4 w-4 text-emerald-500" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">Operational</div>
-          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">Uptime: 99.99% (30 days)</p>
+          <div className={`text-2xl font-bold ${data.databaseConnected ? 'text-emerald-600' : 'text-red-600'}`}>
+            {data.databaseConnected ? 'Connected' : 'Disconnected'}
+          </div>
+          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
+            {data.pendingMigrationsCount > 0 ? `${data.pendingMigrationsCount} pending migration(s)` : 'All migrations applied'}
+          </p>
         </CardContent>
       </Card>
       <Card className="border-l-4 border-l-blue-500">
@@ -59,12 +63,14 @@ const SuperAdminDashboard = ({ data }: { data: DashboardSummary }) => (
       </Card>
       <Card className="border-l-4 border-l-zinc-500">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Database Load</CardTitle>
-          <Database className="h-4 w-4 text-zinc-500" />
+          <CardTitle className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Monthly Revenue</CardTitle>
+          <DollarSign className="h-4 w-4 text-zinc-500" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">42%</div>
-          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">1,240 Queries / min</p>
+          <div className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">₱{data.monthlyRevenue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
+            {data.revenueTrend > 0 ? '↑' : data.revenueTrend < 0 ? '↓' : '—'} {Math.abs(data.revenueTrend).toFixed(0)}% vs last month
+          </p>
         </CardContent>
       </Card>
       <Card className="border-l-4 border-l-amber-500">
@@ -145,32 +151,44 @@ const ManagerDashboard = ({ data }: { data: DashboardSummary }) => {
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Monthly Revenue</CardTitle>
+          <DollarSign className="h-4 w-4 text-emerald-500" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">₱{data.monthlyRevenue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+          <p className="text-xs mt-1">
+            <span className={data.revenueTrend >= 0 ? 'text-emerald-500' : 'text-red-500'}>
+              {data.revenueTrend >= 0 ? '↑' : '↓'} {Math.abs(data.revenueTrend).toFixed(0)}%
+            </span>
+            <span className="text-zinc-500 dark:text-zinc-400"> vs last month</span>
+          </p>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Monthly Expenses</CardTitle>
-          <DollarSign className="h-4 w-4 text-zinc-500" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">₱{data.monthlyExpenses.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">Total expenses this month</p>
-        </CardContent>
-      </Card>
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Active Products</CardTitle>
-          <Package className="h-4 w-4 text-zinc-500" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">{data.totalProducts.toLocaleString()}</div>
-          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">Total SKUs in inventory</p>
-        </CardContent>
-      </Card>
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Pending Orders</CardTitle>
           <TrendingUp className="h-4 w-4 text-zinc-500" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">{data.pendingPurchaseOrders}</div>
-          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">Purchase orders awaiting delivery</p>
+          <div className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">₱{data.monthlyExpenses.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+          <p className="text-xs mt-1">
+            <span className={data.expenseTrend <= 0 ? 'text-emerald-500' : 'text-red-500'}>
+              {data.expenseTrend >= 0 ? '↑' : '↓'} {Math.abs(data.expenseTrend).toFixed(0)}%
+            </span>
+            <span className="text-zinc-500 dark:text-zinc-400"> vs last month</span>
+          </p>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Profit Estimate</CardTitle>
+          <DollarSign className="h-4 w-4 text-zinc-500" />
+        </CardHeader>
+        <CardContent>
+          <div className={`text-2xl font-bold ${data.profitEstimate >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+            ₱{data.profitEstimate.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          </div>
+          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">Revenue − Expenses</p>
         </CardContent>
       </Card>
       <Card>
@@ -180,7 +198,9 @@ const ManagerDashboard = ({ data }: { data: DashboardSummary }) => {
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">{data.activeEmployees}</div>
-          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">{data.presentToday} present today</p>
+          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
+            {data.attendanceRate > 0 ? `${data.attendanceRate.toFixed(0)}% attendance` : `${data.presentToday} present today`}
+          </p>
         </CardContent>
       </Card>
     </div>

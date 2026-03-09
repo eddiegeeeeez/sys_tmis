@@ -20,4 +20,12 @@ namespace TradeMatrix.Server.DTOs
         public string Status { get; set; } = "Paid";
         public string? ReferenceNumber { get; set; }
     }
+
+    public class ExpenseSummaryDto
+    {
+        public string Category { get; set; } = string.Empty;
+        public decimal TotalAmount { get; set; }
+        public int Count { get; set; }
+        public decimal PercentageOfTotal { get; set; }
+    }
 }
