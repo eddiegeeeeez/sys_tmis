@@ -68,12 +68,12 @@ namespace TradeMatrix.Server.Controllers
 
         [HttpPost("purchase-orders")]
         [Authorize(Roles = "SuperAdmin,Manager,InventoryClerk")]
-        public async Task<ActionResult<ApiResponse<PurchaseOrder>>> CreatePurchaseOrder([FromBody] CreatePODto dto)
+        public async Task<ActionResult<ApiResponse<PurchaseOrderDto>>> CreatePurchaseOrder([FromBody] CreatePODto dto)
         {
             try
             {
                 var result = await _procurementService.CreatePurchaseOrderAsync(dto);
-                return Ok(ApiResponse<PurchaseOrder>.SuccessResponse(result));
+                return Ok(ApiResponse<PurchaseOrderDto>.SuccessResponse(result));
             }
             catch (Exception ex)
             {

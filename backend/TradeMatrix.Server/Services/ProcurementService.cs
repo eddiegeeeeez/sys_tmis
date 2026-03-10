@@ -101,7 +101,7 @@ namespace TradeMatrix.Server.Services
                 .ToListAsync();
         }
 
-        public async Task<PurchaseOrder> CreatePurchaseOrderAsync(CreatePODto dto)
+        public async Task<PurchaseOrderDto> CreatePurchaseOrderAsync(CreatePODto dto)
         {
             var po = new PurchaseOrder
             {
@@ -128,7 +128,18 @@ namespace TradeMatrix.Server.Services
             _context.PurchaseOrders.Add(po);
             await _context.SaveChangesAsync();
 
-            return po;
+            var supplier = await _context.Suppliers.FindAsync(po.SupplierId);
+            return new PurchaseOrderDto
+            {
+                Id = po.Id,
+                PONumber = po.PONumber,
+                SupplierId = po.SupplierId,
+                SupplierName = supplier?.CompanyName ?? string.Empty,
+                OrderDate = po.OrderDate,
+                ExpectedDeliveryDate = po.ExpectedDeliveryDate,
+                TotalAmount = po.TotalAmount,
+                Status = po.Status
+            };
         }
 
         public async Task<PurchaseOrderDto?> ReceivePurchaseOrderAsync(int id, string receivedBy)

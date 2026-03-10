@@ -1,7 +1,6 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { Card, CardContent } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
-import { Badge } from '../../../components/ui/Badge';
 import { StatusDot } from '../../../components/ui/StatusDot';
 import { Alert, AlertDescription } from '../../../components/ui/Alert';
 import { Input } from '../../../components/ui/Input';
@@ -10,12 +9,10 @@ import { ColumnDef } from '@tanstack/react-table';
 import { DataTable } from '../../../components/ui/data-table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../../../components/ui/Dialog';
 import { Label } from '../../../components/ui/Label';
-import { Select } from '../../../components/ui/Select';
 import { procurementService, Supplier as ApiSupplier, PurchaseOrder as ApiPO } from '../services/procurementService';
-import { Loader2, Truck, PackagePlus, Plus, Phone, Mail, ArrowUpDown, ArrowUp, ArrowDown, UserSquare2, PackageCheck, AlertCircle } from 'lucide-react';
-import { PurchaseOrder, UserRole } from '../../../types';
-
-const ITEMS_PER_PAGE = 10;
+import { Loader2, Truck, PackagePlus, Plus, Phone, Mail, ArrowUpDown, UserSquare2, PackageCheck, AlertCircle, X } from 'lucide-react';
+import { inventoryService, Product } from '../../inventory/services/inventoryService';
+import { UserRole } from '../../../types';
 
 interface ProcurementProps {
     currentRole?: string;
@@ -106,16 +103,17 @@ export const Procurement: React.FC<ProcurementProps> = ({ currentRole }) => {
     const handleCreatePO = async () => {
         setIsSaving(true);
         try {
-            // In a real scenario, we'd add items. For now, creating a basic PO.
             const res = await procurementService.createPurchaseOrder({
-                ...newPO,
                 supplierId: parseInt(newPO.supplierId),
-                items: []
+                expectedDeliveryDate: newPO.expectedDeliveryDate,
+                items: poItems.map(({ productId, quantity, unitCost }) => ({ productId, quantity, unitCost }))
             });
             if (res.data.success) {
                 setIsPOModalOpen(false);
                 fetchData();
                 setNewPO({ supplierId: '', expectedDeliveryDate: '', items: [] });
+                setPoItems([]);
+                setNewPOItem({ productId: '', quantity: '1', unitCost: '' });
             }
         } catch (error) {
             console.error("Error creating PO", error);
@@ -127,9 +125,37 @@ export const Procurement: React.FC<ProcurementProps> = ({ currentRole }) => {
 
     const [isReceiving, setIsReceiving] = useState(false);
     const [activeTab, setActiveTab] = useState('po');
+    const [pendingReceivePO, setPendingReceivePO] = useState<ApiPO | null>(null);
+
+    const [products, setProducts] = useState<Product[]>([]);
+    const [isLoadingProducts, setIsLoadingProducts] = useState(false);
+    const [newPOItem, setNewPOItem] = useState({ productId: '', quantity: '1', unitCost: '' });
+    const [poItems, setPoItems] = useState<{ productId: number; productName: string; quantity: number; unitCost: number }[]>([]);
+
+    useEffect(() => {
+        if (!isPOModalOpen) return;
+        setIsLoadingProducts(true);
+        inventoryService.getProducts()
+            .then(res => { if (res.data.success) setProducts(res.data.data); })
+            .catch(() => {})
+            .finally(() => setIsLoadingProducts(false));
+    }, [isPOModalOpen]);
+
+    const handleAddPOItem = () => {
+        const product = products.find(p => p.id === parseInt(newPOItem.productId));
+        if (!product || !newPOItem.quantity || !newPOItem.unitCost) return;
+        setPoItems(prev => [...prev, {
+            productId: product.id,
+            productName: product.name,
+            quantity: parseInt(newPOItem.quantity),
+            unitCost: parseFloat(newPOItem.unitCost)
+        }]);
+        setNewPOItem({ productId: '', quantity: '1', unitCost: '' });
+    };
 
     const handleReceivePO = useCallback(async (poId: number) => {
         setIsReceiving(true);
+        setPendingReceivePO(null);
         try {
             const res = await procurementService.receivePurchaseOrder(poId);
             if (res.data.success) {
@@ -217,8 +243,8 @@ export const Procurement: React.FC<ProcurementProps> = ({ currentRole }) => {
                 }
                 return (
                     <div className="flex justify-end pr-2">
-                        <Button size="sm" variant="outline" disabled={isReceiving} onClick={() => handleReceivePO(po.id)}>
-                            {isReceiving ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <PackageCheck className="mr-1 h-3 w-3" />}
+                        <Button size="sm" variant="outline" disabled={isReceiving} onClick={() => setPendingReceivePO(po)}>
+                            <PackageCheck className="mr-1 h-3 w-3" />
                             Receive
                         </Button>
                     </div>
@@ -229,6 +255,35 @@ export const Procurement: React.FC<ProcurementProps> = ({ currentRole }) => {
 
     return (
         <div className="space-y-6">
+            {/* Receive PO Confirmation Modal */}
+            <Dialog open={!!pendingReceivePO} onOpenChange={open => !open && setPendingReceivePO(null)}>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                            <PackageCheck className="h-5 w-5 text-emerald-600" />
+                            Confirm Receipt
+                        </DialogTitle>
+                        <DialogDescription className="pt-1">
+                            Mark <span className="font-semibold text-zinc-900 dark:text-zinc-100">{pendingReceivePO?.poNumber}</span> from <span className="font-semibold text-zinc-900 dark:text-zinc-100">{pendingReceivePO?.supplierName}</span> as received?
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="rounded-md border border-emerald-100 bg-emerald-50 dark:border-emerald-900/50 dark:bg-emerald-900/20 px-4 py-3 text-sm text-emerald-800 dark:text-emerald-300">
+                        This will mark the order as received and update stock levels for all items in this purchase order.
+                    </div>
+                    <DialogFooter className="mt-2">
+                        <Button variant="outline" onClick={() => setPendingReceivePO(null)}>Cancel</Button>
+                        <Button
+                            className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                            disabled={isReceiving}
+                            onClick={() => pendingReceivePO && handleReceivePO(pendingReceivePO.id)}
+                        >
+                            {isReceiving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PackageCheck className="mr-2 h-4 w-4" />}
+                            Confirm Receipt
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
             {/* Edit Supplier Modal */}
             <Dialog open={isEditSupplierOpen} onOpenChange={setIsEditSupplierOpen}>
                 <DialogContent>
@@ -331,8 +386,8 @@ export const Procurement: React.FC<ProcurementProps> = ({ currentRole }) => {
             </Dialog>
 
             {/* Create PO Modal */}
-            <Dialog open={isPOModalOpen} onOpenChange={setIsPOModalOpen}>
-                <DialogContent className="max-w-xl">
+            <Dialog open={isPOModalOpen} onOpenChange={open => { setIsPOModalOpen(open); if (!open) { setPoItems([]); setNewPOItem({ productId: '', quantity: '1', unitCost: '' }); } }}>
+                <DialogContent className="max-w-2xl">
                     <DialogHeader>
                         <DialogTitle>Create Purchase Order</DialogTitle>
                         <DialogDescription>Initiate a new order to replenish stock.</DialogDescription>
@@ -365,13 +420,100 @@ export const Procurement: React.FC<ProcurementProps> = ({ currentRole }) => {
                                 />
                             </div>
                         </div>
-                        <div className="border rounded-md p-4 bg-zinc-50 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 min-h-[100px] flex items-center justify-center text-zinc-400 text-sm">
-                            Basic PO Creation (Add Items in full implementation)
+                        <div className="grid gap-3">
+                            <Label className="text-sm font-semibold">Order Items</Label>
+                            <div className="flex gap-2 items-end">
+                                <div className="flex-1">
+                                    <select
+                                        className="flex h-9 w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm ring-offset-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-800 dark:bg-zinc-950 dark:ring-offset-zinc-950 dark:focus-visible:ring-zinc-300"
+                                        value={newPOItem.productId}
+                                        disabled={isLoadingProducts}
+                                        onChange={e => {
+                                            const prod = products.find(p => p.id === parseInt(e.target.value));
+                                            setNewPOItem({ ...newPOItem, productId: e.target.value, unitCost: prod ? prod.costPrice.toFixed(2) : '' });
+                                        }}
+                                    >
+                                        <option value="">{isLoadingProducts ? 'Loading products...' : 'Select product...'}</option>
+                                        {products
+                                            .filter(p => !poItems.some(i => i.productId === p.id))
+                                            .map(p => (
+                                                <option key={p.id} value={p.id}>{p.name} ({p.sku})</option>
+                                            ))}
+                                    </select>
+                                </div>
+                                <div className="w-20">
+                                    <Input
+                                        type="number" min="1" placeholder="Qty"
+                                        value={newPOItem.quantity}
+                                        onChange={e => setNewPOItem({ ...newPOItem, quantity: e.target.value })}
+                                    />
+                                </div>
+                                <div className="w-28">
+                                    <Input
+                                        type="number" min="0" step="0.01" placeholder="Unit Cost"
+                                        value={newPOItem.unitCost}
+                                        onChange={e => setNewPOItem({ ...newPOItem, unitCost: e.target.value })}
+                                    />
+                                </div>
+                                <Button
+                                    type="button" size="sm" variant="outline"
+                                    disabled={!newPOItem.productId || !newPOItem.quantity || !newPOItem.unitCost}
+                                    onClick={handleAddPOItem}
+                                >
+                                    <Plus className="h-4 w-4" />
+                                </Button>
+                            </div>
+
+                            {poItems.length > 0 ? (
+                                <div className="rounded-md border border-zinc-200 dark:border-zinc-700 overflow-hidden">
+                                    <div className="max-h-48 overflow-y-auto">
+                                        <table className="w-full text-sm">
+                                            <thead className="bg-zinc-50 dark:bg-zinc-800 sticky top-0">
+                                                <tr>
+                                                    <th className="text-left px-3 py-2 text-xs font-medium text-zinc-500">Product</th>
+                                                    <th className="text-right px-3 py-2 text-xs font-medium text-zinc-500">Qty</th>
+                                                    <th className="text-right px-3 py-2 text-xs font-medium text-zinc-500">Unit Cost</th>
+                                                    <th className="text-right px-3 py-2 text-xs font-medium text-zinc-500">Subtotal</th>
+                                                    <th className="w-8"></th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+                                                {poItems.map((item, idx) => (
+                                                    <tr key={idx} className="bg-white dark:bg-zinc-900">
+                                                        <td className="px-3 py-2 text-zinc-700 dark:text-zinc-300 max-w-[160px] truncate">{item.productName}</td>
+                                                        <td className="px-3 py-2 text-right text-zinc-700 dark:text-zinc-300">{item.quantity}</td>
+                                                        <td className="px-3 py-2 text-right font-mono text-zinc-700 dark:text-zinc-300">₱{item.unitCost.toFixed(2)}</td>
+                                                        <td className="px-3 py-2 text-right font-mono font-medium text-zinc-900 dark:text-zinc-100">₱{(item.quantity * item.unitCost).toFixed(2)}</td>
+                                                        <td className="px-2 py-2 text-center">
+                                                            <button
+                                                                onClick={() => setPoItems(prev => prev.filter((_, i) => i !== idx))}
+                                                                className="text-zinc-400 hover:text-red-500 transition-colors"
+                                                            >
+                                                                <X className="h-3.5 w-3.5" />
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <div className="border-t border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 px-3 py-2 flex justify-end items-center gap-3">
+                                        <span className="text-xs font-medium text-zinc-500">Order Total</span>
+                                        <span className="font-mono font-bold text-zinc-900 dark:text-zinc-100">
+                                            ₱{poItems.reduce((sum, i) => sum + i.quantity * i.unitCost, 0).toFixed(2)}
+                                        </span>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="border rounded-md border-dashed border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 p-6 text-center text-sm text-zinc-400">
+                                    No items added yet. Select a product above to get started.
+                                </div>
+                            )}
                         </div>
                     </div>
                     <DialogFooter>
-                        <Button variant="outline" onClick={() => setIsPOModalOpen(false)}>Cancel</Button>
-                        <Button onClick={handleCreatePO} disabled={isSaving || !newPO.supplierId}>
+                        <Button variant="outline" onClick={() => { setIsPOModalOpen(false); setPoItems([]); setNewPOItem({ productId: '', quantity: '1', unitCost: '' }); }}>Cancel</Button>
+                        <Button onClick={handleCreatePO} disabled={isSaving || !newPO.supplierId || poItems.length === 0}>
                             {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                             Submit Order
                         </Button>

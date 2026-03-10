@@ -9,7 +9,7 @@ namespace TradeMatrix.Server.Services
         Task<SupplierDto> CreateSupplierAsync(CreateSupplierDto dto);
         Task<SupplierDto?> UpdateSupplierAsync(int id, CreateSupplierDto dto);
         Task<List<PurchaseOrderDto>> GetPurchaseOrdersAsync();
-        Task<PurchaseOrder> CreatePurchaseOrderAsync(CreatePODto dto);
+        Task<PurchaseOrderDto> CreatePurchaseOrderAsync(CreatePODto dto);
         Task<PurchaseOrderDto?> ReceivePurchaseOrderAsync(int id, string receivedBy);
     }
 }
