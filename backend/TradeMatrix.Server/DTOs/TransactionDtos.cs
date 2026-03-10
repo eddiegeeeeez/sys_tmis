@@ -9,6 +9,9 @@ namespace TradeMatrix.Server.DTOs
 
         public decimal AmountTendered { get; set; }
 
+        [MaxLength(100)]
+        public string? ReferenceNumber { get; set; }
+
         [Required]
         [MinLength(1)]
         public List<CreateTransactionItemDto> Items { get; set; } = new();
@@ -37,6 +40,7 @@ namespace TradeMatrix.Server.DTOs
         public string Status { get; set; } = string.Empty;
         public DateTime TransactionDate { get; set; }
         public string? CashierName { get; set; }
+        public string? ReferenceNumber { get; set; }
         public List<TransactionItemDto> Items { get; set; } = new();
     }
 

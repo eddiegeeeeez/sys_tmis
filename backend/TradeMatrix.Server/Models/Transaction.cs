@@ -18,7 +18,10 @@ namespace TradeMatrix.Server.Models
         public User? Cashier { get; set; }
 
         [MaxLength(30)]
-        public string PaymentMethod { get; set; } = "Cash"; // Cash, Card, E-Wallet
+        public string PaymentMethod { get; set; } = "Cash"; // Cash, GCash, PayMaya
+
+        [MaxLength(100)]
+        public string? ReferenceNumber { get; set; }
 
         [Column(TypeName = "decimal(18,2)")]
         public decimal Subtotal { get; set; }

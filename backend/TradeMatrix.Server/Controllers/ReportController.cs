@@ -7,7 +7,7 @@ namespace TradeMatrix.Server.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize(Roles = "SuperAdmin,Manager")]
+    [Authorize(Roles = "Manager")]
     public class ReportController : ControllerBase
     {
         private readonly IReportService _reportService;

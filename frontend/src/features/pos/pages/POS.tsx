@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Label } from '../../../components/ui/Label';
 import {
   Search, Plus, Minus, Receipt, ShoppingBag, X, Banknote,
-  Loader2, CheckCircle2, AlertTriangle, Package, CreditCard,
+  Loader2, CheckCircle2, AlertTriangle, Package, Printer,
   Smartphone, Trash2, ChevronRight, LayoutGrid, List, ArrowLeft, ScanBarcode, AlertCircle
 } from 'lucide-react';
 import { Alert, AlertDescription } from '../../../components/ui/Alert';
@@ -23,9 +23,8 @@ const QUICK_AMOUNTS = [20, 50, 100, 200, 500, 1000];
 
 // ─── Payment method config ────────────────────────────────────────────────
 const PAYMENT_METHODS = [
-  { value: 'Cash', label: 'Cash', icon: Banknote },
-  { value: 'Card', label: 'Card / POS', icon: CreditCard },
-  { value: 'GCash', label: 'GCash', icon: Smartphone },
+  { value: 'Cash',    label: 'Cash',    icon: Banknote  },
+  { value: 'GCash',   label: 'GCash',   icon: Smartphone },
   { value: 'PayMaya', label: 'PayMaya', icon: Smartphone },
 ];
 
@@ -60,11 +59,16 @@ export const POS: React.FC = () => {
   const [pendingVoidId, setPendingVoidId] = useState<string | null>(null);
   const [voidAllOpen, setVoidAllOpen] = useState(false);
 
+  // ── Exit POS state ────────────────────────────────────────────────────────
+  const [exitConfirmOpen, setExitConfirmOpen] = useState(false);
+  const [isExiting, setIsExiting] = useState(false);
+
   const searchRef = useRef<HTMLInputElement>(null);
   const barcodeRef = useRef<HTMLInputElement>(null);
   const [barcodeInput, setBarcodeInput] = useState('');
   const [scanError, setScanError] = useState<string | null>(null);
   const [payError, setPayError] = useState<string | null>(null);
+  const [referenceNumber, setReferenceNumber] = useState('');
 
   // ── Load products on mount ─────────────────────────────────────────────
   const loadProducts = useCallback(() => {
@@ -193,6 +197,61 @@ export const POS: React.FC = () => {
 
   const clearCart = useCallback(() => setCart([]), []);
 
+  // ── Print receipt (opens print-friendly window) ───────────────────────────
+  const printReceipt = useCallback((tx: TransactionResult) => {
+    const date = new Date(tx.transactionDate);
+    const dateStr = date.toLocaleDateString('en-PH', { year: 'numeric', month: 'long', day: 'numeric' });
+    const timeStr = date.toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit' });
+    const vatableAmt = (tx.subtotal / 1.12).toFixed(2);
+    const html = `<!DOCTYPE html><html><head>
+  <meta charset="utf-8" />
+  <title>Receipt ${tx.transactionNumber}</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Courier New', Courier, monospace; font-size: 12px; width: 280px; margin: 0 auto; padding: 16px 12px; }
+    .center { text-align: center; }
+    .bold { font-weight: bold; }
+    .large { font-size: 16px; }
+    .small { font-size: 10px; color: #555; }
+    hr { border: none; border-top: 1px dashed #000; margin: 8px 0; }
+    .row { display: flex; justify-content: space-between; margin: 2px 0; }
+    .total-row { font-weight: bold; font-size: 14px; margin-top: 4px; }
+    .item-meta { display: flex; justify-content: space-between; font-size: 11px; color: #444; padding-left: 8px; }
+    @media print { @page { margin: 0; } }
+  </style>
+</head><body>
+  <div class="center bold large">TradeMatrix</div>
+  <div class="center small">Point of Sale Receipt</div>
+  <hr />
+  <div class="row"><span>${dateStr}</span><span>${timeStr}</span></div>
+  <div class="row bold"><span>TXN#</span><span>${tx.transactionNumber}</span></div>
+  ${tx.cashierName ? `<div class="row"><span>Cashier</span><span>${tx.cashierName}</span></div>` : ''}
+  <hr />
+  ${tx.items.map(item => `<div style="margin:3px 0">
+    <div>${item.productName}</div>
+    <div class="item-meta"><span>x${item.quantity} @ &#x20B1;${item.unitPrice.toFixed(2)}</span><span>&#x20B1;${item.lineTotal.toFixed(2)}</span></div>
+  </div>`).join('')}
+  <hr />
+  <div class="row"><span>VATable Sales</span><span>&#x20B1;${vatableAmt}</span></div>
+  <div class="row"><span>VAT (12%)</span><span>&#x20B1;${tx.taxAmount.toFixed(2)}</span></div>
+  <hr />
+  <div class="row total-row"><span>TOTAL</span><span>&#x20B1;${tx.totalAmount.toFixed(2)}</span></div>
+  <div class="row"><span>Payment</span><span>${tx.paymentMethod}</span></div>
+  ${tx.referenceNumber ? `<div class="row"><span>Reference No.</span><span>${tx.referenceNumber}</span></div>` : ''}
+  ${tx.paymentMethod === 'Cash' ? `<div class="row"><span>Tendered</span><span>&#x20B1;${tx.amountTendered.toFixed(2)}</span></div><div class="row"><span>Change</span><span>&#x20B1;${tx.change.toFixed(2)}</span></div>` : ''}
+  <hr />
+  <div class="center small">Thank you for your purchase!</div>
+  <div class="center small" style="margin-top:3px">This serves as your official receipt.</div>
+</body></html>`;
+    const win = window.open('', '_blank', 'width=340,height=620,scrollbars=yes');
+    if (win) {
+      win.document.write(html);
+      win.document.close();
+      win.focus();
+      setTimeout(() => win.print(), 300);
+    }
+  }, []);
+
   // ── Totals (Philippine 12% VAT-inclusive pricing) ───────────────────────
   const subtotal    = useMemo(() => cart.reduce((s, i) => s + i.price * i.quantity, 0), [cart]);
   const vatableSales = useMemo(() => Math.round(subtotal / 1.12 * 100) / 100, [subtotal]);
@@ -209,6 +268,7 @@ export const POS: React.FC = () => {
     setAmountTendered('');
     setPaymentMethod('Cash');
     setPayError(null);
+    setReferenceNumber('');
     setPayModalOpen(true);
   };
 
@@ -219,11 +279,13 @@ export const POS: React.FC = () => {
       const result = await createTransaction({
         paymentMethod,
         amountTendered: isExact ? total : tender,
+        referenceNumber: (paymentMethod === 'GCash' || paymentMethod === 'PayMaya') ? referenceNumber.trim() : undefined,
         items: cart.map(i => ({ productId: parseInt(i.id), quantity: i.quantity })),
       });
       setSuccessTx(result);
       setCart([]);
       setAmountTendered('');
+      setReferenceNumber('');
       setPayModalOpen(false);
       setReceiptOpen(true);
       loadProducts();
@@ -234,7 +296,11 @@ export const POS: React.FC = () => {
     }
   };
 
-  const canPay = cart.length > 0 && !isProcessing && (isExact || tender >= total);
+  const canPay = cart.length > 0 && !isProcessing && (
+    paymentMethod === 'Cash'
+      ? tender >= total
+      : referenceNumber.trim().length > 0
+  );
 
   // ── Cart item quantity in-cart count (for badge overlay) ─────────────────
   const cartQtyMap = useMemo(() => {
@@ -250,6 +316,11 @@ export const POS: React.FC = () => {
     return counts;
   }, [products]);
 
+  // ── Return to dashboard with loading transition ─────────────────────────
+  if (isExiting) {
+    return <LoadingScreen message="Returning to dashboard…" />;
+  }
+
   // ── Show branded loading screen on initial POS load (after ALL hooks) ────
   if (productsLoading) {
     return <LoadingScreen message="Loading POS terminal..." subMessage="Fetching product catalog" />;
@@ -260,7 +331,7 @@ export const POS: React.FC = () => {
       {/* ── POS Header bar ───────────────────────────────────────────────── */}
       <div className="flex items-center justify-between px-1 pb-3">
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="sm" onClick={() => navigate('/dashboard')} className="text-xs gap-1.5 text-zinc-500" aria-label="Go back to dashboard">
+          <Button variant="ghost" size="sm" onClick={() => setExitConfirmOpen(true)} className="text-xs gap-1.5 text-zinc-500" aria-label="Exit POS">
             <ArrowLeft className="h-3.5 w-3.5" /> Back
           </Button>
           <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Point of Sale</span>
@@ -617,8 +688,8 @@ export const POS: React.FC = () => {
       </div>
 
       {/* ── Payment modal ─────────────────────────────────────────────────── */}
-      <Dialog open={payModalOpen} onOpenChange={v => { if (!isProcessing) { setPayModalOpen(v); if (!v) setPayError(null); } }}>
-        <DialogContent className="max-w-md">
+      <Dialog open={payModalOpen} onOpenChange={v => { if (!isProcessing) { setPayModalOpen(v); if (!v) { setPayError(null); setReferenceNumber(''); } } }}>
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-lg">
               <Receipt className="h-5 w-5" /> Process Payment
@@ -628,113 +699,146 @@ export const POS: React.FC = () => {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-5 py-2">
-            {/* Totals summary */}
-            <div className="grid grid-cols-3 gap-2">
-              <div className="col-span-2 p-4 bg-zinc-900 dark:bg-zinc-800 rounded-xl text-white text-center">
-                <p className="text-xs text-zinc-400 mb-1">Total Due</p>
-                <p className="text-3xl font-bold tabular-nums tracking-tight">₱{total.toFixed(2)}</p>
-              </div>
-              <div className="p-4 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl text-center border border-emerald-100 dark:border-emerald-800/40">
-                <p className="text-xs text-emerald-600 dark:text-emerald-400 mb-1">Change</p>
-                <p className="text-xl font-bold text-emerald-700 dark:text-emerald-300 tabular-nums">₱{change.toFixed(2)}</p>
-              </div>
-            </div>
-
-            {/* Payment method */}
-            <div className="space-y-2">
-              <Label className="text-xs font-semibold text-zinc-500 uppercase tracking-widest">Payment Method</Label>
-              <div className="grid grid-cols-2 gap-2">
-                {PAYMENT_METHODS.map(m => {
-                  const Icon = m.icon;
-                  return (
-                    <button
-                      key={m.value}
-                      onClick={() => setPaymentMethod(m.value)}
-                      className={cn(
-                        'flex items-center gap-2 px-4 py-3 rounded-xl border text-sm font-medium transition-all',
-                        paymentMethod === m.value
-                          ? 'border-zinc-900 dark:border-zinc-50 bg-zinc-900 dark:bg-zinc-50 text-white dark:text-zinc-900 shadow-sm'
-                          : 'border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:border-zinc-400'
-                      )}
-                      aria-pressed={paymentMethod === m.value}
-                    >
-                      <Icon className="h-4 w-4 shrink-0" />
-                      {m.label}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Amount tendered (cash only) */}
-            {paymentMethod === 'Cash' && (
-              <div className="space-y-2">
-                <Label className="text-xs font-semibold text-zinc-500 uppercase tracking-widest">Amount Tendered</Label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 font-semibold text-sm pointer-events-none">₱</span>
-                  <Input
-                    type="number"
-                    min={total}
-                    step="0.01"
-                    className="pl-7 text-xl font-bold h-12 tabular-nums"
-                    placeholder={total.toFixed(2)}
-                    value={amountTendered}
-                    onChange={e => setAmountTendered(e.target.value)}
-                    autoFocus
-                    aria-label="Amount tendered"
-                  />
+          <div className="grid grid-cols-5 gap-6 py-1">
+            {/* LEFT: Order summary */}
+            <div className="col-span-2 flex flex-col">
+              <div className="border border-zinc-100 dark:border-zinc-800 rounded-xl overflow-hidden flex flex-col h-full">
+                <div className="bg-zinc-50 dark:bg-zinc-800/60 px-4 py-2.5 text-xs font-semibold text-zinc-500 uppercase tracking-widest shrink-0">
+                  Order Summary
                 </div>
-                {/* Quick-tender buttons */}
-                <div className="flex gap-1.5 flex-wrap">
-                  <button
-                    onClick={() => setAmountTendered(total.toFixed(2))}
-                    className="px-3 py-1.5 text-xs rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 hover:border-zinc-400 font-semibold text-zinc-700 dark:text-zinc-300 transition-colors"
-                  >
-                    Exact
-                  </button>
-                  {QUICK_AMOUNTS.filter(a => a >= total).slice(0, 5).map(a => (
-                    <button
-                      key={a}
-                      onClick={() => setAmountTendered(String(a))}
-                      className="px-3 py-1.5 text-xs rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 hover:border-zinc-400 font-semibold text-zinc-700 dark:text-zinc-300 transition-colors"
-                    >
-                      ₱{a.toLocaleString()}
-                    </button>
+                <div className="divide-y divide-zinc-100 dark:divide-zinc-800 overflow-y-auto flex-1">
+                  {cart.map(item => (
+                    <div key={item.id} className="flex justify-between items-center px-4 py-2.5 text-sm">
+                      <span className="text-zinc-700 dark:text-zinc-300 truncate flex-1 mr-2">
+                        {item.name} <span className="text-zinc-400">×{item.quantity}</span>
+                      </span>
+                      <span className="font-semibold text-zinc-900 dark:text-zinc-100 tabular-nums shrink-0">
+                        ₱{(item.price * item.quantity).toFixed(2)}
+                      </span>
+                    </div>
                   ))}
                 </div>
-                {tender > 0 && tender < total && (
-                  <p className="text-xs text-red-500 flex items-center gap-1" role="alert">
-                    <AlertTriangle className="h-3.5 w-3.5" />
-                    Short by ₱{(total - tender).toFixed(2)}
-                  </p>
-                )}
-              </div>
-            )}
-
-            {/* Non-cash confirmation line */}
-            {paymentMethod !== 'Cash' && (
-              <div className="flex items-center gap-2 text-sm text-zinc-500 bg-zinc-50 dark:bg-zinc-800 rounded-xl px-4 py-3 border border-zinc-200 dark:border-zinc-700">
-                <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
-                Confirm {paymentMethod} payment of <strong className="text-zinc-900 dark:text-zinc-100 ml-1">₱{total.toFixed(2)}</strong>
-              </div>
-            )}
-
-            {/* Order summary */}
-            <div className="border border-zinc-100 dark:border-zinc-800 rounded-xl overflow-hidden">
-              <div className="bg-zinc-50 dark:bg-zinc-800/60 px-4 py-2 text-xs font-semibold text-zinc-500 uppercase tracking-widest">Order Summary</div>
-              <div className="divide-y divide-zinc-100 dark:divide-zinc-800 max-h-36 overflow-y-auto">
-                {cart.map(item => (
-                  <div key={item.id} className="flex justify-between items-center px-4 py-2.5 text-sm">
-                    <span className="text-zinc-700 dark:text-zinc-300 truncate flex-1 mr-2">{item.name} <span className="text-zinc-400">×{item.quantity}</span></span>
-                    <span className="font-semibold text-zinc-900 dark:text-zinc-100 tabular-nums shrink-0">₱{(item.price * item.quantity).toFixed(2)}</span>
+                <div className="border-t border-zinc-100 dark:border-zinc-800 bg-zinc-50/60 dark:bg-zinc-800/30 text-sm shrink-0">
+                  <div className="flex justify-between px-4 py-2 text-zinc-500">
+                    <span>VATable Sales</span>
+                    <span className="tabular-nums">₱{vatableSales.toFixed(2)}</span>
                   </div>
-                ))}
+                  <div className="flex justify-between px-4 py-2 text-zinc-500 border-t border-zinc-100 dark:border-zinc-800">
+                    <span>VAT (12%)</span>
+                    <span className="tabular-nums">₱{vatAmount.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between px-4 py-3 font-bold text-zinc-900 dark:text-zinc-50 border-t border-zinc-200 dark:border-zinc-700">
+                    <span>Total</span>
+                    <span className="tabular-nums">₱{total.toFixed(2)}</span>
+                  </div>
+                </div>
               </div>
-              <div className="flex justify-between px-4 py-2.5 text-xs border-t border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/60 text-zinc-500">
-                <span>VATable Sales · VAT (12%)</span>
-                <span className="tabular-nums">₱{vatableSales.toFixed(2)} · ₱{vatAmount.toFixed(2)}</span>
+            </div>
+
+            {/* RIGHT: Payment */}
+            <div className="col-span-3 flex flex-col gap-4">
+              {/* Total Due + Change */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="p-4 bg-zinc-900 dark:bg-zinc-800 rounded-xl text-white text-center">
+                  <p className="text-xs text-zinc-400 mb-1">Total Due</p>
+                  <p className="text-3xl font-bold tabular-nums tracking-tight">₱{total.toFixed(2)}</p>
+                </div>
+                <div className="p-4 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl text-center border border-emerald-100 dark:border-emerald-800/40">
+                  <p className="text-xs text-emerald-600 dark:text-emerald-400 mb-1">Change</p>
+                  <p className="text-2xl font-bold text-emerald-700 dark:text-emerald-300 tabular-nums">₱{change.toFixed(2)}</p>
+                </div>
               </div>
+
+              {/* Payment Method */}
+              <div className="space-y-2">
+                <Label className="text-xs font-semibold text-zinc-500 uppercase tracking-widest">Payment Method</Label>
+                <div className="flex gap-2">
+                  {PAYMENT_METHODS.map(m => {
+                    const Icon = m.icon;
+                    return (
+                      <button
+                        key={m.value}
+                        onClick={() => { setPaymentMethod(m.value); setReferenceNumber(''); }}
+                        className={cn(
+                          'flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl border text-sm font-medium transition-all',
+                          paymentMethod === m.value
+                            ? 'border-zinc-900 dark:border-zinc-50 bg-zinc-900 dark:bg-zinc-50 text-white dark:text-zinc-900 shadow-sm'
+                            : 'border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:border-zinc-400'
+                        )}
+                        aria-pressed={paymentMethod === m.value}
+                      >
+                        <Icon className="h-4 w-4 shrink-0" />
+                        {m.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Cash: Amount tendered */}
+              {paymentMethod === 'Cash' && (
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold text-zinc-500 uppercase tracking-widest">Amount Tendered</Label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 font-semibold text-sm pointer-events-none">₱</span>
+                    <Input
+                      type="number"
+                      min={total}
+                      step="0.01"
+                      className="pl-7 text-xl font-bold h-12 tabular-nums"
+                      placeholder={total.toFixed(2)}
+                      value={amountTendered}
+                      onChange={e => setAmountTendered(e.target.value)}
+                      autoFocus
+                      aria-label="Amount tendered"
+                    />
+                  </div>
+                  <div className="flex gap-1.5 flex-wrap">
+                    <button
+                      onClick={() => setAmountTendered(total.toFixed(2))}
+                      className="px-3 py-1.5 text-xs rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 hover:border-zinc-400 font-semibold text-zinc-700 dark:text-zinc-300 transition-colors"
+                    >
+                      Exact
+                    </button>
+                    {QUICK_AMOUNTS.filter(a => a >= total).slice(0, 5).map(a => (
+                      <button
+                        key={a}
+                        onClick={() => setAmountTendered(String(a))}
+                        className="px-3 py-1.5 text-xs rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 hover:border-zinc-400 font-semibold text-zinc-700 dark:text-zinc-300 transition-colors"
+                      >
+                        ₱{a.toLocaleString()}
+                      </button>
+                    ))}
+                  </div>
+                  {tender > 0 && tender < total && (
+                    <p className="text-xs text-red-500 flex items-center gap-1" role="alert">
+                      <AlertTriangle className="h-3.5 w-3.5" />
+                      Short by ₱{(total - tender).toFixed(2)}
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {/* GCash / PayMaya: Reference number */}
+              {(paymentMethod === 'GCash' || paymentMethod === 'PayMaya') && (
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold text-zinc-500 uppercase tracking-widest">
+                    Reference Number <span className="text-red-400 normal-case font-normal text-xs">* required</span>
+                  </Label>
+                  <Input
+                    type="text"
+                    className="h-12 font-mono text-sm tracking-wider"
+                    placeholder={`Enter ${paymentMethod} reference number`}
+                    value={referenceNumber}
+                    onChange={e => setReferenceNumber(e.target.value)}
+                    autoFocus
+                    aria-label="Payment reference number"
+                  />
+                  <p className="text-xs text-zinc-400">
+                    Enter the reference number from the {paymentMethod} transaction confirmation.
+                  </p>
+                </div>
+              )}
             </div>
           </div>
 
@@ -798,19 +902,36 @@ export const POS: React.FC = () => {
                   <span className="tabular-nums text-emerald-600">₱{successTx.totalAmount.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between text-zinc-500">
-                  <span>Tendered ({successTx.paymentMethod})</span>
-                  <span className="tabular-nums">₱{successTx.amountTendered.toFixed(2)}</span>
+                  <span>Payment</span>
+                  <span className="font-medium text-zinc-700 dark:text-zinc-300">{successTx.paymentMethod}</span>
                 </div>
-                <div className="flex justify-between font-semibold">
-                  <span>Change</span>
-                  <span className="tabular-nums text-emerald-600">₱{successTx.change.toFixed(2)}</span>
-                </div>
+                {successTx.referenceNumber && (
+                  <div className="flex justify-between font-semibold">
+                    <span>Reference No.</span>
+                    <span className="font-mono text-xs tabular-nums">{successTx.referenceNumber}</span>
+                  </div>
+                )}
+                {successTx.paymentMethod === 'Cash' && (
+                  <>
+                    <div className="flex justify-between text-zinc-500">
+                      <span>Tendered</span>
+                      <span className="tabular-nums">₱{successTx.amountTendered.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between font-semibold">
+                      <span>Change</span>
+                      <span className="tabular-nums text-emerald-600">₱{successTx.change.toFixed(2)}</span>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           )}
 
-          <DialogFooter>
-            <Button className="w-full h-11 font-semibold text-base" onClick={() => setReceiptOpen(false)}>
+          <DialogFooter className="flex gap-2">
+            <Button variant="outline" className="flex-1 h-11 gap-2" onClick={() => successTx && printReceipt(successTx)}>
+              <Printer className="h-4 w-4" /> Print Receipt
+            </Button>
+            <Button className="flex-1 h-11 font-semibold text-base" onClick={() => setReceiptOpen(false)}>
               New Transaction
             </Button>
           </DialogFooter>
@@ -832,6 +953,33 @@ export const POS: React.FC = () => {
         onConfirm={handleClearCartConfirmed}
         actionDescription="Clearing the entire cart requires manager authorization. Please enter your password to continue."
       />
+
+      {/* ── Exit POS confirmation ─────────────────────────────────────────── */}
+      <Dialog open={exitConfirmOpen} onOpenChange={setExitConfirmOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Exit POS?</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to leave the Point of Sale?
+              {cart.length > 0 && ' Your current cart will be discarded.'}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setExitConfirmOpen(false)}>
+              Stay
+            </Button>
+            <Button
+              onClick={() => {
+                setExitConfirmOpen(false);
+                setIsExiting(true);
+                setTimeout(() => navigate('/dashboard'), 600);
+              }}
+            >
+              Exit POS
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

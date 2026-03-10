@@ -10,7 +10,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import {
   DollarSign, Package, Users, TrendingUp, Activity, Server,
   ShieldAlert, Database, AlertCircle, ShoppingCart,
-  ClipboardList, ArrowRight, Truck, CheckCircle2
+  ClipboardList, Truck, CheckCircle2
 } from 'lucide-react';
 import { UserRole } from '../../../types';
 
@@ -275,96 +275,65 @@ const ManagerDashboard = ({ data }: { data: DashboardSummary }) => {
  */
 const CashierDashboard = ({ data }: { data: DashboardSummary }) => (
   <div className="space-y-6">
-    <div className="flex flex-col md:flex-row gap-4">
-      <div className="flex-1 space-y-6">
-        <div className="grid gap-4 md:grid-cols-3">
-          <Card className="bg-zinc-900 text-zinc-50 border-zinc-800 dark:bg-zinc-950 dark:border-zinc-800">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm text-zinc-400 font-medium">Revenue (Today)</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-zinc-50">₱{data.todayRevenue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-              <p className="text-xs text-zinc-400 mt-1">{data.todayTransactionCount} transaction{data.todayTransactionCount !== 1 ? 's' : ''}</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm text-zinc-500 dark:text-zinc-400 font-medium">Items Sold</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">{data.todayItemsSold}</div>
-              <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">Units today</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm text-zinc-500 dark:text-zinc-400 font-medium">Register Status</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-emerald-600 flex items-center gap-2">
-                <div className="h-3 w-3 rounded-full bg-emerald-500 animate-pulse"></div>
-                Online
-              </div>
-              <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">POS System Active</p>
-            </CardContent>
-          </Card>
-        </div>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Recent Transactions (Today)</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {(data.recentTransactions.length > 0 ? data.recentTransactions : []).map((tx, i) => (
-                <div key={i} className="flex items-center justify-between p-3 border border-zinc-100 rounded-lg hover:bg-zinc-50 dark:border-zinc-800 dark:hover:bg-zinc-800/50 transition-colors">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-zinc-100 dark:bg-zinc-800 rounded text-zinc-500">
-                      <ShoppingCart className="h-4 w-4" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-zinc-900 dark:text-zinc-200">{tx.transactionNumber}</p>
-                      <p className="text-xs text-zinc-500 dark:text-zinc-400">{tx.time} • {tx.itemCount} item{tx.itemCount !== 1 ? 's' : ''} • {tx.paymentMethod}</p>
-                    </div>
-                  </div>
-                  <span className="font-bold text-zinc-900 dark:text-zinc-50">₱{tx.totalAmount.toFixed(2)}</span>
-                </div>
-              ))}
-              {data.recentTransactions.length === 0 && (
-                <p className="text-sm text-zinc-400 text-center py-4">No transactions yet today.</p>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="w-full md:w-80 space-y-4">
-        <Card className="bg-gradient-to-br from-indigo-50 to-white border-indigo-100 dark:from-indigo-950 dark:to-zinc-900 dark:border-indigo-900">
-          <CardHeader>
-            <CardTitle className="text-indigo-900 dark:text-indigo-200">Quick Actions</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <Button className="w-full bg-indigo-600 hover:bg-indigo-700 text-white justify-between">
-              New Sale <ArrowRight className="h-4 w-4" />
-            </Button>
-            <Button variant="outline" className="w-full justify-start border-indigo-200 text-indigo-700 hover:bg-indigo-50 dark:border-indigo-800 dark:text-indigo-300 dark:hover:bg-indigo-900/50">
-              Check Price
-            </Button>
-            <Button variant="outline" className="w-full justify-start border-indigo-200 text-indigo-700 hover:bg-indigo-50 dark:border-indigo-800 dark:text-indigo-300 dark:hover:bg-indigo-900/50">
-              Customer Lookup
-            </Button>
-            <Button variant="outline" className="w-full justify-start border-indigo-200 text-indigo-700 hover:bg-indigo-50 dark:border-indigo-800 dark:text-indigo-300 dark:hover:bg-indigo-900/50">
-              Refund / Return
-            </Button>
-          </CardContent>
-        </Card>
-
-        <div className="p-4 bg-amber-50 border border-amber-100 rounded-xl text-amber-800 text-sm dark:bg-amber-900/20 dark:border-amber-900/50 dark:text-amber-200">
-          <p className="font-semibold mb-1 flex items-center gap-2"><AlertCircle className="h-4 w-4" /> Store Notice</p>
-          <p>Holiday sale starts tomorrow. Please ensure promotional flyers are visible at the counter.</p>
-        </div>
-      </div>
+    <div className="grid gap-4 md:grid-cols-3">
+      <Card className="bg-zinc-900 text-zinc-50 border-zinc-800 dark:bg-zinc-950 dark:border-zinc-800">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm text-zinc-400 font-medium">Revenue (Today)</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold text-zinc-50">₱{data.todayRevenue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+          <p className="text-xs text-zinc-400 mt-1">{data.todayTransactionCount} transaction{data.todayTransactionCount !== 1 ? 's' : ''}</p>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm text-zinc-500 dark:text-zinc-400 font-medium">Items Sold</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">{data.todayItemsSold}</div>
+          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">Units today</p>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm text-zinc-500 dark:text-zinc-400 font-medium">Register Status</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold text-emerald-600 flex items-center gap-2">
+            <div className="h-3 w-3 rounded-full bg-emerald-500 animate-pulse"></div>
+            Online
+          </div>
+          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">POS System Active</p>
+        </CardContent>
+      </Card>
     </div>
+
+    <Card>
+      <CardHeader>
+        <CardTitle>Recent Transactions (Today)</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-4">
+          {(data.recentTransactions.length > 0 ? data.recentTransactions : []).map((tx, i) => (
+            <div key={i} className="flex items-center justify-between p-3 border border-zinc-100 rounded-lg hover:bg-zinc-50 dark:border-zinc-800 dark:hover:bg-zinc-800/50 transition-colors">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-zinc-100 dark:bg-zinc-800 rounded text-zinc-500">
+                  <ShoppingCart className="h-4 w-4" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-zinc-900 dark:text-zinc-200">{tx.transactionNumber}</p>
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400">{tx.time} • {tx.itemCount} item{tx.itemCount !== 1 ? 's' : ''} • {tx.paymentMethod}</p>
+                </div>
+              </div>
+              <span className="font-bold text-zinc-900 dark:text-zinc-50">₱{tx.totalAmount.toFixed(2)}</span>
+            </div>
+          ))}
+          {data.recentTransactions.length === 0 && (
+            <p className="text-sm text-zinc-400 text-center py-4">No transactions yet today.</p>
+          )}
+        </div>
+      </CardContent>
+    </Card>
   </div>
 );
 

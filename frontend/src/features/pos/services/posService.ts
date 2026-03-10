@@ -9,6 +9,7 @@ export interface CreateTransactionItemPayload {
 export interface CreateTransactionPayload {
   paymentMethod: string;
   amountTendered: number;
+  referenceNumber?: string;
   items: CreateTransactionItemPayload[];
 }
 
@@ -32,6 +33,7 @@ export interface TransactionResult {
   status: string;
   transactionDate: string;
   cashierName?: string;
+  referenceNumber?: string;
   items: TransactionItemResult[];
 }
 

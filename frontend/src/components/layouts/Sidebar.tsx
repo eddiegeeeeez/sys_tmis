@@ -21,7 +21,6 @@ export function getNavItems(currentRole: UserRole) {
           section: 'System Core', items: [
             { id: 'dashboard', label: 'System Overview', icon: LayoutDashboard },
             { id: 'admin/db', label: 'Database Admin', icon: Database },
-            { id: 'reports', label: 'Reports', icon: BarChart3 },
           ]
         },
         {

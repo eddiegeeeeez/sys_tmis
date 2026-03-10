@@ -243,7 +243,7 @@ const AppContent: React.FC = () => {
                 <ProtectedRoute
                   isLoggedIn={isLoggedIn}
                   currentRole={currentRole}
-                  allowedRoles={[UserRole.SUPER_ADMIN, UserRole.MANAGER]}
+                  allowedRoles={[UserRole.MANAGER]}
                 >
                   <Reports />
                 </ProtectedRoute>
