@@ -37,12 +37,20 @@ namespace TradeMatrix.Server.Services
                     .ToListAsync();
 
                 // Validate all products exist and have sufficient stock
-                foreach (var item in dto.Items)
+                // Group duplicate ProductIds and validate aggregate quantity to prevent
+                // the stock-bypass exploit where duplicates pass validation individually
+                // but collectively exceed available stock.
+                var aggregatedItems = dto.Items
+                    .GroupBy(i => i.ProductId)
+                    .Select(g => new { ProductId = g.Key, TotalQuantity = g.Sum(i => i.Quantity) })
+                    .ToList();
+
+                foreach (var agg in aggregatedItems)
                 {
-                    var product = products.FirstOrDefault(p => p.Id == item.ProductId)
-                        ?? throw new ArgumentException($"Product ID {item.ProductId} not found.");
-                    if (product.Stock < item.Quantity)
-                        throw new ArgumentException($"Insufficient stock for '{product.Name}'. Available: {product.Stock}.");
+                    var product = products.FirstOrDefault(p => p.Id == agg.ProductId)
+                        ?? throw new ArgumentException($"Product ID {agg.ProductId} not found.");
+                    if (product.Stock < agg.TotalQuantity)
+                        throw new ArgumentException($"Insufficient stock for '{product.Name}'. Available: {product.Stock}, requested: {agg.TotalQuantity}.");
                 }
 
                 // Generate transaction number: TRX-YYYYMMDD-XXXX

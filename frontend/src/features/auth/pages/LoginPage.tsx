@@ -4,7 +4,7 @@ import { UserRole } from '../../../types';
 import { CircuitBoard } from 'lucide-react';
 
 interface LoginPageProps {
-  onLogin: (role?: UserRole) => void;
+  onLogin: (role?: UserRole, mustChangePassword?: boolean) => void;
 }
 
 export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {

@@ -5,8 +5,10 @@ namespace TradeMatrix.Server.DTOs
     public class CreateTransactionDto
     {
         [Required]
+        [RegularExpression("^(Cash|Card|GCash|PayMaya)$", ErrorMessage = "PaymentMethod must be Cash, Card, GCash, or PayMaya.")]
         public string PaymentMethod { get; set; } = "Cash";
 
+        [Range(0, (double)decimal.MaxValue, ErrorMessage = "AmountTendered cannot be negative.")]
         public decimal AmountTendered { get; set; }
 
         [MaxLength(100)]
@@ -14,6 +16,7 @@ namespace TradeMatrix.Server.DTOs
 
         [Required]
         [MinLength(1)]
+        [MaxLength(100, ErrorMessage = "A transaction cannot contain more than 100 line items.")]
         public List<CreateTransactionItemDto> Items { get; set; } = new();
     }
 

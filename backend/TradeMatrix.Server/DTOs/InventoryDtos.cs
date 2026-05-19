@@ -25,9 +25,13 @@ namespace TradeMatrix.Server.DTOs
         public string SKU { get; set; } = string.Empty;
         [Required]
         public string Category { get; set; } = string.Empty;
+        [Range(0, (double)decimal.MaxValue, ErrorMessage = "CostPrice cannot be negative.")]
         public decimal CostPrice { get; set; }
+        [Range(0, (double)decimal.MaxValue, ErrorMessage = "SellingPrice cannot be negative.")]
         public decimal SellingPrice { get; set; }
+        [Range(0, int.MaxValue, ErrorMessage = "InitialStock cannot be negative.")]
         public int InitialStock { get; set; }
+        [Range(0, int.MaxValue, ErrorMessage = "ReorderLevel cannot be negative.")]
         public int ReorderLevel { get; set; } = 10;
         public string UnitOfMeasure { get; set; } = "pcs";
         public int? SupplierId { get; set; }

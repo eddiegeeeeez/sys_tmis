@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
+import { toast } from 'sonner';
 import { QRCodeSVG } from 'qrcode.react';
 import { Card, CardContent } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
@@ -13,7 +14,7 @@ import { Select } from '../../../components/ui/Select';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '../../../components/ui/DropdownMenu';
 import { inventoryService, Product as ApiProduct, StockMovement, StockMovementSummary } from '../services/inventoryService';
 import { procurementService, Supplier } from '../../procurement/services/procurementService';
-import { Loader2, Search, ArrowUpCircle, MoreHorizontal, Download, ArrowUpDown, X, Pencil, Upload, Trash2, PackagePlus, History, Eye, Plus, AlertTriangle, CheckCircle2, Printer, AlertCircle } from 'lucide-react';
+import { Loader2, Search, ArrowUpCircle, MoreHorizontal, Download, ArrowUpDown, X, Pencil, Upload, Trash2, PackagePlus, History, Eye, Plus, AlertTriangle, Printer, AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '../../../components/ui/Alert';
 import { UserRole, Product } from '../../../types';
 
@@ -109,9 +110,6 @@ export const Inventory: React.FC<InventoryProps> = ({ currentRole }) => {
     const [deletingProduct, setDeletingProduct] = useState<ApiProduct | null>(null);
     const [isDeleting, setIsDeleting] = useState(false);
 
-    // Toast / feedback
-    const [toast, setToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
-
     // Stock Movement State
     const [isMovementOpen, setIsMovementOpen] = useState(false);
     const [movementProduct, setMovementProduct] = useState<ApiProduct | null>(null);
@@ -148,18 +146,6 @@ export const Inventory: React.FC<InventoryProps> = ({ currentRole }) => {
 
     useEffect(() => {
         fetchData();
-    }, []);
-
-    // Auto-dismiss toast
-    useEffect(() => {
-        if (toast) {
-            const timer = setTimeout(() => setToast(null), 4000);
-            return () => clearTimeout(timer);
-        }
-    }, [toast]);
-
-    const showToast = useCallback((type: 'success' | 'error', message: string) => {
-        setToast({ type, message });
     }, []);
 
     const fetchData = async () => {
@@ -270,7 +256,7 @@ export const Inventory: React.FC<InventoryProps> = ({ currentRole }) => {
                     name: '', sku: '', category: 'Electronics', unitOfMeasure: 'pcs',
                     costPrice: 0, sellingPrice: 0, initialStock: 0, reorderLevel: 10, supplierId: ''
                 });
-                showToast('success', `Product "${res.data.data.name}" added successfully (SKU: ${res.data.data.sku}).`);
+                toast.success(`Product "${res.data.data.name}" added successfully (SKU: ${res.data.data.sku}).`);
             } else {
                 setSaveError(res.data.message || 'Failed to save product. Please check the form and try again.');
             }
@@ -302,7 +288,7 @@ export const Inventory: React.FC<InventoryProps> = ({ currentRole }) => {
             if (res.data.success) {
                 setIsEditProductOpen(false);
                 fetchData();
-                showToast('success', 'Product updated successfully.');
+                toast.success('Product updated successfully.');
             } else {
                 setEditError(res.data.message || 'Failed to update product.');
             }
@@ -388,7 +374,7 @@ export const Inventory: React.FC<InventoryProps> = ({ currentRole }) => {
             if (res.data.success) {
                 setIsMovementOpen(false);
                 fetchData();
-                showToast('success', `Stock movement recorded for ${movementProduct.name}.`);
+                toast.success(`Stock movement recorded for ${movementProduct.name}.`);
             } else {
                 setMovementError(res.data.message || 'Failed to record movement.');
             }
@@ -437,10 +423,10 @@ export const Inventory: React.FC<InventoryProps> = ({ currentRole }) => {
                 setIsDeleteOpen(false);
                 setDeletingProduct(null);
                 fetchData();
-                showToast('success', `Product "${deletingProduct.name}" deleted.`);
+                toast.success(`Product "${deletingProduct.name}" deleted.`);
             }
         } catch (error: any) {
-            showToast('error', error?.response?.data?.message || 'Failed to delete product.');
+            toast.error(error?.response?.data?.message || 'Failed to delete product.');
         } finally {
             setIsDeleting(false);
         }
@@ -459,7 +445,7 @@ export const Inventory: React.FC<InventoryProps> = ({ currentRole }) => {
                 if (supRes.data.success) setSuppliers(supRes.data.data);
                 // Auto-select the new supplier
                 setNewProduct(prev => ({ ...prev, supplierId: String(res.data.data.id) }));
-                showToast('success', `Supplier "${res.data.data.companyName}" added.`);
+                toast.success(`Supplier "${res.data.data.companyName}" added.`);
             }
         } catch (error: any) {
             setSupplierSaveError(error?.response?.data?.message || 'Failed to save supplier.');
@@ -1191,20 +1177,7 @@ export const Inventory: React.FC<InventoryProps> = ({ currentRole }) => {
                 </DialogContent>
             </Dialog>
 
-            {/* Toast Notification */}
-            {toast && (
-                <div className={`fixed bottom-6 right-6 z-[100] flex items-center gap-2 rounded-lg px-4 py-3 text-sm font-medium shadow-lg transition-all animate-in slide-in-from-bottom-4 ${
-                    toast.type === 'success'
-                        ? 'bg-emerald-600 text-white'
-                        : 'bg-red-600 text-white'
-                }`}>
-                    {toast.type === 'success' ? <CheckCircle2 className="h-4 w-4" /> : <AlertTriangle className="h-4 w-4" />}
-                    {toast.message}
-                    <button onClick={() => setToast(null)} className="ml-2 opacity-70 hover:opacity-100">
-                        <X className="h-3.5 w-3.5" />
-                    </button>
-                </div>
-            )}
+            {/* Toast Notification removed — using sonner */}
         </div>
     );
 };

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { toast } from 'sonner';
 import { Button } from '../../../components/ui/Button';
 import { Select } from '../../../components/ui/Select';
 import { Badge } from '../../../components/ui/Badge';
@@ -85,8 +86,8 @@ export const UserManagement: React.FC = () => {
       const response = await adminService.getRoles();
       const rolesData = response.data.data;
 
-      // Filter roles based on current user role
-      let filteredRoles = rolesData || [];
+      // Filter roles based on current user role, and exclude archived roles
+      let filteredRoles = (rolesData || []).filter((r: Role) => !r.isArchived);
       if (currentUserRole !== 'SuperAdmin') {
         // Non-SuperAdmin users should not manage roles
         filteredRoles = [];
@@ -128,6 +129,7 @@ export const UserManagement: React.FC = () => {
       });
 
       setIsUserModalOpen(false);
+      toast.success('User created successfully.');
       fetchUsers(); // Refresh list
       // Reset form
       setNewUser({
@@ -154,6 +156,7 @@ export const UserManagement: React.FC = () => {
         isActive: editingUser.status === 'Active' || editingUser.isActive === true
       });
       setIsEditUserOpen(false);
+      toast.success('User updated successfully.');
       fetchUsers();
     } catch (error: any) {
       console.error('Error updating user:', error);
@@ -174,9 +177,11 @@ export const UserManagement: React.FC = () => {
     if (!archiveTarget) return;
     try {
       await adminService.archiveUser(archiveTarget.id);
+      toast.success(`${archiveTarget.name} has been archived.`);
       fetchUsers();
     } catch (error) {
       console.error('Error archiving user:', error);
+      toast.error('Failed to archive user.');
     } finally {
       setIsArchiveAuthOpen(false);
       setArchiveTarget(null);
@@ -186,9 +191,11 @@ export const UserManagement: React.FC = () => {
   const handleRestoreUser = async (user: UserType) => {
     try {
       await adminService.restoreUser(user.id);
+      toast.success(`${user.name} has been restored.`);
       fetchUsers();
     } catch (error) {
       console.error('Error restoring user:', error);
+      toast.error('Failed to restore user.');
     }
   };
 

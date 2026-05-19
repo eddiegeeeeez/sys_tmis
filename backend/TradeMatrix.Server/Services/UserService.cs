@@ -139,7 +139,8 @@ namespace TradeMatrix.Server.Services
                 Role = role,
                 IsActive = createUserDto.IsActive ?? true,
                 CreatedAt = DateTime.UtcNow,
-                CreatedBy = currentUserId
+                CreatedBy = currentUserId,
+                MustChangePassword = true
             };
 
             _context.Users.Add(newUser);
@@ -295,6 +296,7 @@ namespace TradeMatrix.Server.Services
             }
 
             user.PasswordHash = _passwordHashing.HashPassword(newPassword);
+            user.MustChangePassword = true;
             user.FailedLoginAttempts = 0;
             user.LockoutUntil = null;
 

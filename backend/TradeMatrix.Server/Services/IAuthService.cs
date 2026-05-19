@@ -7,6 +7,13 @@ namespace TradeMatrix.Server.Services
         Task<LoginResultDto> LoginAsync(LoginDto loginDto);
         Task<UserProfileDto?> GetProfileAsync(int userId);
         Task<bool> VerifyPasswordAsync(int userId, string password);
+        Task<ApiResponse<bool>> ChangePasswordAsync(int userId, string newPassword);
+
+        /// <summary>Sends an OTP to the user's email for the given purpose.</summary>
+        Task<ApiResponse<bool>> RequestOtpAsync(string email, string purpose);
+
+        /// <summary>Verifies an OTP. Returns a short-lived session token on success.</summary>
+        Task<ApiResponse<string>> VerifyOtpAsync(string email, string purpose, string otp);
     }
 
     /// <summary>
@@ -36,6 +43,7 @@ namespace TradeMatrix.Server.Services
         public string Role { get; set; } = string.Empty;
         public string Name { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;
+        public bool MustChangePassword { get; set; }
     }
 
     public class UserProfileDto
@@ -46,5 +54,6 @@ namespace TradeMatrix.Server.Services
         public string Role { get; set; } = string.Empty;
         public bool IsActive { get; set; }
         public DateTime? LastLogin { get; set; }
+        public bool MustChangePassword { get; set; }
     }
 }

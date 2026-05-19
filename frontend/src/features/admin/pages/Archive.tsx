@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { toast } from 'sonner';
 import { Card, CardContent } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
 import { Badge } from '../../../components/ui/Badge';
@@ -24,7 +25,6 @@ export const Archive: React.FC = () => {
     const [archivedRoles, setArchivedRoles] = useState<Role[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [restoreError, setRestoreError] = useState<string | null>(null);
 
     const [userPage, setUserPage] = useState(1);
     const [userTotalPages, setUserTotalPages] = useState(1);
@@ -59,26 +59,24 @@ export const Archive: React.FC = () => {
     };
 
     const handleRestoreUser = async (id: string | number) => {
-        if (!window.confirm('Are you sure you want to restore this user? They will regain their previous access.')) return;
-
         try {
             await adminService.restoreUser(id);
+            toast.success('User restored successfully.');
             loadData();
         } catch (err) {
             console.error('Failed to restore user:', err);
-            setRestoreError('Failed to restore user.');
+            toast.error('Failed to restore user.');
         }
     };
 
     const handleRestoreRole = async (id: string | number) => {
-        if (!window.confirm('Are you sure you want to restore this role? Users assigned to it will regain its permissions.')) return;
-
         try {
             await adminService.restoreRole(id);
+            toast.success('Role restored successfully.');
             loadData();
         } catch (err) {
             console.error('Failed to restore role:', err);
-            setRestoreError('Failed to restore role.');
+            toast.error('Failed to restore role.');
         }
     };
 
@@ -199,13 +197,6 @@ export const Archive: React.FC = () => {
                     <AlertDescription>
                         <span className="font-medium">Error loading data</span><br />{error}
                     </AlertDescription>
-                </Alert>
-            )}
-
-            {restoreError && (
-                <Alert variant="destructive">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertDescription>{restoreError}</AlertDescription>
                 </Alert>
             )}
 

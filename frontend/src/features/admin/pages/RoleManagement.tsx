@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
@@ -104,12 +105,14 @@ export const RoleManagement: React.FC = () => {
             });
 
             fetchRoles();
+            toast.success(`Role "${newRoleName}" created successfully.`);
             setIsAuthModalOpen(false);
             setIsCreateRoleOpen(false);
             setNewRoleName('');
             setNewRoleDesc('');
         } catch (error) {
             console.error('Error creating role:', error);
+            toast.error('Failed to create role.');
         }
     };
 
@@ -124,6 +127,7 @@ export const RoleManagement: React.FC = () => {
             });
             setIsEditRoleOpen(false);
             fetchRoles();
+            toast.success('Role updated successfully.');
         } catch (error: any) {
             console.error('Error updating role:', error);
             setEditError(error.response?.data?.message || 'Failed to update role');
@@ -144,8 +148,10 @@ export const RoleManagement: React.FC = () => {
         try {
             await adminService.archiveRole(archiveTarget.id);
             fetchRoles();
+            toast.success(`Role "${archiveTarget.name}" archived.`);
         } catch (error) {
             console.error('Error archiving role:', error);
+            toast.error('Failed to archive role.');
         } finally {
             setIsArchiveAuthOpen(false);
             setArchiveTarget(null);
@@ -156,8 +162,10 @@ export const RoleManagement: React.FC = () => {
         try {
             await adminService.restoreRole(role.id);
             fetchRoles();
+            toast.success(`Role "${role.name}" restored.`);
         } catch (error) {
             console.error('Error restoring role:', error);
+            toast.error('Failed to restore role.');
         }
     };
 
@@ -172,7 +180,7 @@ export const RoleManagement: React.FC = () => {
         return <ArrowDown className="ml-2 h-4 w-4" />;
     };
 
-    const columns: ColumnDef<Role>[] = [
+    const columns: ColumnDef<Role>[] = useMemo(() => [
         {
             accessorKey: "name",
             header: ({ column }) => {
@@ -274,7 +282,7 @@ export const RoleManagement: React.FC = () => {
                 );
             }
         }
-    ];
+    ], [handleArchiveClick, handleRestoreRole, handleEditPermissionsClick, setViewingRole, setEditingRole, setIsEditRoleOpen]);
 
     const renderSkeleton = () => (
         <div className="space-y-6">
@@ -611,6 +619,27 @@ export const RoleManagement: React.FC = () => {
                                         >
                                             <Shield className="h-3.5 w-3.5 mr-2" /> Edit Permissions
                                         </Button>
+                                        {!role.isSystemRole && (
+                                            role.isArchived ? (
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    className="w-full text-xs text-emerald-600 border-emerald-200 hover:bg-emerald-50 hover:border-emerald-400 dark:text-emerald-400 dark:border-emerald-900 dark:hover:bg-emerald-950"
+                                                    onClick={() => handleRestoreRole(role)}
+                                                >
+                                                    <Plus className="h-3.5 w-3.5 mr-2" /> Restore
+                                                </Button>
+                                            ) : (
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    className="w-full text-xs text-amber-600 border-amber-200 hover:bg-amber-50 hover:border-amber-400 dark:text-amber-400 dark:border-amber-900 dark:hover:bg-amber-950"
+                                                    onClick={() => handleArchiveClick(role)}
+                                                >
+                                                    <Archive className="h-3.5 w-3.5 mr-2" /> Archive
+                                                </Button>
+                                            )
+                                        )}
                                     </div>
                                 </CardContent>
                             </Card>

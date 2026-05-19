@@ -1,13 +1,14 @@
 import { useState, useEffect, useMemo } from 'react';
+import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
 import { DataTable } from '../../../components/ui/data-table';
 import { StatusDot } from '../../../components/ui/StatusDot';
-import { Alert, AlertDescription } from '../../../components/ui/Alert';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '../../../components/ui/Tabs';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../../../components/ui/DropdownMenu';
 import { ColumnDef } from '@tanstack/react-table';
-import { Plus, Wallet, Receipt, MoreHorizontal, ArrowUpDown, Loader2, Pencil, CheckCircle2, AlertCircle, Trash2, TrendingUp, TrendingDown, DollarSign, Target } from 'lucide-react';
+import { Plus, Wallet, Receipt, MoreHorizontal, ArrowUpDown, Loader2, Pencil, AlertCircle, Trash2, TrendingUp, TrendingDown, DollarSign, Target } from 'lucide-react';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '../../../components/ui/Tabs';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../../../components/ui/DropdownMenu';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../../../components/ui/Dialog';
 import { Label } from '../../../components/ui/Label';
@@ -20,8 +21,6 @@ const Finance = () => {
     const [isAddOpen, setIsAddOpen] = useState(false);
     const [isEditOpen, setIsEditOpen] = useState(false);
     const [editingExpense, setEditingExpense] = useState<ApiExpense | null>(null);
-    const [addFeedback, setAddFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
-    const [editFeedback, setEditFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
     const [isViewReceiptOpen, setIsViewReceiptOpen] = useState(false);
     const [viewingExpense, setViewingExpense] = useState<ApiExpense | null>(null);
     const [newExpense, setNewExpense] = useState<Partial<ApiExpense>>({
@@ -59,47 +58,39 @@ const Finance = () => {
 
     const handleCreateExpense = async (e: React.FormEvent) => {
         e.preventDefault();
-        setAddFeedback(null);
         try {
             const response = await financeService.createExpense(newExpense);
             if (response.success) {
-                setAddFeedback({ type: 'success', message: 'Expense recorded successfully.' });
-                setTimeout(() => {
-                    setIsAddOpen(false);
-                    setAddFeedback(null);
-                    setNewExpense({
-                        expenseCategory: '',
-                        description: '',
-                        amount: 0,
-                        expenseDate: new Date().toISOString().split('T')[0],
-                        status: 'Paid'
-                    });
-                    loadData();
-                }, 800);
+                toast.success('Expense recorded successfully.');
+                setIsAddOpen(false);
+                setNewExpense({
+                    expenseCategory: '',
+                    description: '',
+                    amount: 0,
+                    expenseDate: new Date().toISOString().split('T')[0],
+                    status: 'Paid'
+                });
+                loadData();
             }
         } catch (error) {
-            setAddFeedback({ type: 'error', message: 'Failed to record expense.' });
+            toast.error('Failed to record expense.');
         }
     };
 
     const handleUpdateExpense = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!editingExpense) return;
-        setEditFeedback(null);
         try {
             const response = await financeService.updateExpense(editingExpense.id, editingExpense);
             if (response.success) {
-                setEditFeedback({ type: 'success', message: 'Expense updated successfully.' });
-                setTimeout(() => {
-                    setIsEditOpen(false);
-                    setEditFeedback(null);
-                    loadData();
-                }, 800);
+                toast.success('Expense updated successfully.');
+                setIsEditOpen(false);
+                loadData();
             } else {
-                setEditFeedback({ type: 'error', message: response.message || 'Failed to update expense.' });
+                toast.error(response.message || 'Failed to update expense.');
             }
         } catch (error) {
-            setEditFeedback({ type: 'error', message: 'Failed to update expense.' });
+            toast.error('Failed to update expense.');
         }
     };
 
@@ -257,12 +248,6 @@ const Finance = () => {
                             </div>
                         </div>
                         <DialogFooter>
-                            {addFeedback && (
-                                <Alert variant={addFeedback.type === 'success' ? 'success' : 'destructive'} className="mr-auto py-2">
-                                    {addFeedback.type === 'success' ? <CheckCircle2 className="h-4 w-4" /> : <AlertCircle className="h-4 w-4" />}
-                                    <AlertDescription>{addFeedback.message}</AlertDescription>
-                                </Alert>
-                            )}
                             <Button type="button" variant="outline" onClick={() => setIsAddOpen(false)}>Cancel</Button>
                             <Button type="submit">Complete Record</Button>
                         </DialogFooter>
@@ -315,12 +300,6 @@ const Finance = () => {
                                 </select>
                             </div>
                             <DialogFooter>
-                                {editFeedback && (
-                                    <Alert variant={editFeedback.type === 'success' ? 'success' : 'destructive'} className="mr-auto py-2">
-                                        {editFeedback.type === 'success' ? <CheckCircle2 className="h-4 w-4" /> : <AlertCircle className="h-4 w-4" />}
-                                        <AlertDescription>{editFeedback.message}</AlertDescription>
-                                    </Alert>
-                                )}
                                 <Button type="button" variant="outline" onClick={() => setIsEditOpen(false)}>Cancel</Button>
                                 <Button type="submit">Save Changes</Button>
                             </DialogFooter>
@@ -365,7 +344,6 @@ const BudgetTab = () => {
     const [isAddOpen, setIsAddOpen] = useState(false);
     const [isEditOpen, setIsEditOpen] = useState(false);
     const [editingBudget, setEditingBudget] = useState<Budget | null>(null);
-    const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
     const [newBudget, setNewBudget] = useState<CreateBudget>({ category: '', allocatedAmount: 0, month, year });
 
     const load = async () => {
@@ -385,25 +363,24 @@ const BudgetTab = () => {
 
     const handleCreate = async (e: React.FormEvent) => {
         e.preventDefault();
-        setFeedback(null);
         try {
             const res = await financeService.createBudget({ ...newBudget, month, year });
             if (res.success) {
-                setFeedback({ type: 'success', message: 'Budget created.' });
-                setTimeout(() => { setIsAddOpen(false); setFeedback(null); setNewBudget({ category: '', allocatedAmount: 0, month, year }); load(); }, 600);
+                toast.success('Budget created.');
+                setIsAddOpen(false);
+                setNewBudget({ category: '', allocatedAmount: 0, month, year });
+                load();
             } else {
-                setFeedback({ type: 'error', message: res.message || 'Failed to create budget.' });
+                toast.error(res.message || 'Failed to create budget.');
             }
         } catch (err: any) {
-            const msg = err?.response?.data?.message || 'Failed to create budget.';
-            setFeedback({ type: 'error', message: msg });
+            toast.error(err?.response?.data?.message || 'Failed to create budget.');
         }
     };
 
     const handleUpdate = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!editingBudget) return;
-        setFeedback(null);
         try {
             const res = await financeService.updateBudget(editingBudget.id, {
                 category: editingBudget.category,
@@ -413,13 +390,14 @@ const BudgetTab = () => {
                 notes: editingBudget.notes,
             });
             if (res.success) {
-                setFeedback({ type: 'success', message: 'Budget updated.' });
-                setTimeout(() => { setIsEditOpen(false); setFeedback(null); load(); }, 600);
+                toast.success('Budget updated.');
+                setIsEditOpen(false);
+                load();
             } else {
-                setFeedback({ type: 'error', message: res.message || 'Failed to update.' });
+                toast.error(res.message || 'Failed to update.');
             }
         } catch (err: any) {
-            setFeedback({ type: 'error', message: err?.response?.data?.message || 'Failed to update budget.' });
+            toast.error(err?.response?.data?.message || 'Failed to update budget.');
         }
     };
 
@@ -598,12 +576,6 @@ const BudgetTab = () => {
                             <Input value={newBudget.notes || ''} onChange={e => setNewBudget({ ...newBudget, notes: e.target.value })} placeholder="Optional notes" />
                         </div>
                         <DialogFooter>
-                            {feedback && (
-                                <Alert variant={feedback.type === 'success' ? 'success' : 'destructive'} className="mr-auto py-2">
-                                    {feedback.type === 'success' ? <CheckCircle2 className="h-4 w-4" /> : <AlertCircle className="h-4 w-4" />}
-                                    <AlertDescription>{feedback.message}</AlertDescription>
-                                </Alert>
-                            )}
                             <Button type="button" variant="outline" onClick={() => setIsAddOpen(false)}>Cancel</Button>
                             <Button type="submit">Create</Button>
                         </DialogFooter>
@@ -633,12 +605,6 @@ const BudgetTab = () => {
                                 <Input value={editingBudget.notes || ''} onChange={e => setEditingBudget({ ...editingBudget, notes: e.target.value })} />
                             </div>
                             <DialogFooter>
-                                {feedback && (
-                                    <Alert variant={feedback.type === 'success' ? 'success' : 'destructive'} className="mr-auto py-2">
-                                        {feedback.type === 'success' ? <CheckCircle2 className="h-4 w-4" /> : <AlertCircle className="h-4 w-4" />}
-                                        <AlertDescription>{feedback.message}</AlertDescription>
-                                    </Alert>
-                                )}
                                 <Button type="button" variant="outline" onClick={() => setIsEditOpen(false)}>Cancel</Button>
                                 <Button type="submit">Save Changes</Button>
                             </DialogFooter>

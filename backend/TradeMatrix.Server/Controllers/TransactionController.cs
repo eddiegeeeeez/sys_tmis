@@ -52,6 +52,8 @@ namespace TradeMatrix.Server.Controllers
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 20)
         {
+            pageSize = Math.Clamp(pageSize, 1, 200);
+            page = Math.Max(1, page);
             try
             {
                 var (items, total) = await _transactionService.GetTransactionsAsync(from, to, page, pageSize);

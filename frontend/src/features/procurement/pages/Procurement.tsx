@@ -1,8 +1,9 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import { toast } from 'sonner';
 import { Card, CardContent } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
 import { StatusDot } from '../../../components/ui/StatusDot';
-import { Alert, AlertDescription } from '../../../components/ui/Alert';
+
 import { Input } from '../../../components/ui/Input';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../../../components/ui/Tabs';
 import { ColumnDef } from '@tanstack/react-table';
@@ -10,7 +11,7 @@ import { DataTable } from '../../../components/ui/data-table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../../../components/ui/Dialog';
 import { Label } from '../../../components/ui/Label';
 import { procurementService, Supplier as ApiSupplier, PurchaseOrder as ApiPO } from '../services/procurementService';
-import { Loader2, Truck, PackagePlus, Plus, Phone, Mail, ArrowUpDown, UserSquare2, PackageCheck, AlertCircle, X } from 'lucide-react';
+import { Loader2, Truck, PackagePlus, Plus, Phone, Mail, ArrowUpDown, UserSquare2, PackageCheck, X } from 'lucide-react';
 import { inventoryService, Product } from '../../inventory/services/inventoryService';
 import { UserRole } from '../../../types';
 
@@ -25,10 +26,10 @@ export const Procurement: React.FC<ProcurementProps> = ({ currentRole }) => {
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
     const [isSupplierModalOpen, setIsSupplierModalOpen] = useState(false);
+
     const [isPOModalOpen, setIsPOModalOpen] = useState(false);
     const [isEditSupplierOpen, setIsEditSupplierOpen] = useState(false);
     const [editingSupplier, setEditingSupplier] = useState<ApiSupplier | null>(null);
-    const [pageFeedback, setPageFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
     // Form States
     const [newSupplier, setNewSupplier] = useState({
@@ -56,7 +57,7 @@ export const Procurement: React.FC<ProcurementProps> = ({ currentRole }) => {
             if (poRes.data.success) setPurchaseOrders(poRes.data.data);
         } catch (error) {
             console.error("Failed to fetch procurement data", error);
-            setPageFeedback({ type: 'error', message: 'Failed to load procurement data.' });
+            toast.error('Failed to load procurement data.');
         } finally {
             setIsLoading(false);
         }
@@ -73,11 +74,12 @@ export const Procurement: React.FC<ProcurementProps> = ({ currentRole }) => {
             if (res.data.success) {
                 setIsSupplierModalOpen(false);
                 fetchData();
+                toast.success('Supplier registered successfully.');
                 setNewSupplier({ companyName: '', contactPerson: '', contactNumber: '', email: '', address: '' });
             }
         } catch (error) {
             console.error("Error saving supplier", error);
-            setPageFeedback({ type: 'error', message: 'Failed to save supplier.' });
+            toast.error('Failed to save supplier.');
         } finally {
             setIsSaving(false);
         }
@@ -91,10 +93,11 @@ export const Procurement: React.FC<ProcurementProps> = ({ currentRole }) => {
             if (res.data.success) {
                 setIsEditSupplierOpen(false);
                 fetchData();
+                toast.success('Supplier updated successfully.');
             }
         } catch (error) {
             console.error("Error updating supplier", error);
-            setPageFeedback({ type: 'error', message: 'Failed to update supplier.' });
+            toast.error('Failed to update supplier.');
         } finally {
             setIsSaving(false);
         }
@@ -111,13 +114,14 @@ export const Procurement: React.FC<ProcurementProps> = ({ currentRole }) => {
             if (res.data.success) {
                 setIsPOModalOpen(false);
                 fetchData();
+                toast.success('Purchase order created successfully.');
                 setNewPO({ supplierId: '', expectedDeliveryDate: '', items: [] });
                 setPoItems([]);
                 setNewPOItem({ productId: '', quantity: '1', unitCost: '' });
             }
         } catch (error) {
             console.error("Error creating PO", error);
-            setPageFeedback({ type: 'error', message: 'Failed to create purchase order.' });
+            toast.error('Failed to create purchase order.');
         } finally {
             setIsSaving(false);
         }
@@ -159,11 +163,12 @@ export const Procurement: React.FC<ProcurementProps> = ({ currentRole }) => {
         try {
             const res = await procurementService.receivePurchaseOrder(poId);
             if (res.data.success) {
+                toast.success('Purchase order marked as received. Stock updated.');
                 fetchData();
             }
         } catch (error: any) {
             const msg = error?.response?.data?.message || 'Failed to receive PO';
-            setPageFeedback({ type: 'error', message: msg });
+            toast.error(msg);
         } finally {
             setIsReceiving(false);
         }
@@ -529,13 +534,6 @@ export const Procurement: React.FC<ProcurementProps> = ({ currentRole }) => {
                     </p>
                 </div>
             </div>
-
-            {pageFeedback && (
-                <Alert variant={pageFeedback.type === 'error' ? 'destructive' : 'success'} className="flex items-center gap-2">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertDescription>{pageFeedback.message}</AlertDescription>
-                </Alert>
-            )}
 
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                 <div className="flex items-center justify-between mb-4">

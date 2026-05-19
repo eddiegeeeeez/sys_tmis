@@ -8,8 +8,10 @@ import { ThemeProvider, useTheme } from './components/providers/ThemeProvider';
 import { ProtectedRoute } from './components/common/ProtectedRoute';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { PageTitle } from './components/common/PageTitle';
+import { ForceChangePasswordPage } from './features/auth/pages/ForceChangePasswordPage';
 import api from './lib/axios';
 import { LoadingScreen } from './components/common/LoadingScreen';
+import { Toaster } from './components/ui/Sonner';
 
 // Pages — lazy-loaded so each route becomes its own JS chunk
 const Dashboard             = React.lazy(() => import('./features/dashboard/pages/Dashboard').then(m => ({ default: m.Dashboard })));
@@ -48,6 +50,13 @@ const AppContent: React.FC = () => {
     }
     return UserRole.MANAGER;
   });
+  const [mustChangePassword, setMustChangePassword] = useState<boolean>(() => {
+    const savedUser = localStorage.getItem('user');
+    if (savedUser) {
+      try { return JSON.parse(savedUser).mustChangePassword === true; } catch { return false; }
+    }
+    return false;
+  });
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [isLoginTransition, setIsLoginTransition] = useState(false);
 
@@ -65,12 +74,14 @@ const AppContent: React.FC = () => {
             const data = response.data;
             setIsLoggedIn(true);
             setCurrentRole(data.role || UserRole.MANAGER);
+            setMustChangePassword(data.mustChangePassword === true);
 
             // Sync localStorage user data
             localStorage.setItem('user', JSON.stringify({
               name: data.name,
               role: data.role,
-              email: data.email
+              email: data.email,
+              mustChangePassword: data.mustChangePassword === true
             }));
           } else {
             // Token invalid or expired
@@ -89,6 +100,7 @@ const AppContent: React.FC = () => {
               const userData = JSON.parse(savedUser);
               setIsLoggedIn(true);
               setCurrentRole(userData.role || UserRole.MANAGER);
+              setMustChangePassword(userData.mustChangePassword === true);
             } catch (e) {
               setIsLoggedIn(false);
             }
@@ -104,12 +116,13 @@ const AppContent: React.FC = () => {
     checkAuth();
   }, []);
 
-  const handleLogin = (role?: UserRole) => {
+  const handleLogin = (role?: UserRole, mustChange?: boolean) => {
     setIsLoginTransition(true);
     setIsLoggedIn(true);
     if (role) {
       setCurrentRole(role);
     }
+    setMustChangePassword(mustChange === true);
     setTimeout(() => setIsLoginTransition(false), 700);
   };
 
@@ -122,6 +135,7 @@ const AppContent: React.FC = () => {
       // Reset theme to light so the login page always appears in light mode
       setTheme('light');
       setIsLoggedIn(false);
+      setMustChangePassword(false);
       setIsLoggingOut(false);
     }, 800);
   };
@@ -147,15 +161,31 @@ const AppContent: React.FC = () => {
               )
             } />
 
+            {/* Force password change — standalone page, no sidebar */}
+            <Route path="/change-password" element={
+              isLoggedIn ? (
+                <ForceChangePasswordPage
+                  onPasswordChanged={() => setMustChangePassword(false)}
+                  currentRole={currentRole}
+                />
+              ) : (
+                <Navigate to="/login" replace />
+              )
+            } />
+
             {/* Protected Routes */}
             <Route path="/" element={
-              <ProtectedRoute isLoggedIn={isLoggedIn} currentRole={currentRole}>
-                <DashboardLayout
-                  currentRole={currentRole}
-                  onRoleChange={setCurrentRole}
-                  onLogout={handleLogout}
-                />
-              </ProtectedRoute>
+              isLoggedIn && mustChangePassword ? (
+                <Navigate to="/change-password" replace />
+              ) : (
+                <ProtectedRoute isLoggedIn={isLoggedIn} currentRole={currentRole}>
+                  <DashboardLayout
+                    currentRole={currentRole}
+                    onRoleChange={setCurrentRole}
+                    onLogout={handleLogout}
+                  />
+                </ProtectedRoute>
+              )
             }>
               <Route index element={<Navigate to="/dashboard" replace />} />
 
@@ -329,6 +359,7 @@ const App: React.FC = () => {
   return (
     <ThemeProvider defaultTheme="light" storageKey="tradematrix-theme">
       <AppContent />
+      <Toaster />
     </ThemeProvider>
   );
 };

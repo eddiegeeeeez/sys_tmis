@@ -90,6 +90,8 @@ namespace TradeMatrix.Server.Controllers
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 20)
         {
+            pageSize = Math.Clamp(pageSize, 1, 200);
+            page = Math.Max(1, page);
             try
             {
                 var (items, total) = await _stockMovementService.GetMovementsAsync(id, movementType, from, to, page, pageSize);
@@ -146,6 +148,8 @@ namespace TradeMatrix.Server.Controllers
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 20)
         {
+            pageSize = Math.Clamp(pageSize, 1, 200);
+            page = Math.Max(1, page);
             try
             {
                 var (items, total) = await _stockMovementService.GetMovementsAsync(productId, movementType, from, to, page, pageSize);

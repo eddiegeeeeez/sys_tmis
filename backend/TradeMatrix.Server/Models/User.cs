@@ -38,5 +38,16 @@ namespace TradeMatrix.Server.Models
         public DateTime? LockoutUntil { get; set; }
         public string? PasswordResetToken { get; set; }
         public DateTime? PasswordResetExpiry { get; set; }
+
+        // Forces a password change on first login after account creation or admin reset
+        public bool MustChangePassword { get; set; } = false;
+
+        // Password expiry — null means no expiry enforced
+        public DateTime? PasswordChangedAt { get; set; }
+
+        // OTP fields (hashed, single-use, time-limited)
+        public string? OtpHash { get; set; }
+        public string? OtpPurpose { get; set; }
+        public DateTime? OtpExpiry { get; set; }
     }
 }

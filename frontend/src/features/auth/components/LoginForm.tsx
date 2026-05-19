@@ -10,7 +10,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import api from '../../../lib/axios';
 
 interface LoginFormProps extends React.HTMLAttributes<HTMLDivElement> {
-  onLogin: (role?: UserRole) => void;
+  onLogin: (role?: UserRole, mustChangePassword?: boolean) => void;
   className?: string;
 }
 
@@ -27,12 +27,17 @@ export function LoginForm({
   const navigate = useNavigate();
   const location = useLocation();
 
-  const handleSuccess = (role: UserRole, token: string, name: string) => {
+  const handleSuccess = (role: UserRole, token: string, name: string, mustChangePassword: boolean) => {
     // Store token and user info
     localStorage.setItem('token', token);
-    localStorage.setItem('user', JSON.stringify({ name, role, email }));
+    localStorage.setItem('user', JSON.stringify({ name, role, email, mustChangePassword }));
 
-    onLogin(role);
+    onLogin(role, mustChangePassword);
+
+    if (mustChangePassword) {
+      navigate('/change-password', { replace: true });
+      return;
+    }
 
     // If ProtectedRoute redirected the user here from a specific page, send them back there.
     const from = (location.state as any)?.from?.pathname;
@@ -63,8 +68,8 @@ export function LoginForm({
     try {
       const response = await api.post('/auth/login', { email: email.trim(), password });
 
-      const { token, role, name } = response.data;
-      handleSuccess(role as UserRole, token, name);
+      const { token, role, name, mustChangePassword } = response.data;
+      handleSuccess(role as UserRole, token, name, mustChangePassword === true);
     } catch (err: any) {
       const status = err.response?.status;
       const message = err.response?.data?.message;
@@ -117,11 +122,10 @@ export function LoginForm({
             />
           </div>
           <div className="grid gap-2">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center">
               <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-zinc-900 dark:text-zinc-100" htmlFor="password">
                 Password
               </label>
-              <a href="#" className="text-xs text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-300">Forgot password?</a>
             </div>
             <div className="relative">
               <Input
@@ -153,15 +157,7 @@ export function LoginForm({
       </form>
 
       <p className="px-8 text-center text-xs text-zinc-500 dark:text-zinc-400">
-        By clicking continue, you agree to our{" "}
-        <a href="#" className="underline underline-offset-4 hover:text-zinc-900 dark:hover:text-zinc-50">
-          Terms of Service
-        </a>{" "}
-        and{" "}
-        <a href="#" className="underline underline-offset-4 hover:text-zinc-900 dark:hover:text-zinc-50">
-          Privacy Policy
-        </a>
-        .
+        Powered by TradeMatrix MIS Security
       </p>
     </div>
   )
