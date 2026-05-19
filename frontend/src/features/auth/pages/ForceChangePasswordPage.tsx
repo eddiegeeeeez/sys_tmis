@@ -4,6 +4,7 @@ import { KeyRound, Eye, EyeOff, CheckCircle2, AlertCircle } from 'lucide-react';
 import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
 import { Alert, AlertDescription } from '../../../components/ui/Alert';
+import { PasswordStrengthMeter, evaluatePasswordStrength } from '../components/PasswordStrengthMeter';
 import api from '../../../lib/axios';
 import { UserRole } from '../../../types';
 
@@ -33,6 +34,14 @@ export const ForceChangePasswordPage: React.FC<ForceChangePasswordPageProps> = (
       setError('Password must be at least 8 characters.');
       return;
     }
+
+    // Enforce full password policy client-side before sending to server
+    const strength = evaluatePasswordStrength(newPassword);
+    if (strength.score < 5) {
+      setError('Password does not meet the security requirements. Please check the checklist below.');
+      return;
+    }
+
     if (newPassword !== confirmPassword) {
       setError('Passwords do not match.');
       return;
@@ -143,18 +152,7 @@ export const ForceChangePasswordPage: React.FC<ForceChangePasswordPageProps> = (
                   </button>
                 </div>
                 {/* Strength indicator */}
-                {strength && (
-                  <div className="flex items-center gap-2 mt-1">
-                    <div className="flex gap-1 flex-1">
-                      <div className={`h-1 flex-1 rounded-full transition-colors ${strength !== null ? 'bg-red-400' : 'bg-zinc-200'}`} />
-                      <div className={`h-1 flex-1 rounded-full transition-colors ${strength === 'fair' || strength === 'strong' ? 'bg-yellow-400' : 'bg-zinc-200'}`} />
-                      <div className={`h-1 flex-1 rounded-full transition-colors ${strength === 'strong' ? 'bg-emerald-500' : 'bg-zinc-200'}`} />
-                    </div>
-                    <span className={`text-xs font-medium ${strength === 'weak' ? 'text-red-500' : strength === 'fair' ? 'text-yellow-500' : 'text-emerald-600'}`}>
-                      {strength === 'weak' ? 'Too short' : strength === 'fair' ? 'Fair' : 'Strong'}
-                    </span>
-                  </div>
-                )}
+                <PasswordStrengthMeter password={newPassword} />
               </div>
 
               {/* Confirm Password */}

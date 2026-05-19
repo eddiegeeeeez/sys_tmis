@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using TradeMatrix.Server.Data;
 using TradeMatrix.Server.DTOs;
 using TradeMatrix.Server.Models;
+using TradeMatrix.Server.Services;
 
 namespace TradeMatrix.Server.Services
 {
@@ -120,16 +121,15 @@ namespace TradeMatrix.Server.Services
                 }
             }
 
-            // Validate password
+            // Validate password with full policy
             if (string.IsNullOrWhiteSpace(createUserDto.Password))
             {
                 return ApiResponse<UserDto>.ErrorResponse("Password is required");
             }
 
-            if (createUserDto.Password.Length < 8)
-            {
-                return ApiResponse<UserDto>.ErrorResponse("Password must be at least 8 characters");
-            }
+            var policyError = AuthService.ValidatePasswordPolicy(createUserDto.Password);
+            if (policyError != null)
+                return ApiResponse<UserDto>.ErrorResponse(policyError);
 
             var newUser = new User
             {
@@ -290,10 +290,9 @@ namespace TradeMatrix.Server.Services
                 return ApiResponse<bool>.ErrorResponse("New password is required");
             }
 
-            if (newPassword.Length < 8)
-            {
-                return ApiResponse<bool>.ErrorResponse("Password must be at least 8 characters");
-            }
+            var policyError = AuthService.ValidatePasswordPolicy(newPassword);
+            if (policyError != null)
+                return ApiResponse<bool>.ErrorResponse(policyError);
 
             user.PasswordHash = _passwordHashing.HashPassword(newPassword);
             user.MustChangePassword = true;

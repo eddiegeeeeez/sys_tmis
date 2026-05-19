@@ -87,6 +87,18 @@ builder.Services.AddScoped<IDashboardService, DashboardService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IReportService, ReportService>();
 
+// ── New Security Services ──────────────────────────────────────────────────
+// OTP service (in-memory; swap for Redis/DB in production)
+builder.Services.AddSingleton<IOtpService, OtpService>();
+
+// AES-256 encryption via ASP.NET Core Data Protection
+builder.Services.AddDataProtection();
+builder.Services.AddScoped<IEncryptionService, EncryptionService>();
+
+// reCAPTCHA verification (calls Google's siteverify API)
+builder.Services.AddHttpClient("ReCaptcha");
+builder.Services.AddScoped<IReCaptchaService, ReCaptchaService>();
+
 // AWS S3
 builder.Services.AddSingleton<IAmazonS3>(sp =>
 {
